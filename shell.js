@@ -193,5 +193,12 @@ if (window.innerWidth < WIDE_SCREEN_BREAKPOINT) {
     setPhoneSize(430, 932);
 }
 
-preloadApps();
+preloadApps().then(() => {
+    // The header's Account/Role toggles are wired to Kinetic Flow's
+    // setAccountType/setRole, which only exist as window globals once its
+    // activate() has run. Run it now so those controls work the instant the
+    // page loads, not only after the app icon has first been tapped.
+    const entry = window.Apps && window.Apps['kinetic-flow'];
+    if (entry && entry.activate) entry.activate();
+});
 bootPhone();
