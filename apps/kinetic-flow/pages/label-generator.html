@@ -40,10 +40,6 @@
         el.textContent = n + ' label' + (n !== 1 ? 's' : '') + ' selected';
     }
 
-    function categoryFullySelected(cat, ci) {
-        return cat.kits.every(function (k, ki) { return selected.has('K|' + ci + '|' + ki); });
-    }
-
     function itemGroupHtml(title, kind, ci, ki, items) {
         var html = '<div class="label-section-title">' + title + '</div>';
         if (!items || items.length === 0) {
@@ -83,10 +79,8 @@
 
     function categoryHtml(cat, ci) {
         var expanded = state.expandedCats.has(ci);
-        var checked = categoryFullySelected(cat, ci);
         var html = '<div class="label-cat">';
         html += '<div class="label-row label-row-cat">' +
-            '<input type="checkbox"' + (checked ? ' checked' : '') + ' class="label-checkbox" onclick="toggleCategoryLabels(' + ci + ')">' +
             '<button class="label-toggle" onclick="toggleCatExpand(' + ci + ')">' +
             '<span class="label-name">' + cat.name + '</span>' +
             '<span class="label-count">' + cat.kits.length + ' kit' + (cat.kits.length !== 1 ? 's' : '') + '</span>' +
@@ -159,17 +153,6 @@
 
     window.filterLabelKits = function (query) {
         state.searchQuery = query.trim();
-        render();
-    };
-
-    window.toggleCategoryLabels = function (ci) {
-        var cat = KIT_CATEGORIES[ci];
-        var allSelected = categoryFullySelected(cat, ci);
-        cat.kits.forEach(function (k, ki) {
-            var id = 'K|' + ci + '|' + ki;
-            if (allSelected) selected.delete(id);
-            else selected.set(id, k.name);
-        });
         render();
     };
 

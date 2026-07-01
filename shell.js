@@ -183,5 +183,15 @@ function updateSizeLabel(w, h) {
 })();
 
 // ── Init ─────────────────────────────────────────────────────────────────────
+// On a wide (desktop) viewport there's room to show the phone at its "Large"
+// preset; on a narrow viewport (an actual phone) that size wouldn't fit
+// on-screen, so default to the smaller "Phone" preset instead.
+const WIDE_SCREEN_BREAKPOINT = 600;
+if (window.innerWidth < WIDE_SCREEN_BREAKPOINT) {
+    setPhoneSize(390, 720);
+} else {
+    setPhoneSize(430, 932);
+}
+
 preloadApps();
 bootPhone();
