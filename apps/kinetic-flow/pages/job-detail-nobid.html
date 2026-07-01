@@ -1,0 +1,67 @@
+<div class="page" style="padding-bottom:80px;">
+    <button class="btn btn-secondary btn-sm mb-4" onclick="loadPage('jobs')">&larr; Jobs</button>
+
+    <!-- Job Header -->
+    <div style="padding:18px; margin-bottom:16px; border:1px solid #e2e8f0;">
+        <div style="font-size:1.2rem; font-weight:700; margin-bottom:6px;">Westgate Electrical Panel</div>
+        <div class="flex-between mb-2">
+            <span class="badge">JOB-2023</span>
+            <span class="badge">No Bid Yet</span>
+        </div>
+        <div style="font-size:0.82rem;">456 Westgate Blvd, Calgary AB</div>
+        <div style="font-size:0.82rem; margin-top:2px;">Target start: Jun 26, 2024</div>
+    </div>
+
+    <!-- No-bid CTA -->
+    <div style="padding:20px; text-align:center; margin-bottom:16px; border:1px solid #e2e8f0;">
+        <div style="font-size:1rem; margin-bottom:4px;">No Bid Created</div>
+        <div style="font-size:0.82rem; color:#64748b; margin-bottom:16px;">
+            This job needs a bid before work can begin. Create one now to estimate labour, materials, and total cost.
+        </div>
+        <button class="btn btn-orange" style="margin:0;" onclick="openBid()">+ Create Bid</button>
+    </div>
+
+    <!-- Other Actions -->
+    <div class="section-header">
+        <span class="section-title">Other Actions</span>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:16px;">
+        <button class="btn btn-secondary" style="margin:0;" onclick="openSchedule()">Schedule</button>
+        <button class="btn btn-secondary" style="margin:0;" onclick="openKits()">Kits</button>
+        <button class="btn btn-secondary" style="margin:0;" onclick="openFieldClock()">Field Clock</button>
+    </div>
+
+    <!-- Job Info -->
+    <div class="section-header">
+        <span class="section-title">Job Details</span>
+    </div>
+
+    <div class="card" style="cursor:default; margin-bottom:16px;">
+        <div class="list-item" style="padding:8px 0;">
+            <div class="list-item-body"><div class="list-item-title">Customer</div></div>
+            <div class="list-item-right"><div class="list-item-value">Westgate Commercial</div></div>
+        </div>
+        <div class="list-item" style="padding:8px 0;">
+            <div class="list-item-body"><div class="list-item-title">Job Type</div></div>
+            <div class="list-item-right"><div class="list-item-value">Electrical</div></div>
+        </div>
+        <div class="list-item" style="padding:8px 0;">
+            <div class="list-item-body"><div class="list-item-title">Priority</div></div>
+            <div class="list-item-right"><span class="badge badge-orange">High</span></div>
+        </div>
+        <div class="list-item" style="padding:8px 0; border-bottom:none;">
+            <div class="list-item-body"><div class="list-item-title">Assigned Team</div></div>
+            <div class="list-item-right"><div class="list-item-value" style="color:#94a3b8;">Unassigned</div></div>
+        </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="section-header">
+        <span class="section-title">Job Notes</span>
+    </div>
+
+    <div class="alert alert-warn">
+        200A panel replacement. Customer wants quote before scheduling crew. Access via side entrance — call ahead.
+    </div>
+</div>

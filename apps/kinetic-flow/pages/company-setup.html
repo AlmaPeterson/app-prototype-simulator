@@ -1,0 +1,90 @@
+<div class="page">
+    <div class="page-header">
+        <div class="page-title">Company Setup</div>
+        <div class="page-subtitle">Configure your company before inviting team members.</div>
+    </div>
+
+    <div class="alert alert-success mb-4">Company created! Complete the setup below.</div>
+
+    <!-- Positions -->
+    <div class="section-header">
+        <span class="section-title">Employee Positions</span>
+        <button class="section-action">+ Add</button>
+    </div>
+
+    <div style="display:flex; flex-wrap:wrap; margin-bottom:16px;">
+        <span class="chip selected" onclick="toggleChip(this)">Admin</span>
+        <span class="chip selected" onclick="toggleChip(this)">Manager</span>
+        <span class="chip selected" onclick="toggleChip(this)">Supervisor</span>
+        <span class="chip selected" onclick="toggleChip(this)">Senior Tech</span>
+        <span class="chip selected" onclick="toggleChip(this)">Technician</span>
+        <span class="chip" onclick="toggleChip(this)">Apprentice</span>
+        <span class="chip" onclick="toggleChip(this)">Dispatcher</span>
+        <span class="chip" onclick="toggleChip(this)">Estimator</span>
+    </div>
+
+    <!-- Branches -->
+    <div class="section-header">
+        <span class="section-title">Branches / Divisions</span>
+        <button class="section-action">+ Add</button>
+    </div>
+
+    <div class="card" style="margin-bottom:8px; cursor:default;">
+        <div class="flex-between">
+            <div>
+                <div class="card-title">Calgary HQ</div>
+                <div class="card-subtitle">123 Main St, Calgary, AB</div>
+            </div>
+            <span class="badge badge-green">Primary</span>
+        </div>
+    </div>
+
+    <div class="card" style="cursor:default; margin-bottom:16px;">
+        <div class="flex-between">
+            <div>
+                <div class="card-title">Edmonton Branch</div>
+                <div class="card-subtitle">456 Jasper Ave, Edmonton, AB</div>
+            </div>
+            <button class="text-link" style="font-size:0.75rem; color:#dc2626;">Remove</button>
+        </div>
+    </div>
+
+    <!-- Permissions -->
+    <div class="section-header">
+        <span class="section-title">Permissions</span>
+    </div>
+
+    <div class="card" style="cursor:default; margin-bottom:16px;">
+        <div class="list-item" style="padding:8px 0;">
+            <div class="list-item-body"><div class="list-item-title">Technicians can create bids</div></div>
+            <div style="width:36px; height:20px; background:#2563eb; border-radius:99px; position:relative; cursor:pointer;">
+                <div style="width:16px; height:16px; background:white; border-radius:50%; position:absolute; right:2px; top:2px;"></div>
+            </div>
+        </div>
+        <div class="list-item" style="padding:8px 0;">
+            <div class="list-item-body"><div class="list-item-title">Managers approve timesheets</div></div>
+            <div style="width:36px; height:20px; background:#2563eb; border-radius:99px; position:relative; cursor:pointer;">
+                <div style="width:16px; height:16px; background:white; border-radius:50%; position:absolute; right:2px; top:2px;"></div>
+            </div>
+        </div>
+        <div class="list-item" style="padding:8px 0; border-bottom:none;">
+            <div class="list-item-body"><div class="list-item-title">Workers view finance data</div></div>
+            <div style="width:36px; height:20px; background:#e2e8f0; border-radius:99px; position:relative; cursor:pointer;">
+                <div style="width:16px; height:16px; background:white; border-radius:50%; position:absolute; left:2px; top:2px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invite -->
+    <div class="section-header">
+        <span class="section-title">Invite Team Members</span>
+    </div>
+
+    <div class="form-group">
+        <label>Email Addresses</label>
+        <textarea placeholder="jane@example.com&#10;bob@example.com&#10;...one per line"></textarea>
+    </div>
+
+    <button class="btn btn-primary" onclick="continueFromSetup()">Continue to Jobs &rarr;</button>
+    <button class="btn btn-secondary" onclick="continueFromSetup()">Skip for Now</button>
+</div>

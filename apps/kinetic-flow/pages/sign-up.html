@@ -1,0 +1,52 @@
+<div class="page-title-sm mb-2">Request an Account</div>
+<div class="page-subtitle mb-4">Fill out the form below and we'll get you set up.</div>
+
+<div class="form-row">
+    <div class="form-group">
+        <label>First Name</label>
+        <input type="text" placeholder="John">
+    </div>
+    <div class="form-group">
+        <label>Last Name</label>
+        <input type="text" placeholder="Doe">
+    </div>
+</div>
+
+<div class="form-group">
+    <label>Email Address</label>
+    <input type="email" placeholder="you@example.com">
+</div>
+
+<div class="form-group">
+    <label>Phone Number</label>
+    <input type="tel" placeholder="(555) 000-0000">
+</div>
+
+<div class="form-group">
+    <label>I am a</label>
+    <select>
+        <option value="">Select your role...</option>
+        <option>Worker / Technician</option>
+        <option>Manager / Supervisor</option>
+        <option>Customer</option>
+        <option>Supplier / Vendor</option>
+        <option>Admin</option>
+    </select>
+</div>
+
+<div class="form-group">
+    <label>Company Name (optional)</label>
+    <input type="text" placeholder="Acme Corp">
+</div>
+
+<div class="form-group">
+    <label>Notes / Why you need access</label>
+    <textarea placeholder="Briefly describe your role..."></textarea>
+</div>
+
+<div class="alert alert-info">
+    Your request will be reviewed. You'll receive an email once approved.
+</div>
+
+<button class="btn btn-primary" onclick="submitAccount()">Submit Request</button>
+<button class="btn btn-secondary" onclick="closeSignUp()">Cancel</button>

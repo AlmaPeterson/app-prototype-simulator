@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Simulator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <a href="index.html" class="header-brand">&#128241; App Simulator</a>
+
+        <div class="header-controls">
+            <div class="toggle-group" id="account-toggle">
+                <button id="btn-existing" class="active" onclick="setAccountType('existing')">Existing Account</button>
+                <button id="btn-new" onclick="setAccountType('new')">New Account</button>
+            </div>
+            <div class="role-group" id="role-toggle">
+                <button id="btn-worker" class="active" onclick="setRole('worker')">Worker</button>
+                <button id="btn-customer" onclick="setRole('customer')">Customer</button>
+                <button id="btn-supplier" onclick="setRole('supplier')">Supplier</button>
+            </div>
+            <div class="toggle-group" id="size-presets">
+                <button onclick="setPhoneSize(320, 568)">Mini</button>
+                <button onclick="setPhoneSize(390, 720)">Phone</button>
+                <button onclick="setPhoneSize(430, 932)" class="active">Large</button>
+                <button onclick="setPhoneSize(768, 1024)">Tablet</button>
+            </div>
+            <div id="size-label">430 &times; 932</div>
+        </div>
+    </header>
+
+    <div id="phone-wrap">
+        <div id="phone-sizer">
+            <div id="phone">
+                <div id="status-bar">
+                    <span>9:41</span>
+                    <span>&#9679;&#9679;&#9679; 100%</span>
+                </div>
+
+                <div id="os-boot" class="os-screen">
+                    <div class="boot-logo">&#x2B21;</div>
+                    <div class="boot-spinner"></div>
+                </div>
+
+                <div id="os-home" class="os-screen" style="display:none;">
+                    <div id="home-icons"></div>
+                </div>
+
+                <div id="app-container" style="display:none;">
+                    <div id="main"></div>
+                    <nav id="bottom-nav" class="bottom-nav"></nav>
+                </div>
+
+                <div id="home-indicator" onclick="closeApp()" title="Close app"></div>
+            </div>
+            <div id="resize-grip" title="Drag to resize">&#8689;</div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="apps.js"></script>
+    <script src="shell.js"></script>
+</body>
+</html>

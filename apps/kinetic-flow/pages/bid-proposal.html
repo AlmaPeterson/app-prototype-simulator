@@ -1,0 +1,161 @@
+<div class="page">
+    <button class="btn btn-secondary btn-sm mb-4" onclick="loadPage('bid')">&larr; Edit Bid</button>
+
+    <div style="text-align:center; border-bottom:2px solid #0f172a; padding-bottom:12px; margin-bottom:16px;">
+        <div style="font-size:1rem; font-weight:900; letter-spacing:0.04em;">BUILDING FORWARD LLC</div>
+        <div style="font-size:0.75rem; color:#64748b;">General Contracting &bull; Construction Management</div>
+        <div style="font-size:0.9rem; font-weight:700; margin-top:6px;">BID PROPOSAL</div>
+    </div>
+
+    <div id="prop-header"></div>
+
+    <div class="section-header mt-2">
+        <span class="section-title">Construction Sequence of Divisions</span>
+    </div>
+    <div id="prop-divisions"></div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; border-top:2px solid #0f172a; border-bottom:1px solid #e2e8f0; padding:8px 0; margin:8px 0 16px 0;">
+        <strong>Grand Total</strong>
+        <strong id="prop-total" style="font-size:1.1rem; color:#16a34a;"></strong>
+    </div>
+
+    <div class="section-header mt-2">
+        <span class="section-title">Project Schedule &amp; Timeline</span>
+    </div>
+    <div id="prop-schedule" style="border:1px solid #e2e8f0; border-radius:6px; padding:12px; margin-bottom:16px;"></div>
+
+    <div style="border:1px solid #e2e8f0; border-radius:6px; padding:12px; margin-bottom:16px; font-size:0.78rem; color:#475569; line-height:1.6;">
+        <p style="margin:0 0 6px 0;"><strong>Schedule Note:</strong> Dates listed are good-faith estimates. Delays from supply chains or change orders will extend the completion date.</p>
+        <p style="margin:0 0 6px 0;"><strong>Changes:</strong> Any deviation from the original scope requires a written Change Order signed by both parties. Payment for approved Change Orders is due before that work begins.</p>
+        <p style="margin:0;"><strong>Deposit Policy:</strong> Scheduling and material orders begin immediately upon receipt of the deposit. Lead times are calculated from the date the deposit clears.</p>
+    </div>
+
+    <div class="section-header mt-2">
+        <span class="section-title">Schedule of Payments</span>
+    </div>
+    <div id="prop-payments" style="border:1px solid #e2e8f0; border-radius:6px; padding:12px; margin-bottom:16px;"></div>
+
+    <div class="section-header mt-2">
+        <span class="section-title">Acceptance of Proposal</span>
+    </div>
+    <div style="border:1px solid #e2e8f0; border-radius:6px; padding:12px; margin-bottom:20px;">
+        <p style="font-size:0.78rem; color:#475569; margin:0 0 12px 0; line-height:1.5;">By signing below, the client acknowledges they have read and agree to all terms, conditions, specifications, and pricing in this proposal.</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:0.8rem;">
+            <div>
+                <div style="font-weight:700; margin-bottom:6px;">Building Forward LLC</div>
+                <div style="border-bottom:1px solid #000; height:28px; margin-bottom:4px;"></div>
+                <div>Joshua Peterson Jr.</div>
+                <div style="color:#64748b; font-size:0.72rem;">Managing Member / President</div>
+                <div style="border-bottom:1px solid #e2e8f0; height:20px; margin-top:10px; margin-bottom:2px;"></div>
+                <div style="color:#94a3b8; font-size:0.72rem;">Date</div>
+            </div>
+            <div>
+                <div style="font-weight:700; margin-bottom:6px;">Owner / Auth. Representative</div>
+                <div style="border-bottom:1px solid #000; height:28px; margin-bottom:4px;"></div>
+                <div style="color:#94a3b8;">Print name</div>
+                <div style="border-bottom:1px solid #e2e8f0; height:20px; margin-top:10px; margin-bottom:2px;"></div>
+                <div style="color:#94a3b8; font-size:0.72rem;">Date</div>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn btn-primary" style="margin-bottom:8px;" onclick="alert('Send flow not wired in prototype.')">Send to Customer</button>
+    <button class="btn btn-secondary" onclick="loadPage('bid')">&larr; Back to Bid Creation</button>
+</div>
+
+<script>
+(function renderProposal() {
+
+    var bd = window.bidData;
+    if (!bd) {
+        document.getElementById('prop-header').innerHTML = '<p style="color:red;">No bid data. Go back and create a bid first.</p>';
+        return;
+    }
+
+    function fmt(n) {
+        return '$' + n.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
+    }
+    function fmtDate(iso) {
+        if (!iso) return '—';
+        return new Date(iso + 'T12:00:00').toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
+    }
+    function divTotal(d) {
+        var labor = 0, mat = 0;
+        (d.tasks || []).forEach(function(t) {
+            if (!t.included) return;
+            var hrs = (t.qty||0) * (t.hrsEach||0);
+            labor += hrs * (d.laborRate||120);
+            (t.materials||[]).forEach(function(m){ mat += (m.price||0)*(m.qty||0); });
+        });
+        return labor + mat + labor*0.10 + mat*0.10;
+    }
+
+    // Header block
+    document.getElementById('prop-header').innerHTML =
+        '<div style="border:1px solid #e2e8f0; border-radius:6px; padding:12px; margin-bottom:16px; font-size:0.82rem;">' +
+        '<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px 16px;">' +
+        '<div><span style="color:#64748b; font-size:0.72rem; display:block;">DATE</span><strong>' + fmtDate(bd.date) + '</strong></div>' +
+        '<div><span style="color:#64748b; font-size:0.72rem; display:block;">EXPIRES</span><strong>' + fmtDate(bd.expires) + '</strong></div>' +
+        '<div><span style="color:#64748b; font-size:0.72rem; display:block;">BID #</span><strong>' + (bd.bidNumber||'—') + '</strong></div>' +
+        '<div><span style="color:#64748b; font-size:0.72rem; display:block;">PROJECT</span><strong>' + (bd.project||'—') + '</strong></div>' +
+        '<div style="margin-top:4px;"><span style="color:#64748b; font-size:0.72rem; display:block;">CUSTOMER</span><strong>' + (bd.customer||'—') + '</strong></div>' +
+        '<div style="margin-top:4px;"><span style="color:#64748b; font-size:0.72rem; display:block;">LEAD CRAFTSMAN</span><strong>' + (bd.craftsman||'—') + '</strong></div>' +
+        '<div style="margin-top:4px; grid-column:1/-1;"><span style="color:#64748b; font-size:0.72rem; display:block;">SITE ADDRESS</span><strong>' + (bd.address||'—') + '</strong></div>' +
+        '</div></div>';
+
+    // Included divisions
+    var included = bd.divisions.filter(function(d){ return d.included; });
+    var grandTotal = 0;
+    if (included.length === 0) {
+        document.getElementById('prop-divisions').innerHTML =
+            '<p style="color:#94a3b8; font-size:0.85rem; padding:12px 0;">No divisions selected.</p>';
+    } else {
+        var rows = included.map(function(d) {
+            var total = divTotal(d);
+            grandTotal += total;
+            var num = bd.divisions.indexOf(d) + 1;
+            return '<div style="border-bottom:1px solid #f1f5f9; padding:8px 0;">' +
+                '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">' +
+                '<div><span style="font-size:0.72rem; color:#64748b;">Div ' + num + ' &mdash; </span><strong>' + d.name + '</strong>' +
+                (d.scope ? '<div style="font-size:0.78rem; color:#475569; margin-top:3px;">' + d.scope + '</div>' : '') +
+                '</div>' +
+                '<strong style="white-space:nowrap; color:#16a34a;">' + fmt(total) + '</strong>' +
+                '</div></div>';
+        });
+        document.getElementById('prop-divisions').innerHTML = rows.join('');
+    }
+    document.getElementById('prop-total').textContent = fmt(grandTotal);
+
+    // Schedule
+    var totalDays = bd.constructionDays || bd.divisions.reduce(function(sum, d) {
+        if (!d.included) return sum;
+        var hrs = (d.tasks||[]).reduce(function(s,t){ return t.included ? s+(t.qty||0)*(t.hrsEach||0) : s; }, 0);
+        return sum + Math.ceil(hrs / (8 * (d.guys||1)));
+    }, 0);
+
+    document.getElementById('prop-schedule').innerHTML =
+        '<div style="font-size:0.82rem; display:flex; flex-direction:column; gap:6px;">' +
+        '<div style="display:flex; justify-content:space-between;"><span style="color:#64748b;">Estimated Start Date</span><strong>' + fmtDate(bd.startDate) + '</strong></div>' +
+        '<div style="display:flex; justify-content:space-between;"><span style="color:#64748b;">Material Procurement</span><strong>~' + (bd.procurementDays||10) + ' business days from deposit</strong></div>' +
+        '<div style="display:flex; justify-content:space-between;"><span style="color:#64748b;">On-Site Duration</span><strong>~' + (totalDays||'—') + ' business days</strong></div>' +
+        '<div style="display:flex; justify-content:space-between; border-top:1px solid #e2e8f0; padding-top:6px;"><span style="color:#64748b; font-weight:600;">Est. Completion</span><strong>' + fmtDate(bd.completionDate) + '</strong></div>' +
+        '</div>';
+
+    // Payments
+    document.getElementById('prop-payments').innerHTML =
+        '<div style="font-size:0.82rem; display:flex; flex-direction:column; gap:0;">' +
+        payRow('Deposit — 50%',           fmt(grandTotal*0.50), 'Due upon acceptance. Required to secure scheduling and initiate material orders.') +
+        payRow('Progress Draw 1 — 20%',   fmt(grandTotal*0.20), 'Due upon completion of: ' + (bd.milestone1 || '_______________')) +
+        payRow('Progress Draw 2 — 20%',   fmt(grandTotal*0.20), 'Due upon completion of: ' + (bd.milestone2 || '_______________')) +
+        payRow('Final Balance — 10%',     fmt(grandTotal*0.10), 'Due upon completion of agreed-upon punch list.', true) +
+        '</div>';
+
+    function payRow(label, amount, note, last) {
+        return '<div style="display:flex; justify-content:space-between; align-items:flex-start; padding:8px 0;' + (last ? '' : ' border-bottom:1px solid #f1f5f9;') + '">' +
+            '<div><strong>' + label + '</strong><div style="font-size:0.72rem; color:#64748b; margin-top:2px;">' + note + '</div></div>' +
+            '<strong style="color:#16a34a; white-space:nowrap; padding-left:12px;">' + amount + '</strong>' +
+            '</div>';
+    }
+
+})();
+</script>

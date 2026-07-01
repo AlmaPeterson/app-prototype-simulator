@@ -1,0 +1,422 @@
+<div class="page">
+    <button class="btn btn-secondary btn-sm mb-4" onclick="loadPage('job-detail-nobid')">&larr; Job Detail</button>
+
+    <div class="page-header">
+        <div class="page-title" id="bid-page-title">Bid Creation</div>
+        <div class="page-subtitle">Building Forward LLC &bull; Bid Creation</div>
+    </div>
+
+    <!-- Job Header -->
+    <div class="card" style="cursor:default; padding:12px; margin-bottom:16px;">
+        <div class="form-row">
+            <div class="form-group" style="margin:0; flex:1;">
+                <label>Date</label>
+                <input type="date" id="hdr-date">
+            </div>
+            <div class="form-group" style="margin:0; flex:1;">
+                <label>Expires</label>
+                <input type="date" id="hdr-expires">
+            </div>
+        </div>
+        <div class="form-row" style="margin-top:8px;">
+            <div class="form-group" style="margin:0; flex:1;">
+                <label>Bid #</label>
+                <input type="text" id="hdr-bidnum">
+            </div>
+            <div class="form-group" style="margin:0; flex:2;">
+                <label>Project</label>
+                <input type="text" id="hdr-project">
+            </div>
+        </div>
+        <div class="form-row" style="margin-top:8px;">
+            <div class="form-group" style="margin:0; flex:1;">
+                <label>Customer</label>
+                <input type="text" id="hdr-customer">
+            </div>
+            <div class="form-group" style="margin:0; flex:1;">
+                <label>Lead Craftsman</label>
+                <input type="text" id="hdr-craftsman">
+            </div>
+        </div>
+        <div class="form-group" style="margin:8px 0 0 0;">
+            <label>Site Address</label>
+            <input type="text" id="hdr-address">
+        </div>
+        <div class="form-row" style="margin-top:8px;">
+            <div class="form-group" style="margin:0; flex:1;">
+                <label>Phone</label>
+                <input type="tel" id="hdr-phone">
+            </div>
+            <div class="form-group" style="margin:0; flex:1;">
+                <label>Email</label>
+                <input type="email" id="hdr-email">
+            </div>
+        </div>
+    </div>
+
+    <!-- Construction Divisions -->
+    <div class="section-header">
+        <span class="section-title">Construction Divisions</span>
+        <span id="div-summary" style="font-size:0.8rem; color:#64748b;"></span>
+    </div>
+    <p style="font-size:0.78rem; color:#64748b; margin:0 0 8px 0;">Check divisions included in this job. Tap Edit to fill out each division sheet.</p>
+
+    <div id="div-list"></div>
+
+    <!-- Grand Total -->
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-top:2px solid #0f172a; border-bottom:1px solid #e2e8f0; margin:8px 0 16px 0;">
+        <strong>Grand Total</strong>
+        <strong id="grand-total" style="font-size:1.1rem; color:#16a34a;">$0.00</strong>
+    </div>
+
+    <!-- Project Schedule -->
+    <div class="section-header mt-2">
+        <span class="section-title">Project Schedule</span>
+    </div>
+    <div class="card" style="cursor:default; padding:12px; margin-bottom:16px;">
+        <div class="form-row">
+            <div class="form-group" style="margin:0; flex:1;">
+                <label>Est. Start Date</label>
+                <input type="date" id="sched-start" oninput="window.bidData.startDate=this.value">
+            </div>
+            <div class="form-group" style="margin:0; flex:1;">
+                <label>Est. Completion</label>
+                <input type="date" id="sched-end" oninput="window.bidData.completionDate=this.value">
+            </div>
+        </div>
+        <div class="form-row" style="margin-top:8px;">
+            <div class="form-group" style="margin:0; flex:1;">
+                <label>Procurement (bus. days)</label>
+                <input type="number" id="sched-proc" min="0" oninput="window.bidData.procurementDays=+this.value">
+            </div>
+            <div class="form-group" style="margin:0; flex:1;">
+                <label>On-Site (bus. days)</label>
+                <input type="number" id="sched-build" min="0" oninput="window.bidData.constructionDays=+this.value">
+            </div>
+        </div>
+        <p style="font-size:0.75rem; color:#64748b; margin:6px 0 0 0;">On-site days auto-sum from division sheets. Override here if needed.</p>
+    </div>
+
+    <!-- Schedule of Payments -->
+    <div class="section-header mt-2">
+        <span class="section-title">Schedule of Payments</span>
+    </div>
+    <div class="card" style="cursor:default; padding:12px; margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #f1f5f9;">
+            <div>
+                <div style="font-weight:600;">Deposit — 50%</div>
+                <div style="font-size:0.75rem; color:#64748b;">Due upon acceptance</div>
+            </div>
+            <strong id="pay-dep" style="color:#16a34a;">$0.00</strong>
+        </div>
+        <div style="padding:6px 0; border-bottom:1px solid #f1f5f9;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div style="flex:1;">
+                    <div style="font-weight:600;">Progress Draw 1 — 20%</div>
+                    <input type="text" id="pay-m1" placeholder="Milestone description..."
+                        style="margin-top:4px; font-size:0.8rem; width:100%; box-sizing:border-box;"
+                        oninput="window.bidData.milestone1=this.value">
+                </div>
+                <strong id="pay-d1" style="color:#16a34a; margin-left:12px; white-space:nowrap;">$0.00</strong>
+            </div>
+        </div>
+        <div style="padding:6px 0; border-bottom:1px solid #f1f5f9;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div style="flex:1;">
+                    <div style="font-weight:600;">Progress Draw 2 — 20%</div>
+                    <input type="text" id="pay-m2" placeholder="Milestone description..."
+                        style="margin-top:4px; font-size:0.8rem; width:100%; box-sizing:border-box;"
+                        oninput="window.bidData.milestone2=this.value">
+                </div>
+                <strong id="pay-d2" style="color:#16a34a; margin-left:12px; white-space:nowrap;">$0.00</strong>
+            </div>
+        </div>
+        <div style="display:flex; justify-content:space-between; padding:6px 0;">
+            <div>
+                <div style="font-weight:600;">Final Balance — 10%</div>
+                <div style="font-size:0.75rem; color:#64748b;">Punch list completion</div>
+            </div>
+            <strong id="pay-fin" style="color:#16a34a;">$0.00</strong>
+        </div>
+    </div>
+
+    <button class="btn btn-primary" style="margin-bottom:8px;" onclick="previewProposal()">Preview Proposal &rarr;</button>
+    <button class="btn btn-secondary" onclick="loadPage('job-detail-nobid')">Save Draft</button>
+</div>
+
+<script>
+(function initBidCreation() {
+
+    var NAMES = [
+        'Planning / Design',
+        'Site Prep',
+        'Temporary Utilities',
+        'Demolition',
+        'Excavation and Trenching',
+        'Underground Utilities',
+        'Concrete',
+        'Framing',
+        'Exterior Doors and Windows',
+        'Rough HVAC',
+        'Rough Plumbing',
+        'Rough Electrical',
+        'Low Voltage / Data Rough-In',
+        'Thermal and Moisture Protection',
+        'Pre-Drywall Sign-Off',
+        'Drywall',
+        'Drywall Dry-Out & Dehumidification',
+        'HVAC Commissioning',
+        'Cultured Marble',
+        'Finish Carpentry, Millwork — Phase 1',
+        'Floor Coverings — Phase 1',
+        'Finish Carpentry — Phase 2',
+        'Painting',
+        'Epoxy Floor Coatings',
+        'Countertops',
+        'Finish Electrical',
+        'Finish HVAC',
+        'Finish Low Voltage / Data',
+        'Finish Plumbing',
+        'Appliances, Hardware & Wall Specialties',
+        'Shower Glass and Mirrors',
+        'Floor Coverings — Phase 2',
+        'Final Clean',
+        'Final Building Inspections',
+        'Exterior Hardscape & Irrigation Sleeves',
+        'Exterior Flatwork',
+        'Irrigation and Landscaping',
+        'Exterior Electrical',
+        'Exterior Structures',
+        'Furnishings'
+    ];
+
+    if (!window.bidData) {
+        var today = new Date();
+        var exp   = new Date(today); exp.setDate(today.getDate() + 7);
+        var iso   = function(d) { return d.toISOString().split('T')[0]; };
+
+        function blankDiv(i) {
+            return { name: NAMES[i], included: false, scope: '', laborRate: 120, guys: 1, tasks: [] };
+        }
+        var divs = NAMES.map(function(_, i) { return blankDiv(i); });
+
+        // Division 22 — Finish Carpentry Phase 2 (index 21)
+        Object.assign(divs[21], {
+            included: true,
+            scope: 'Install hollow core doors, door casing FJP, and baseboard FJP throughout.',
+            tasks: [
+                {
+                    category: 'Pre-hung Doors', name: 'Hollow Core Door Install',
+                    included: true, scope: 'Hang hollow core pre-hung units. Shim, secure, and trim jamb.',
+                    qtyType: 'C', qty: 2, hrsEach: 1.5,
+                    materials: [
+                        { item: 'Door 30"x80" Hollow Core', supplier: 'WoodGrain', price: 155, qty: 2 },
+                        { item: 'Shims', supplier: 'Home Depot', price: 3, qty: 3 },
+                        { item: 'Box Finish Nails', supplier: 'Home Depot', price: 60, qty: 0.5 },
+                        { item: '3.5" Stainless Screws', supplier: 'Home Depot', price: 15, qty: 4 },
+                        { item: 'Spackle', supplier: 'Amazon', price: 22, qty: 0.5 }
+                    ]
+                },
+                {
+                    category: 'Trim', name: 'Door Casing FJP',
+                    included: true, scope: 'Install FJP primed door casing, TM 380 profile.',
+                    qtyType: 'LF', qty: 45, hrsEach: 0.03,
+                    materials: [
+                        { item: "TM 380 Casing 7'", supplier: 'SunPro', price: 7.25, qty: 16.5 }
+                    ]
+                },
+                {
+                    category: 'Trim', name: 'Baseboard FJP',
+                    included: true, scope: "Install FJP baseboard, TM 730 profile, 16' lengths.",
+                    qtyType: 'LF', qty: 45, hrsEach: 0.05,
+                    materials: [
+                        { item: "TM 730 Baseboard 16'", supplier: 'SunPro', price: 20.56, qty: 3 }
+                    ]
+                }
+            ]
+        });
+
+        // Division 23 — Painting (index 22)
+        Object.assign(divs[22], {
+            included: false,
+            scope: 'Full interior paint: spackle, caulk, prime, and paint walls, trim, and doors.',
+            tasks: [
+                {
+                    category: 'Paint Prep', name: 'Spackle & Fill',
+                    included: true, scope: 'Fill all nail holes and surface imperfections.',
+                    qtyType: 'LF', qty: 40, hrsEach: 0.02,
+                    materials: [{ item: 'Famo Wood Filler', supplier: 'Amazon', price: 22, qty: 0.5 }]
+                },
+                {
+                    category: 'Paint Prep', name: 'Caulk Door & Window Trim',
+                    included: true, scope: "Caulk all door and window trim with painter's caulk.",
+                    qtyType: 'LF', qty: 70, hrsEach: 0.02,
+                    materials: [{ item: "Painter's Caulk", supplier: 'Amazon', price: 3, qty: 1.4 }]
+                },
+                {
+                    category: 'Priming', name: 'Spray Primer — Trim',
+                    included: true, scope: 'Spray prime all trim with Gallery Series primer.',
+                    qtyType: 'LF', qty: 45, hrsEach: 0.007,
+                    materials: [{ item: 'Gallery Series Primer', supplier: 'Sherwin Williams', price: 58, qty: 0.5 }]
+                },
+                {
+                    category: 'Painting', name: 'Doors — Gallery Series',
+                    included: true, scope: 'Apply Gallery Series enamel to all doors, 2 coats.',
+                    qtyType: 'C', qty: 4, hrsEach: 1.0,
+                    materials: [{ item: 'Gallery Series Paint', supplier: 'Sherwin Williams', price: 124, qty: 1 }]
+                },
+                {
+                    category: 'Painting', name: 'Walls — 2 Coats',
+                    included: true, scope: 'Apply 2 coats of wall paint to all interior walls.',
+                    qtyType: 'SF', qty: 624, hrsEach: 0.004,
+                    materials: [{ item: 'Wall Paint', supplier: 'Sherwin Williams', price: 80, qty: 3.12 }]
+                }
+            ]
+        });
+
+        // Division 32 — Floor Coverings Phase 2 (index 31)
+        Object.assign(divs[31], {
+            included: true,
+            scope: 'Install tack strip, stretch, cut, and lay carpet in place.',
+            tasks: [
+                {
+                    category: 'Carpet', name: 'Stretch & Install Carpet',
+                    included: true, scope: 'Install 9 ft of tack strip, stretch, cut and install carpet.',
+                    qtyType: 'LF', qty: 15, hrsEach: 0.09,
+                    materials: [
+                        { item: 'Tac Strip', supplier: 'Home Depot', price: 3.40, qty: 1.25 },
+                        { item: 'Clean-Up Fee', supplier: '', price: 100, qty: 1 }
+                    ]
+                }
+            ]
+        });
+
+        window.bidData = {
+            date: iso(today), expires: iso(exp),
+            bidNumber: '260701', project: 'Westgate Electrical Panel',
+            customer: 'Sarah Mitchell', craftsman: 'Joshua Peterson',
+            address: '4821 Westgate Blvd, Sandy UT 84070',
+            phone: '(385) 555-0192', email: 'sarah@example.com',
+            startDate: '', procurementDays: 10, constructionDays: 8, completionDate: '',
+            milestone1: 'Finish Carpentry Phase 2 complete',
+            milestone2: 'Painting complete',
+            divisions: divs
+        };
+    }
+
+    var bd = window.bidData;
+
+    document.getElementById('bid-page-title').textContent = bd.project;
+
+    // Populate header fields
+    document.getElementById('hdr-date').value      = bd.date;
+    document.getElementById('hdr-expires').value   = bd.expires;
+    document.getElementById('hdr-bidnum').value    = bd.bidNumber;
+    document.getElementById('hdr-project').value   = bd.project;
+    document.getElementById('hdr-customer').value  = bd.customer;
+    document.getElementById('hdr-craftsman').value = bd.craftsman;
+    document.getElementById('hdr-address').value   = bd.address;
+    document.getElementById('hdr-phone').value     = bd.phone;
+    document.getElementById('hdr-email').value     = bd.email;
+    document.getElementById('sched-start').value   = bd.startDate;
+    document.getElementById('sched-end').value     = bd.completionDate;
+    document.getElementById('sched-proc').value    = bd.procurementDays;
+    document.getElementById('sched-build').value   = bd.constructionDays;
+    document.getElementById('pay-m1').value        = bd.milestone1;
+    document.getElementById('pay-m2').value        = bd.milestone2;
+
+    // Wire header saves
+    var hdrMap = {
+        'hdr-date':'date','hdr-expires':'expires','hdr-bidnum':'bidNumber',
+        'hdr-project':'project','hdr-customer':'customer','hdr-craftsman':'craftsman',
+        'hdr-address':'address','hdr-phone':'phone','hdr-email':'email'
+    };
+    Object.keys(hdrMap).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('input', function() { bd[hdrMap[id]] = this.value; });
+    });
+
+    // Calculate total for one division
+    function divTotal(d) {
+        var labor = 0, mat = 0;
+        (d.tasks || []).forEach(function(t) {
+            if (!t.included) return;
+            var hrs = (t.qty || 0) * (t.hrsEach || 0);
+            labor += hrs * (d.laborRate || 120);
+            (t.materials || []).forEach(function(m) { mat += (m.price || 0) * (m.qty || 0); });
+        });
+        return labor + mat + labor * 0.10 + mat * 0.10;
+    }
+    window.calcDivTotal = divTotal;
+
+    function fmt(n) {
+        return '$' + n.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
+    }
+
+    // Render the 40-division list
+    function renderDivList() {
+        var html = '';
+        bd.divisions.forEach(function(d, i) {
+            var inc   = d.included;
+            var total = divTotal(d);
+            var taskCount = (d.tasks || []).filter(function(t){ return t.included; }).length;
+
+            html += '<div style="border-bottom:1px solid #e2e8f0; padding:6px 0;">';
+
+            // Main row: checkbox + number + name + (cost if included)
+            html += '<div style="display:flex; align-items:center; gap:8px;">';
+            html += '<input type="checkbox"' + (inc ? ' checked' : '') +
+                    ' style="width:16px; height:16px; flex-shrink:0;"' +
+                    ' onchange="window.toggleDiv(' + i + ')">';
+            html += '<span style="color:#94a3b8; font-size:0.75rem; min-width:18px;">' + (i + 1) + '</span>';
+            html += '<span style="flex:1; font-weight:' + (inc ? '600' : '400') + ';">' + d.name + '</span>';
+            if (inc) {
+                html += '<span style="color:#16a34a; font-weight:700; font-size:0.9rem; white-space:nowrap;">' + fmt(total) + '</span>';
+            }
+            html += '</div>';
+
+            // Expanded section when included
+            if (inc) {
+                html += '<div style="padding-left:24px; margin-top:4px;">';
+                if (d.scope) {
+                    html += '<div style="font-size:0.78rem; color:#475569; margin-bottom:6px;">' + d.scope + '</div>';
+                }
+                html += '<div style="display:flex; align-items:center; gap:12px;">';
+                html += '<button class="btn btn-secondary btn-sm" onclick="openDivision(' + i + ')">Edit Division Sheet &rarr;</button>';
+                if (taskCount > 0) {
+                    html += '<span style="font-size:0.75rem; color:#64748b;">' + taskCount + ' task' + (taskCount !== 1 ? 's' : '') + '</span>';
+                }
+                html += '</div>';
+                html += '</div>';
+            }
+
+            html += '</div>';
+        });
+        document.getElementById('div-list').innerHTML = html;
+    }
+
+    // Recalculate grand total and payments
+    function recalc() {
+        var total = 0, count = 0;
+        bd.divisions.forEach(function(d) {
+            if (d.included) { count++; total += divTotal(d); }
+        });
+        document.getElementById('grand-total').textContent = fmt(total);
+        document.getElementById('div-summary').textContent = count + ' selected';
+        document.getElementById('pay-dep').textContent = fmt(total * 0.50);
+        document.getElementById('pay-d1').textContent  = fmt(total * 0.20);
+        document.getElementById('pay-d2').textContent  = fmt(total * 0.20);
+        document.getElementById('pay-fin').textContent = fmt(total * 0.10);
+    }
+
+    window.toggleDiv = function(i) {
+        bd.divisions[i].included = !bd.divisions[i].included;
+        renderDivList();
+        recalc();
+    };
+
+    renderDivList();
+    recalc();
+
+})();
+</script>

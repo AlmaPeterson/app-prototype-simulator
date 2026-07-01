@@ -1,0 +1,97 @@
+<div class="page" style="padding-bottom:80px;">
+    <div class="flex-between mb-4">
+        <div>
+            <div class="page-title">Messages</div>
+            <div class="page-subtitle">Customer Communications</div>
+        </div>
+        <span class="badge badge-blue">3 unread</span>
+    </div>
+
+    <input class="search-bar" type="text" placeholder="Search messages...">
+
+    <!-- Conversation list -->
+    <div class="card" onclick="showConversation('Riverside Properties')">
+        <div class="card-row">
+            <div class="leaderboard-avatar" style="width:44px; height:44px;">RP</div>
+            <div class="card-body" style="margin-left:4px;">
+                <div class="flex-between">
+                    <div class="card-title">Riverside Properties</div>
+                    <span style="font-size:0.7rem; color:#94a3b8;">2 min ago</span>
+                </div>
+                <div class="card-subtitle">What time will you arrive tomorrow?</div>
+            </div>
+        </div>
+        <div style="margin-top:6px; padding-left:52px;">
+            <span class="badge badge-blue">2 new</span>
+        </div>
+    </div>
+
+    <div class="card" onclick="showConversation('Summit Corp')">
+        <div class="card-row">
+            <div class="leaderboard-avatar" style="width:44px; height:44px;">SC</div>
+            <div class="card-body" style="margin-left:4px;">
+                <div class="flex-between">
+                    <div class="card-title">Summit Corp</div>
+                    <span style="font-size:0.7rem; color:#94a3b8;">1 hr ago</span>
+                </div>
+                <div class="card-subtitle" style="color:#94a3b8;">Great work on the panel, thanks!</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" onclick="showConversation('Northview Dev')">
+        <div class="card-row">
+            <div class="leaderboard-avatar" style="width:44px; height:44px;">ND</div>
+            <div class="card-body" style="margin-left:4px;">
+                <div class="flex-between">
+                    <div class="card-title">Northview Dev.</div>
+                    <span style="font-size:0.7rem; color:#94a3b8;">Yesterday</span>
+                </div>
+                <div class="card-subtitle" style="color:#94a3b8;">Can we reschedule to next week?</div>
+            </div>
+        </div>
+        <div style="margin-top:6px; padding-left:52px;">
+            <span class="badge badge-orange">1 new</span>
+        </div>
+    </div>
+
+    <!-- Inline conversation (shown when tapped) -->
+    <div id="convo-panel" style="display:none; border:1px solid #e2e8f0; margin-top:4px; overflow:hidden;">
+        <div style="padding:12px 14px; border-bottom:1px solid #f1f5f9; font-size:0.88rem;" id="convo-name"></div>
+
+        <div id="convo-messages" style="padding:12px 14px; min-height:120px;">
+            <div style="border:1px solid #e2e8f0; padding:10px 12px; margin-bottom:8px; max-width:80%; font-size:0.83rem;">
+                What time will you arrive tomorrow?
+            </div>
+            <div style="background:#2563eb; padding:10px 12px; margin-bottom:8px; max-width:80%; margin-left:auto; font-size:0.83rem; color:white;">
+                We'll be there around 7:30 AM!
+            </div>
+        </div>
+
+        <div style="padding:10px 12px; border-top:1px solid #f1f5f9; display:flex; gap:8px;">
+            <input type="text" placeholder="Reply..." id="convo-input"
+                style="flex:1; border:1px solid #e2e8f0; padding:8px 12px; font-size:0.85rem; outline:none;">
+            <button onclick="sendConvoMsg()"
+                style="background:#2563eb; color:white; border:none; padding:8px 12px; cursor:pointer;">&#9658;</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function showConversation(name) {
+    document.getElementById('convo-name').textContent = name;
+    document.getElementById('convo-panel').style.display = 'block';
+    document.getElementById('convo-panel').scrollIntoView({ behavior: 'smooth' });
+}
+
+function sendConvoMsg() {
+    const input = document.getElementById('convo-input');
+    const text = input.value.trim();
+    if (!text) return;
+    const msg = document.createElement('div');
+    msg.style.cssText = 'background:#2563eb; border-radius:12px 12px 2px 12px; padding:10px 12px; margin-bottom:8px; max-width:80%; margin-left:auto; font-size:0.83rem; color:white;';
+    msg.textContent = text;
+    document.getElementById('convo-messages').appendChild(msg);
+    input.value = '';
+}
+</script>

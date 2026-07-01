@@ -1,0 +1,125 @@
+<div class="page">
+    <button class="btn btn-secondary btn-sm mb-4" onclick="loadPage('feild-clock')">&larr; Field Clock</button>
+
+    <div class="page-title">Time Sheet</div>
+    <div class="page-subtitle mb-4">Week of Jun 24 &ndash; Jun 30, 2024</div>
+
+    <!-- Summary Hero -->
+    <div class="hero-stat">
+        <div style="font-size:0.78rem; opacity:0.7; margin-bottom:4px;">Total Hours This Week</div>
+        <div class="hero-stat-value">42.5 hrs</div>
+        <div style="font-size:0.82rem; opacity:0.8; margin-top:4px;">
+            Regular: 40h &nbsp;|&nbsp; OT: 2.5h
+        </div>
+    </div>
+
+    <!-- Daily breakdown -->
+    <div class="section-header">
+        <span class="section-title">Daily Breakdown</span>
+    </div>
+
+    <div style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;">
+        <div class="list-item">
+            <div class="list-item-body">
+                <div class="list-item-title">Monday, Jun 24</div>
+                <div class="list-item-sub">Riverside HVAC Retrofit</div>
+            </div>
+            <div class="list-item-right">
+                <div class="list-item-value">8.5 hrs</div>
+                <div class="list-item-detail">7:00 AM &ndash; 3:30 PM</div>
+            </div>
+        </div>
+        <div class="list-item">
+            <div class="list-item-body">
+                <div class="list-item-title">Tuesday, Jun 25</div>
+                <div class="list-item-sub">Riverside HVAC Retrofit</div>
+            </div>
+            <div class="list-item-right">
+                <div class="list-item-value">9.0 hrs</div>
+                <div class="list-item-detail">7:00 AM &ndash; 4:00 PM</div>
+            </div>
+        </div>
+        <div class="list-item">
+            <div class="list-item-body">
+                <div class="list-item-title">Wednesday, Jun 26</div>
+                <div class="list-item-sub">Westgate Electrical Panel</div>
+            </div>
+            <div class="list-item-right">
+                <div class="list-item-value">8.0 hrs</div>
+                <div class="list-item-detail">8:00 AM &ndash; 4:00 PM</div>
+            </div>
+        </div>
+        <div class="list-item">
+            <div class="list-item-body">
+                <div class="list-item-title">Thursday, Jun 27</div>
+                <div class="list-item-sub">Northview Plumbing</div>
+            </div>
+            <div class="list-item-right">
+                <div class="list-item-value">8.0 hrs</div>
+                <div class="list-item-detail">7:30 AM &ndash; 3:30 PM</div>
+            </div>
+        </div>
+        <div class="list-item" style="border-bottom:none;">
+            <div class="list-item-body">
+                <div class="list-item-title">Friday, Jun 28</div>
+                <div class="list-item-sub">Riverside HVAC Retrofit</div>
+            </div>
+            <div class="list-item-right">
+                <div class="list-item-value">9.0 hrs</div>
+                <div class="list-item-detail">7:00 AM &ndash; 4:00 PM</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Details -->
+    <div class="section-header">
+        <span class="section-title">Activity Summary</span>
+    </div>
+
+    <div class="stats-grid" style="margin-bottom:16px;">
+        <div class="stat-card">
+            <div class="stat-value">34.5</div>
+            <div class="stat-label">On-Site hrs</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">5.0</div>
+            <div class="stat-label">Drive hrs</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">3.0</div>
+            <div class="stat-label">Lunch hrs</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">$4,718</div>
+            <div class="stat-label">Est. Pay</div>
+        </div>
+    </div>
+
+    <!-- Materials Used -->
+    <div class="section-header">
+        <span class="section-title">Materials Recorded</span>
+    </div>
+
+    <div style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;">
+        <div class="list-item">
+            <div class="list-item-body"><div class="list-item-title">Refrigerant R-410A 25lb</div></div>
+            <div class="list-item-right"><div class="list-item-value">2 units</div></div>
+        </div>
+        <div class="list-item" style="border-bottom:none;">
+            <div class="list-item-body"><div class="list-item-title">Wire 12 AWG 100ft roll</div></div>
+            <div class="list-item-right"><div class="list-item-value">3 rolls</div></div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>Notes for Supervisor</label>
+        <textarea placeholder="Any discrepancies, overtime reasons, or notes..."></textarea>
+    </div>
+
+    <div class="alert alert-warn">
+        Once submitted, your timesheet will go to your supervisor for approval.
+    </div>
+
+    <button class="btn btn-primary" onclick="submitTimeSheet()">Submit Timesheet</button>
+    <button class="btn btn-secondary" onclick="loadPage('feild-clock')">Save Draft</button>
+</div>

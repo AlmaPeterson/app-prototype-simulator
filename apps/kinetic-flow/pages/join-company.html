@@ -1,0 +1,67 @@
+<div class="page">
+    <button class="btn btn-secondary btn-sm mb-4" onclick="loadPage('companies')">&larr; Back</button>
+
+    <div class="page-header">
+        <div class="page-title">Join a Company</div>
+        <div class="page-subtitle">Search for your company and send a join request.</div>
+    </div>
+
+    <div class="form-group">
+        <label>Search Company</label>
+        <input type="text" class="search-bar" placeholder="Company name or code..." style="margin-bottom:0">
+    </div>
+
+    <div class="section-header mt-4">
+        <span class="section-title">Results</span>
+    </div>
+
+    <div class="card card-selected" onclick="this.classList.toggle('card-selected')">
+        <div class="card-row">
+            <div class="card-icon-circle icon-blue">&#9889;</div>
+            <div class="card-body">
+                <div class="card-title">Kinetic Solutions LLC</div>
+                <div class="card-subtitle">Calgary, AB &bull; 12 members</div>
+            </div>
+            <span class="badge badge-blue">Selected</span>
+        </div>
+    </div>
+
+    <div class="card" onclick="this.classList.toggle('card-selected')">
+        <div class="card-row">
+            <div class="card-icon-circle icon-green">&#128296;</div>
+            <div class="card-body">
+                <div class="card-title">ProFlow Industries</div>
+                <div class="card-subtitle">Edmonton, AB &bull; 8 members</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" onclick="this.classList.toggle('card-selected')">
+        <div class="card-row">
+            <div class="card-icon-circle icon-orange">&#128736;</div>
+            <div class="card-body">
+                <div class="card-title">Apex Field Services</div>
+                <div class="card-subtitle">Red Deer, AB &bull; 24 members</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group mt-4">
+        <label>Your Role / Position</label>
+        <select>
+            <option>Technician</option>
+            <option>Senior Technician</option>
+            <option>Supervisor</option>
+            <option>Manager</option>
+            <option>Admin</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Message to Admin (optional)</label>
+        <textarea placeholder="Hi, I'm a new hire starting Monday..."></textarea>
+    </div>
+
+    <button class="btn btn-primary" onclick="submitJoinRequest()">Send Join Request</button>
+    <button class="btn btn-secondary" onclick="loadPage('companies')">Cancel</button>
+</div>

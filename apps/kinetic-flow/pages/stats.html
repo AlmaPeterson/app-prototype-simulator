@@ -1,0 +1,144 @@
+<div class="page" style="padding-bottom:80px;">
+    <div class="page-title">Task Statistics</div>
+    <div class="page-subtitle mb-4">June 2024 &bull; All Jobs</div>
+
+    <div class="tab-bar">
+        <button class="tab-btn active">This Month</button>
+        <button class="tab-btn">Quarter</button>
+        <button class="tab-btn">Year</button>
+    </div>
+
+    <!-- Top Stats -->
+    <div class="stats-grid" style="margin-bottom:16px;">
+        <div class="stat-card">
+            <div class="stat-value">47</div>
+            <div class="stat-label">Jobs Completed</div>
+            <div class="stat-change stat-up">&#8679; +12% vs May</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">96%</div>
+            <div class="stat-label">On-Time Rate</div>
+            <div class="stat-change stat-up">&#8679; +4%</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">4.7</div>
+            <div class="stat-label">Avg Rating</div>
+            <div class="stat-change stat-up">&#9733; +0.2</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">892</div>
+            <div class="stat-label">Labour Hours</div>
+            <div class="stat-change stat-up">&#8679; +68 hrs</div>
+        </div>
+    </div>
+
+    <!-- Job Type Breakdown -->
+    <div class="section-header">
+        <span class="section-title">By Job Type</span>
+    </div>
+
+    <div style="border:1px solid #e2e8f0; padding:14px; margin-bottom:16px;">
+        <div style="margin-bottom:12px;">
+            <div class="flex-between mb-2">
+                <span style="font-size:0.85rem;">HVAC</span>
+                <span style="font-size:0.82rem; color:#64748b;">18 jobs &bull; 38%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width:38%;"></div>
+            </div>
+        </div>
+        <div style="margin-bottom:12px;">
+            <div class="flex-between mb-2">
+                <span style="font-size:0.85rem;">Electrical</span>
+                <span style="font-size:0.82rem; color:#64748b;">14 jobs &bull; 30%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width:30%;"></div>
+            </div>
+        </div>
+        <div style="margin-bottom:12px;">
+            <div class="flex-between mb-2">
+                <span style="font-size:0.85rem;">Plumbing</span>
+                <span style="font-size:0.82rem; color:#64748b;">10 jobs &bull; 21%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width:21%;"></div>
+            </div>
+        </div>
+        <div>
+            <div class="flex-between mb-2">
+                <span style="font-size:0.85rem;">Other</span>
+                <span style="font-size:0.82rem; color:#64748b;">5 jobs &bull; 11%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width:11%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Performance -->
+    <div class="section-header">
+        <span class="section-title">Team Performance</span>
+        <button class="section-action" onclick="openScoreboard()">Scoreboard</button>
+    </div>
+
+    <div style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;">
+        <div class="list-item">
+            <div class="leaderboard-avatar" style="width:32px;height:32px;font-size:0.72rem;">TW</div>
+            <div class="list-item-body" style="margin-left:10px;">
+                <div class="list-item-title">Tyler Wong</div>
+                <div style="font-size:0.72rem; color:#64748b;">14 jobs &bull; 4.9&#9733;</div>
+            </div>
+            <div style="text-align:right;">
+                <div style="font-size:0.85rem; color:#16a34a;">98%</div>
+                <div style="font-size:0.7rem; color:#64748b;">on-time</div>
+            </div>
+        </div>
+        <div class="list-item">
+            <div class="leaderboard-avatar" style="width:32px;height:32px;font-size:0.72rem;">JS</div>
+            <div class="list-item-body" style="margin-left:10px;">
+                <div class="list-item-title">Jake Smith</div>
+                <div style="font-size:0.72rem; color:#64748b;">12 jobs &bull; 4.8&#9733;</div>
+            </div>
+            <div style="text-align:right;">
+                <div style="font-size:0.85rem; color:#16a34a;">95%</div>
+                <div style="font-size:0.7rem; color:#64748b;">on-time</div>
+            </div>
+        </div>
+        <div class="list-item" style="border-bottom:none;">
+            <div class="leaderboard-avatar" style="width:32px;height:32px;font-size:0.72rem;">AC</div>
+            <div class="list-item-body" style="margin-left:10px;">
+                <div class="list-item-title">Amy Chen</div>
+                <div style="font-size:0.72rem; color:#64748b;">11 jobs &bull; 4.7&#9733;</div>
+            </div>
+            <div style="text-align:right;">
+                <div style="font-size:0.85rem; color:#ea580c;">91%</div>
+                <div style="font-size:0.7rem; color:#64748b;">on-time</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Satisfaction -->
+    <div class="section-header">
+        <span class="section-title">Customer Satisfaction</span>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">&#9733; 4.7</div>
+            <div class="stat-label">Avg Rating</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">38</div>
+            <div class="stat-label">Reviews</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">94%</div>
+            <div class="stat-label">Recommend</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">2</div>
+            <div class="stat-label">Complaints</div>
+        </div>
+    </div>
+</div>

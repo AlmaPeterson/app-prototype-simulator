@@ -1,0 +1,85 @@
+<div class="page" style="padding-bottom:80px;">
+    <div class="flex-between mb-4">
+        <div>
+            <div class="page-title">Schedule</div>
+            <div class="page-subtitle">Week of Jun 30, 2024</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="showCreateSchedule()">+ Add</button>
+    </div>
+
+    <!-- Week nav -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+        <button class="btn btn-secondary btn-sm" style="width:auto; padding:6px 12px;">&larr;</button>
+        <div style="display:flex; gap:6px;">
+            <div id="day-sun" class="chip" onclick="selectDay('sun')">Sun</div>
+            <div id="day-mon" class="chip selected" onclick="selectDay('mon')">Mon</div>
+            <div id="day-tue" class="chip" onclick="selectDay('tue')">Tue</div>
+            <div id="day-wed" class="chip" onclick="selectDay('wed')">Wed</div>
+            <div id="day-thu" class="chip" onclick="selectDay('thu')">Thu</div>
+            <div id="day-fri" class="chip" onclick="selectDay('fri')">Fri</div>
+            <div id="day-sat" class="chip" onclick="selectDay('sat')">Sat</div>
+        </div>
+        <button class="btn btn-secondary btn-sm" style="width:auto; padding:6px 12px;">&rarr;</button>
+    </div>
+
+    <!-- Monday -->
+    <div class="schedule-day">
+        <div class="schedule-day-label">Monday, Jul 1</div>
+        <div class="schedule-slot schedule-slot-blue" onclick="openJob('Riverside HVAC Retrofit')">
+            <div class="slot-title">Riverside HVAC Retrofit</div>
+            <div class="slot-time">7:00 AM &ndash; 3:30 PM &bull; J. Smith, A. Chen</div>
+        </div>
+    </div>
+
+    <!-- Tuesday -->
+    <div class="schedule-day">
+        <div class="schedule-day-label">Tuesday, Jul 2</div>
+        <div class="schedule-slot schedule-slot-green" onclick="openJob('Northview Plumbing')">
+            <div class="slot-title">Northview Plumbing Upgrade</div>
+            <div class="slot-time">8:00 AM &ndash; 4:00 PM &bull; T. Wong</div>
+        </div>
+        <div class="schedule-slot schedule-slot-purple">
+            <div class="slot-title">Team Safety Meeting</div>
+            <div class="slot-time">4:00 PM &ndash; 5:00 PM &bull; All Staff</div>
+        </div>
+    </div>
+
+    <!-- Wednesday -->
+    <div class="schedule-day">
+        <div class="schedule-day-label">Wednesday, Jul 3</div>
+        <div class="schedule-slot schedule-slot-blue" onclick="openJob('Riverside HVAC Retrofit')">
+            <div class="slot-title">Riverside HVAC Retrofit</div>
+            <div class="slot-time">7:00 AM &ndash; 12:00 PM &bull; J. Smith</div>
+        </div>
+        <div class="schedule-slot schedule-slot-orange" onclick="openJob('Westgate Electrical Panel')">
+            <div class="slot-title">Westgate Electrical Panel</div>
+            <div class="slot-time">1:00 PM &ndash; 5:00 PM &bull; Pending assign</div>
+        </div>
+    </div>
+
+    <!-- Thursday -->
+    <div class="schedule-day">
+        <div class="schedule-day-label">Thursday, Jul 4 &mdash; <span style="color:#dc2626;">Holiday</span></div>
+        <div style="font-size:0.8rem; color:#94a3b8; padding:8px 0;">No jobs scheduled</div>
+    </div>
+
+    <!-- Friday -->
+    <div class="schedule-day">
+        <div class="schedule-day-label">Friday, Jul 5</div>
+        <div class="schedule-slot schedule-slot-green" onclick="openJob('Northview Plumbing')">
+            <div class="slot-title">Northview Plumbing &mdash; Final Inspection</div>
+            <div class="slot-time">9:00 AM &ndash; 11:00 AM &bull; T. Wong, Supervisor</div>
+        </div>
+    </div>
+</div>
+
+<script>
+function selectDay(day) {
+    document.querySelectorAll('[id^="day-"]').forEach(el => el.classList.remove('selected'));
+    document.getElementById('day-' + day).classList.add('selected');
+}
+
+function showCreateSchedule() {
+    alert('Create schedule entry — form would open here.');
+}
+</script>

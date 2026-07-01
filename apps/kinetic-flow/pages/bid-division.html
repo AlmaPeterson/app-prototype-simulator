@@ -1,0 +1,279 @@
+<div class="page">
+    <button class="btn btn-secondary btn-sm mb-4" onclick="saveDivision()">&larr; Bid Creation</button>
+
+    <div id="div-name-label" style="font-size:1.2rem; font-weight:800; color:#0f172a; margin-bottom:2px;"></div>
+    <div id="div-num-label" style="font-size:0.78rem; color:#64748b; margin-bottom:12px;"></div>
+
+    <!-- Stats row -->
+    <div id="div-stats" style="font-size:0.85rem; color:#475569; border:1px solid #e2e8f0; border-radius:6px; padding:10px 12px; margin-bottom:16px; display:flex; flex-wrap:wrap; gap:12px;"></div>
+
+    <!-- Settings -->
+    <div class="card" style="cursor:default; padding:12px; margin-bottom:12px;">
+        <div class="form-row">
+            <div class="form-group" style="margin:0; flex:1;">
+                <label>Labor Rate ($/hr)</label>
+                <input type="number" id="labor-rate" min="1" step="1">
+            </div>
+            <div class="form-group" style="margin:0; flex:1;">
+                <label>Guys on Site</label>
+                <input type="number" id="guys-count" min="1" step="1">
+            </div>
+        </div>
+    </div>
+
+    <!-- Division scope -->
+    <div class="form-group" style="margin-bottom:16px;">
+        <label>Division Scope <span style="font-weight:400; color:#94a3b8;">(shown on proposal)</span></label>
+        <textarea id="div-scope" rows="2" placeholder="Brief description shown on the bid proposal..."></textarea>
+    </div>
+
+    <!-- Tasks -->
+    <div class="section-header">
+        <span class="section-title">Tasks</span>
+        <button class="section-action" onclick="window.addTask()">+ Add Task</button>
+    </div>
+
+    <div id="task-list"></div>
+
+    <!-- Division total -->
+    <div id="div-totals"></div>
+
+    <button class="btn btn-primary" style="margin-top:8px;" onclick="saveDivision()">Save &amp; Return to Bid</button>
+</div>
+
+<script>
+(function initDivisionPage() {
+
+    var di  = state.currentDivision;
+    var div = window.bidData.divisions[di];
+
+    // Header
+    document.getElementById('div-name-label').textContent = div.name;
+    document.getElementById('div-num-label').textContent  = 'Division ' + (di + 1) + ' of 40';
+
+    // Populate settings
+    var rateEl  = document.getElementById('labor-rate');
+    var guysEl  = document.getElementById('guys-count');
+    var scopeEl = document.getElementById('div-scope');
+    rateEl.value  = div.laborRate || 120;
+    guysEl.value  = div.guys      || 1;
+    scopeEl.value = div.scope     || '';
+    rateEl.addEventListener('input',  function() { div.laborRate = +this.value || 120; window.bidRecalcDiv(); });
+    guysEl.addEventListener('input',  function() { div.guys      = +this.value || 1;   window.bidRecalcDiv(); });
+    scopeEl.addEventListener('input', function() { div.scope = this.value; });
+
+    // ── Helpers ───────────────────────────────────────────────────────────
+    function fmt(n) {
+        return '$' + n.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
+    }
+    function esc(s) {
+        if (!s) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function calcTask(t) {
+        var hrs = (t.qty || 0) * (t.hrsEach || 0);
+        var lc  = hrs * (div.laborRate || 120);
+        var mc  = (t.materials || []).reduce(function(s, m) { return s + (m.price||0)*(m.qty||0); }, 0);
+        return { hrs: hrs, lc: lc, mc: mc };
+    }
+    function calcDiv() {
+        var labor = 0, mat = 0, hours = 0;
+        (div.tasks || []).forEach(function(t) {
+            if (!t.included) return;
+            var c = calcTask(t);
+            labor += c.lc; mat += c.mc; hours += c.hrs;
+        });
+        var conL = labor * 0.10, conM = mat * 0.10;
+        var total = labor + mat + conL + conM;
+        var days = Math.ceil(hours / (8 * (div.guys || 1))) || 0;
+        return { labor:labor, mat:mat, hours:hours, days:days, conL:conL, conM:conM, total:total };
+    }
+
+    // ── Stats display ─────────────────────────────────────────────────────
+    function updateStats() {
+        var c = calcDiv();
+        document.getElementById('div-stats').innerHTML =
+            '<span>Total: <strong style="color:#16a34a;" id="stat-total">' + fmt(c.total) + '</strong></span>' +
+            '<span>Labor: <strong id="stat-labor">' + fmt(c.labor) + '</strong></span>' +
+            '<span>Materials: <strong id="stat-mat">' + fmt(c.mat) + '</strong></span>' +
+            '<span>Hours: <strong id="stat-hours">' + c.hours.toFixed(1) + '</strong></span>' +
+            '<span>Days: <strong id="stat-days">' + c.days + '</strong></span>';
+
+        // Update per-task calc values in DOM
+        (div.tasks || []).forEach(function(t, ti) {
+            var tc = calcTask(t);
+            var hrsEl   = document.querySelector('[data-task-hrs="'   + ti + '"]');
+            var lcEl    = document.querySelector('[data-task-lc="'    + ti + '"]');
+            var totEl   = document.querySelector('[data-task-total="' + ti + '"]');
+            if (hrsEl) hrsEl.textContent = tc.hrs.toFixed(2);
+            if (lcEl)  lcEl.textContent  = fmt(tc.lc);
+            if (totEl) totEl.textContent = fmt(tc.lc + tc.mc);
+            (t.materials || []).forEach(function(m, mi) {
+                var mEl = document.querySelector('[data-mat-total="' + ti + '-' + mi + '"]');
+                if (mEl) mEl.textContent = fmt((m.price||0)*(m.qty||0));
+            });
+        });
+
+        renderTotals(c);
+    }
+    window.bidRecalcDiv = updateStats;
+
+    // ── Division totals ───────────────────────────────────────────────────
+    function renderTotals(c) {
+        document.getElementById('div-totals').innerHTML =
+            '<div style="border:1px solid #e2e8f0; border-radius:6px; padding:12px; margin:12px 0;">' +
+            '<div style="display:flex; justify-content:space-between; padding:3px 0; font-size:0.85rem;"><span>Labor Subtotal</span><span>' + fmt(c.labor) + '</span></div>' +
+            '<div style="display:flex; justify-content:space-between; padding:3px 0; font-size:0.85rem;"><span>Materials Subtotal</span><span>' + fmt(c.mat) + '</span></div>' +
+            '<div style="display:flex; justify-content:space-between; padding:3px 0; font-size:0.85rem; color:#94a3b8;"><span>Contingency — Labor (10%)</span><span>' + fmt(c.conL) + '</span></div>' +
+            '<div style="display:flex; justify-content:space-between; padding:3px 0 8px 0; font-size:0.85rem; color:#94a3b8; border-bottom:1px solid #e2e8f0;"><span>Contingency — Materials (10%)</span><span>' + fmt(c.conM) + '</span></div>' +
+            '<div style="display:flex; justify-content:space-between; padding:8px 0 0 0;"><strong>Division Total</strong><strong style="color:#16a34a; font-size:1.05rem;">' + fmt(c.total) + '</strong></div>' +
+            '</div>';
+    }
+
+    // ── Materials HTML for one task ───────────────────────────────────────
+    function buildMatsHTML(t, ti) {
+        var html = '';
+        if (!t.materials || t.materials.length === 0) {
+            return '<p style="font-size:0.78rem; color:#94a3b8; margin:4px 0;">No materials yet.</p>';
+        }
+        t.materials.forEach(function(m, mi) {
+            html +=
+                '<div style="border:1px solid #e2e8f0; border-radius:4px; padding:8px; margin-bottom:6px; position:relative;">' +
+                '<button onclick="window.removeMaterial(' + ti + ',' + mi + ')" ' +
+                'style="position:absolute; top:4px; right:6px; background:none; border:none; cursor:pointer; color:#94a3b8; font-size:1rem; padding:0; line-height:1;">&times;</button>' +
+                '<div class="form-row" style="margin-bottom:6px;">' +
+                '<div class="form-group" style="margin:0; flex:2;">' +
+                '<label>Item</label>' +
+                '<input type="text" value="' + esc(m.item) + '" placeholder="Item name" ' +
+                'oninput="window.bidData.divisions[' + di + '].tasks[' + ti + '].materials[' + mi + '].item=this.value;">' +
+                '</div>' +
+                '<div class="form-group" style="margin:0; flex:1;">' +
+                '<label>Supplier</label>' +
+                '<input type="text" value="' + esc(m.supplier) + '" placeholder="Supplier" ' +
+                'oninput="window.bidData.divisions[' + di + '].tasks[' + ti + '].materials[' + mi + '].supplier=this.value;">' +
+                '</div>' +
+                '</div>' +
+                '<div class="form-row" style="align-items:center;">' +
+                '<div class="form-group" style="margin:0; flex:1;">' +
+                '<label>Price</label>' +
+                '<input type="number" min="0" step="0.01" value="' + (m.price||'') + '" placeholder="0.00" ' +
+                'oninput="window.bidData.divisions[' + di + '].tasks[' + ti + '].materials[' + mi + '].price=+this.value; window.bidRecalcDiv();">' +
+                '</div>' +
+                '<div class="form-group" style="margin:0; flex:1;">' +
+                '<label>Qty</label>' +
+                '<input type="number" min="0" step="0.01" value="' + (m.qty||'') + '" placeholder="0" ' +
+                'oninput="window.bidData.divisions[' + di + '].tasks[' + ti + '].materials[' + mi + '].qty=+this.value; window.bidRecalcDiv();">' +
+                '</div>' +
+                '<div style="padding-top:18px; min-width:64px; text-align:right;">' +
+                '<strong data-mat-total="' + ti + '-' + mi + '">' + fmt((m.price||0)*(m.qty||0)) + '</strong>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+        });
+        return html;
+    }
+
+    // ── Build one task card ───────────────────────────────────────────────
+    function buildTaskCard(t, ti) {
+        var tc = calcTask(t);
+        return '<div style="border:1px solid #e2e8f0; border-radius:6px; padding:12px; margin-bottom:10px;">' +
+
+            // Header: toggle + category + name + total + remove
+            '<div style="display:flex; align-items:flex-start; gap:8px; margin-bottom:10px;">' +
+            '<input type="checkbox"' + (t.included ? ' checked' : '') +
+            ' style="width:16px; height:16px; margin-top:3px; flex-shrink:0;"' +
+            ' onchange="window.bidData.divisions[' + di + '].tasks[' + ti + '].included=this.checked; window.bidRecalcDiv();">' +
+            '<div style="flex:1; min-width:0;">' +
+            '<input type="text" value="' + esc(t.category) + '" placeholder="Category" ' +
+            'style="font-size:0.75rem; color:#64748b; border:none; background:transparent; width:100%; padding:0; outline:none;"' +
+            ' oninput="window.bidData.divisions[' + di + '].tasks[' + ti + '].category=this.value;">' +
+            '<input type="text" value="' + esc(t.name) + '" placeholder="Task name" ' +
+            'style="font-size:0.92rem; font-weight:600; border:none; background:transparent; width:100%; padding:2px 0 0 0; outline:none;"' +
+            ' oninput="window.bidData.divisions[' + di + '].tasks[' + ti + '].name=this.value;">' +
+            '</div>' +
+            '<strong data-task-total="' + ti + '" style="white-space:nowrap; color:#16a34a;">' + fmt(tc.lc + tc.mc) + '</strong>' +
+            '<button onclick="window.removeTask(' + ti + ')" ' +
+            'style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0; line-height:1;">&times;</button>' +
+            '</div>' +
+
+            // Scope
+            '<div class="form-group" style="margin-bottom:10px;">' +
+            '<label>Scope of Task</label>' +
+            '<textarea rows="2" placeholder="Describe the work for this task..."' +
+            ' oninput="window.bidData.divisions[' + di + '].tasks[' + ti + '].scope=this.value;">' + esc(t.scope) + '</textarea>' +
+            '</div>' +
+
+            // Labor
+            '<div style="border-top:1px solid #f1f5f9; padding-top:10px; margin-bottom:10px;">' +
+            '<strong style="font-size:0.8rem; display:block; margin-bottom:8px;">Labor</strong>' +
+            '<div class="form-row">' +
+            '<div class="form-group" style="margin:0; flex:1;">' +
+            '<label>Qty Type</label>' +
+            '<select oninput="window.bidData.divisions[' + di + '].tasks[' + ti + '].qtyType=this.value;">' +
+            ['SF','LF','C','EA','HR'].map(function(o){ return '<option' + (t.qtyType===o?' selected':'') + '>' + o + '</option>'; }).join('') +
+            '</select></div>' +
+            '<div class="form-group" style="margin:0; flex:1;">' +
+            '<label>Qty</label>' +
+            '<input type="number" min="0" step="0.01" value="' + (t.qty||'') + '" placeholder="0"' +
+            ' oninput="window.bidData.divisions[' + di + '].tasks[' + ti + '].qty=+this.value; window.bidRecalcDiv();"></div>' +
+            '<div class="form-group" style="margin:0; flex:1;">' +
+            '<label>Hrs / Each</label>' +
+            '<input type="number" min="0" step="0.001" value="' + (t.hrsEach||'') + '" placeholder="0"' +
+            ' oninput="window.bidData.divisions[' + di + '].tasks[' + ti + '].hrsEach=+this.value; window.bidRecalcDiv();"></div>' +
+            '</div>' +
+            '<div style="display:flex; gap:16px; font-size:0.85rem; margin-top:4px;">' +
+            '<span>Total Hrs: <strong data-task-hrs="' + ti + '">' + tc.hrs.toFixed(2) + '</strong></span>' +
+            '<span>Labor Cost: <strong data-task-lc="'  + ti + '">' + fmt(tc.lc) + '</strong></span>' +
+            '</div>' +
+            '</div>' +
+
+            // Materials
+            '<div style="border-top:1px solid #f1f5f9; padding-top:10px;">' +
+            '<strong style="font-size:0.8rem; display:block; margin-bottom:8px;">Materials</strong>' +
+            '<div id="mats-' + ti + '">' + buildMatsHTML(t, ti) + '</div>' +
+            '<button onclick="window.addMaterial(' + ti + ')" class="btn btn-secondary btn-sm" style="margin-top:4px;">+ Add Material</button>' +
+            '</div>' +
+
+            '</div>';
+    }
+
+    // ── Render all tasks ──────────────────────────────────────────────────
+    function renderTasks() {
+        var list = document.getElementById('task-list');
+        if (!div.tasks || div.tasks.length === 0) {
+            list.innerHTML =
+                '<div style="padding:20px; text-align:center; border:1px dashed #e2e8f0; border-radius:6px; margin-bottom:12px; color:#94a3b8;">' +
+                '<p style="margin:0 0 10px 0;">No tasks yet.</p>' +
+                '<button class="btn btn-primary btn-sm" onclick="window.addTask()">+ Add First Task</button>' +
+                '</div>';
+            updateStats();
+            return;
+        }
+        list.innerHTML = div.tasks.map(buildTaskCard).join('');
+        updateStats();
+    }
+
+    // ── Task / material actions ───────────────────────────────────────────
+    window.addTask = function() {
+        div.tasks.push({ category:'', name:'', included:true, scope:'', qtyType:'C', qty:0, hrsEach:0, materials:[] });
+        renderTasks();
+    };
+    window.removeTask = function(ti) {
+        div.tasks.splice(ti, 1);
+        renderTasks();
+    };
+    window.addMaterial = function(ti) {
+        div.tasks[ti].materials.push({ item:'', supplier:'', price:0, qty:0 });
+        document.getElementById('mats-' + ti).innerHTML = buildMatsHTML(div.tasks[ti], ti);
+        updateStats();
+    };
+    window.removeMaterial = function(ti, mi) {
+        div.tasks[ti].materials.splice(mi, 1);
+        document.getElementById('mats-' + ti).innerHTML = buildMatsHTML(div.tasks[ti], ti);
+        updateStats();
+    };
+
+    renderTasks();
+
+})();
+</script>

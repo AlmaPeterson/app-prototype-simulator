@@ -1,0 +1,170 @@
+<div class="page" style="padding-bottom:80px;">
+    <div class="flex-between mb-2">
+        <div>
+            <div class="page-title">Kits &amp; Tools</div>
+            <div class="page-subtitle">Browse kits by category to see tools, materials, and training videos.</div>
+        </div>
+        <button class="icon-btn" id="kit-menu-btn" onclick="openKitDrawer()" aria-label="Browse kit categories">
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+        </button>
+    </div>
+    <button class="btn btn-outline btn-sm mb-4" onclick="loadPage('label-generator')">Generate Labels</button>
+
+    <input class="search-bar" type="text" id="kit-search" placeholder="Search kits..." oninput="filterKits(this.value)">
+
+    <div class="kit-content" id="kit-content"></div>
+</div>
+
+<div class="kit-drawer-overlay" id="kit-drawer-overlay" onclick="handleKitDrawerOverlayClick(event)">
+    <div class="kit-drawer">
+        <div class="kit-drawer-header">
+            <span class="section-title">Kit Categories</span>
+            <button class="kit-drawer-close" onclick="closeKitDrawer()" aria-label="Close">&times;</button>
+        </div>
+        <div class="kit-drawer-list" id="kit-drawer-list"></div>
+    </div>
+</div>
+
+<script>
+(function () {
+
+    var KIT_CATEGORIES = window.KIT_CATEGORIES;
+
+    var state = { expandedCat: null, selected: null, searchQuery: '' };
+
+    function clearSearchInput() {
+        var search = document.getElementById('kit-search');
+        if (search) search.value = '';
+    }
+
+    function renderDrawer() {
+        var el = document.getElementById('kit-drawer-list');
+        el.innerHTML = KIT_CATEGORIES.map(function (cat, i) {
+            var expanded = state.expandedCat === i;
+            var html = '<div class="kit-drawer-cat">' +
+                '<button class="kit-drawer-cat-btn' + (expanded ? ' expanded' : '') + '" onclick="toggleKitDrawerCategory(' + i + ')">' +
+                '<span>' + cat.name + '</span>' +
+                '<span class="kit-drawer-chevron">' + (expanded ? '&#9660;' : '&#9654;') + '</span>' +
+                '</button>';
+            if (expanded) {
+                html += '<div class="kit-drawer-kits">' + cat.kits.map(function (k, ki) {
+                    var isSelected = !!(state.selected && state.selected.ci === i && state.selected.ki === ki);
+                    return '<button class="kit-drawer-kit' + (isSelected ? ' active' : '') + '" onclick="selectKit(' + i + ',' + ki + ')">' + k.name + '</button>';
+                }).join('') + '</div>';
+            }
+            html += '</div>';
+            return html;
+        }).join('');
+    }
+
+    function listSection(title, items) {
+        var html = '<div class="section-header mt-4"><span class="section-title">' + title + '</span></div>';
+        if (!items || items.length === 0) {
+            html += '<div class="kit-empty">No ' + title.toLowerCase() + ' listed.</div>';
+            return html;
+        }
+        html += '<div class="card" style="cursor:default; padding:0 14px;">';
+        html += items.map(function (i) { return '<div class="kit-detail-item">' + i + '</div>'; }).join('');
+        html += '</div>';
+        return html;
+    }
+
+    function kitDetailHtml(cat, kit) {
+        var html = '<button class="btn btn-secondary btn-sm mb-4" onclick="openKitDrawer()">&larr; Browse Kits</button>';
+        html += '<div class="page-title-sm">' + kit.name + '</div>';
+        html += '<div class="page-subtitle mb-4">' + cat.name + '</div>';
+        html += listSection('Tools', kit.tools);
+        html += listSection('Materials', kit.materials);
+        html += '<div class="section-header mt-4"><span class="section-title">Videos</span></div>';
+        html += '<div class="card" onclick="alert(\'Training video placeholder\')">' +
+            '<div class="card-row"><div class="card-body">' +
+            '<div class="card-title">' + kit.name + ' &mdash; Overview</div>' +
+            '<div class="card-subtitle">Training video placeholder</div>' +
+            '</div><span class="card-arrow">&#9654;</span></div></div>';
+        return html;
+    }
+
+    function emptyStateHtml() {
+        return '<div class="kit-noselect">' +
+            '<div class="kit-noselect-title">No kit selected</div>' +
+            '<div class="kit-noselect-sub">Tap the menu icon above to expand a category and choose a kit.</div>' +
+            '</div>';
+    }
+
+    function searchResultsHtml(query) {
+        var q = query.toLowerCase();
+        var results = [];
+        KIT_CATEGORIES.forEach(function (cat, ci) {
+            cat.kits.forEach(function (k, ki) {
+                if (k.name.toLowerCase().indexOf(q) !== -1) results.push({ cat: cat, ci: ci, k: k, ki: ki });
+            });
+        });
+        var html = '<div class="section-header"><span class="section-title">Search Results</span>' +
+            '<span class="kit-row-count">' + results.length + ' found</span></div>';
+        if (results.length === 0) {
+            html += '<div class="kit-empty">No kits match &quot;' + query + '&quot;.</div>';
+            return html;
+        }
+        html += '<div class="card" style="cursor:default; padding:0 14px;">';
+        html += results.map(function (r) {
+            return '<div class="kit-row" onclick="selectKit(' + r.ci + ',' + r.ki + ')">' +
+                '<span class="kit-row-name">' + r.k.name + '<br><span style="font-size:0.7rem; font-weight:500; color:#94a3b8;">' + r.cat.name + '</span></span>' +
+                '<span class="card-arrow">&rsaquo;</span></div>';
+        }).join('');
+        html += '</div>';
+        return html;
+    }
+
+    function render() {
+        renderDrawer();
+        var content = document.getElementById('kit-content');
+        if (state.searchQuery) {
+            content.innerHTML = searchResultsHtml(state.searchQuery);
+        } else if (state.selected) {
+            content.innerHTML = kitDetailHtml(KIT_CATEGORIES[state.selected.ci], KIT_CATEGORIES[state.selected.ci].kits[state.selected.ki]);
+        } else {
+            content.innerHTML = emptyStateHtml();
+        }
+    }
+
+    window.openKitDrawer = function () {
+        document.getElementById('kit-drawer-overlay').classList.add('open');
+        renderDrawer();
+    };
+
+    window.closeKitDrawer = function () {
+        document.getElementById('kit-drawer-overlay').classList.remove('open');
+    };
+
+    window.handleKitDrawerOverlayClick = function (e) {
+        if (e.target.id === 'kit-drawer-overlay') closeKitDrawer();
+    };
+
+    window.toggleKitDrawerCategory = function (i) {
+        state.expandedCat = (state.expandedCat === i) ? null : i;
+        renderDrawer();
+    };
+
+    window.selectKit = function (ci, ki) {
+        state.selected = { ci: ci, ki: ki };
+        state.expandedCat = ci;
+        state.searchQuery = '';
+        clearSearchInput();
+        closeKitDrawer();
+        render();
+    };
+
+    window.filterKits = function (query) {
+        state.searchQuery = query.trim();
+        if (state.searchQuery) {
+            state.selected = null;
+            closeKitDrawer();
+        }
+        render();
+    };
+
+    render();
+})();
+</script>

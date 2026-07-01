@@ -1,0 +1,125 @@
+<div class="page" style="padding-bottom:80px;">
+    <div class="flex-between mb-4">
+        <div>
+            <div class="page-title">Inventory</div>
+            <div class="page-subtitle">Stock &amp; Supplies</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addInventoryItem()">+ Add</button>
+    </div>
+
+    <input class="search-bar" type="text" placeholder="Search inventory...">
+
+    <div class="stats-grid" style="margin-bottom:16px;">
+        <div class="stat-card">
+            <div class="stat-value">248</div>
+            <div class="stat-label">Total Items</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:#dc2626;">12</div>
+            <div class="stat-label">Low Stock</div>
+        </div>
+    </div>
+
+    <div class="tab-bar">
+        <button class="tab-btn active">All</button>
+        <button class="tab-btn">HVAC</button>
+        <button class="tab-btn">Electrical</button>
+        <button class="tab-btn">Plumbing</button>
+    </div>
+
+    <div class="section-header">
+        <span class="section-title">Low Stock Alerts</span>
+        <span class="badge badge-red">3 items</span>
+    </div>
+
+    <div class="card" style="cursor:default;">
+        <div class="list-item" style="padding:8px 0;">
+            <div class="card-icon-circle icon-red">&#9888;</div>
+            <div class="list-item-body" style="margin-left:10px;">
+                <div class="list-item-title">Refrigerant R-410A 25lb</div>
+                <div class="list-item-sub">HVAC &bull; SKU-441</div>
+            </div>
+            <div class="list-item-right">
+                <div class="list-item-value" style="color:#dc2626;">2 left</div>
+                <div class="list-item-detail">Min: 5</div>
+            </div>
+        </div>
+        <div class="list-item" style="padding:8px 0;">
+            <div class="card-icon-circle icon-red">&#9888;</div>
+            <div class="list-item-body" style="margin-left:10px;">
+                <div class="list-item-title">20A Circuit Breaker</div>
+                <div class="list-item-sub">Electrical &bull; SKU-102</div>
+            </div>
+            <div class="list-item-right">
+                <div class="list-item-value" style="color:#dc2626;">4 left</div>
+                <div class="list-item-detail">Min: 10</div>
+            </div>
+        </div>
+        <div class="list-item" style="padding:8px 0; border-bottom:none;">
+            <div class="card-icon-circle icon-orange">&#9888;</div>
+            <div class="list-item-body" style="margin-left:10px;">
+                <div class="list-item-title">Copper 1/2&quot; Pipe (10ft)</div>
+                <div class="list-item-sub">Plumbing &bull; SKU-308</div>
+            </div>
+            <div class="list-item-right">
+                <div class="list-item-value" style="color:#ea580c;">6 left</div>
+                <div class="list-item-detail">Min: 8</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-header mt-2">
+        <span class="section-title">All Items</span>
+    </div>
+
+    <div class="card" style="cursor:default;">
+        <div class="list-item" style="padding:8px 0;">
+            <div class="card-icon-circle icon-blue">&#128230;</div>
+            <div class="list-item-body" style="margin-left:10px;">
+                <div class="list-item-title">Carrier 3-Ton AC Unit</div>
+                <div class="list-item-sub">HVAC &bull; SKU-512</div>
+            </div>
+            <div class="list-item-right">
+                <div class="list-item-value">8</div>
+                <div class="list-item-detail">$3,200 ea</div>
+            </div>
+        </div>
+        <div class="list-item" style="padding:8px 0;">
+            <div class="card-icon-circle icon-green">&#128296;</div>
+            <div class="list-item-body" style="margin-left:10px;">
+                <div class="list-item-title">Wire 12 AWG (100ft roll)</div>
+                <div class="list-item-sub">Electrical &bull; SKU-205</div>
+            </div>
+            <div class="list-item-right">
+                <div class="list-item-value">34</div>
+                <div class="list-item-detail">$45 ea</div>
+            </div>
+        </div>
+        <div class="list-item" style="padding:8px 0;">
+            <div class="card-icon-circle icon-purple">&#128738;</div>
+            <div class="list-item-body" style="margin-left:10px;">
+                <div class="list-item-title">PEX Tubing 1/2&quot; (25ft)</div>
+                <div class="list-item-sub">Plumbing &bull; SKU-317</div>
+            </div>
+            <div class="list-item-right">
+                <div class="list-item-value">22</div>
+                <div class="list-item-detail">$18 ea</div>
+            </div>
+        </div>
+        <div class="list-item" style="padding:8px 0; border-bottom:none;">
+            <div class="card-icon-circle icon-blue">&#128295;</div>
+            <div class="list-item-body" style="margin-left:10px;">
+                <div class="list-item-title">Electrical Panel 200A</div>
+                <div class="list-item-sub">Electrical &bull; SKU-410</div>
+            </div>
+            <div class="list-item-right">
+                <div class="list-item-value">11</div>
+                <div class="list-item-detail">$520 ea</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function addInventoryItem() { alert('Add inventory item form'); }
+</script>

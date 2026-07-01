@@ -1,0 +1,84 @@
+<div class="page" style="padding-bottom:80px;">
+    <div class="page-title">Customer Home</div>
+    <div class="page-subtitle mb-4">Welcome back, Riverside Properties</div>
+
+    <!-- Summary card -->
+    <div class="hero-stat" style="margin-bottom:16px;">
+        <div style="font-size:0.78rem; opacity:0.7;">Active Jobs</div>
+        <div class="hero-stat-value">2 Jobs</div>
+        <div style="font-size:0.82rem; opacity:0.8; margin-top:4px;">1 in progress &bull; 1 scheduled</div>
+    </div>
+
+    <!-- Active Jobs -->
+    <div class="section-header">
+        <span class="section-title">Your Jobs</span>
+        <button class="section-action">View All</button>
+    </div>
+
+    <div class="card" onclick="loadPage('job-detail')">
+        <div class="card-title">Riverside HVAC Retrofit</div>
+        <div class="flex-between mb-2">
+            <span class="badge badge-green">In Progress</span>
+            <span style="font-size:0.75rem; color:#94a3b8;">Est. complete Jul 10</span>
+        </div>
+        <div class="card-subtitle">123 Riverside Dr &bull; Jake Smith (Lead)</div>
+        <div class="progress-bar mt-2">
+            <div class="progress-fill" style="width:65%"></div>
+        </div>
+        <div style="font-size:0.72rem; color:#64748b; margin-top:4px;">65% complete</div>
+    </div>
+
+    <div class="card" onclick="loadPage('schedule')">
+        <div class="card-title">Office Electrical Upgrade</div>
+        <div class="flex-between mb-2">
+            <span class="badge badge-purple">Scheduled</span>
+            <span style="font-size:0.75rem; color:#94a3b8;">Starts Jul 8</span>
+        </div>
+        <div class="card-subtitle">55 Summit Ave &bull; Awaiting crew assign</div>
+    </div>
+
+    <!-- Schedule -->
+    <div class="section-header mt-2">
+        <span class="section-title">Upcoming Visits</span>
+        <button class="section-action" onclick="loadPage('schedule')">Full Schedule</button>
+    </div>
+
+    <div class="schedule-slot schedule-slot-blue" style="margin-bottom:8px;">
+        <div class="slot-title">HVAC Inspection &mdash; Day 4</div>
+        <div class="slot-time">Jul 1 &bull; 7:00 AM &ndash; 3:30 PM</div>
+    </div>
+    <div class="schedule-slot schedule-slot-purple" style="margin-bottom:16px;">
+        <div class="slot-title">Final Walkthrough</div>
+        <div class="slot-time">Jul 10 &bull; 10:00 AM &bull; With Jake Smith</div>
+    </div>
+
+    <!-- Send Message -->
+    <div class="section-header">
+        <span class="section-title">Message Your Technician</span>
+    </div>
+
+    <div class="card" style="cursor:default;">
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+            <div class="leaderboard-avatar" style="width:32px; height:32px; font-size:0.75rem;">JS</div>
+            <div>
+                <div style="font-size:0.85rem;">Jake Smith</div>
+                <div style="font-size:0.72rem; color:#16a34a;">On Site Now</div>
+            </div>
+        </div>
+
+        <div id="message-sent" class="alert alert-success" style="display:none;">Message sent!</div>
+
+        <div style="display:flex; gap:8px;">
+            <input type="text" id="customer-msg" placeholder="Type a message..."
+                style="flex:1; border:1px solid #e2e8f0; padding:10px 12px; font-size:0.88rem; outline:none;">
+            <button onclick="sendMessage()"
+                style="background:#2563eb; color:white; border:none; padding:10px 14px; cursor:pointer; font-size:1rem;">&#9658;</button>
+        </div>
+
+        <div style="display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;">
+            <button class="chip" onclick="document.getElementById('customer-msg').value='What time will you arrive?'">Arrival time?</button>
+            <button class="chip" onclick="document.getElementById('customer-msg').value='Is the job on schedule?'">On schedule?</button>
+            <button class="chip" onclick="document.getElementById('customer-msg').value='Please call me when done.'">Call when done</button>
+        </div>
+    </div>
+</div>

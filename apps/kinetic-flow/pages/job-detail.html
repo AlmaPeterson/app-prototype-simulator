@@ -1,0 +1,102 @@
+<div class="page" style="padding-bottom:80px;">
+    <button class="btn btn-secondary btn-sm mb-4" onclick="loadPage('jobs')">&larr; Jobs</button>
+
+    <!-- Job Header -->
+    <div style="padding:18px; margin-bottom:16px; border:1px solid #e2e8f0;">
+        <div style="font-size:1.2rem; font-weight:700; margin-bottom:6px;">Riverside HVAC Retrofit</div>
+        <div class="flex-between mb-2">
+            <span class="badge">JOB-2024</span>
+            <span class="badge badge-green">Active</span>
+        </div>
+        <div style="font-size:0.82rem;">123 Riverside Dr, Calgary AB</div>
+        <div style="font-size:0.82rem; margin-top:2px;">Jun 24 &ndash; Jul 10, 2024</div>
+        <div class="progress-bar mt-4">
+            <div style="width:65%; height:100%; border-radius:99px;"></div>
+        </div>
+        <div style="font-size:0.72rem; margin-top:4px;">65% complete</div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="section-header">
+        <span class="section-title">Quick Actions</span>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:16px;">
+        <button class="btn btn-green" style="margin:0;" onclick="openFieldClock()">Clock In</button>
+        <button class="btn btn-purple" style="margin:0;" onclick="openSchedule()">Schedule</button>
+        <button class="btn btn-orange" style="margin:0;" onclick="openKits()">Kits</button>
+    </div>
+
+    <!-- Bid / Finance -->
+    <div class="section-header">
+        <span class="section-title">Bid &amp; Finance</span>
+        <button class="section-action" onclick="openBid()">View Bid</button>
+    </div>
+
+    <div class="card" style="cursor:default; margin-bottom:16px;">
+        <div class="list-item" style="padding:8px 0;">
+            <div class="list-item-body"><div class="list-item-title">Estimated Value</div></div>
+            <div class="list-item-right"><div class="list-item-value">$12,400</div></div>
+        </div>
+        <div class="list-item" style="padding:8px 0;">
+            <div class="list-item-body"><div class="list-item-title">Labour to Date</div></div>
+            <div class="list-item-right"><div class="list-item-value">$4,320</div></div>
+        </div>
+        <div class="list-item" style="padding:8px 0; border-bottom:none;">
+            <div class="list-item-body"><div class="list-item-title">Materials Used</div></div>
+            <div class="list-item-right"><div class="list-item-value">$1,890</div></div>
+        </div>
+    </div>
+
+    <!-- Team -->
+    <div class="section-header">
+        <span class="section-title">Assigned Team</span>
+        <button class="section-action">+ Add</button>
+    </div>
+
+    <div class="card" style="cursor:default; margin-bottom:16px;">
+        <div class="list-item" style="padding:8px 0;">
+            <div class="leaderboard-avatar">JS</div>
+            <div class="list-item-body" style="margin-left:10px;">
+                <div class="list-item-title">Jake Smith</div>
+                <div class="list-item-sub">Lead Technician</div>
+            </div>
+            <span class="badge badge-green">Clocked In</span>
+        </div>
+        <div class="list-item" style="padding:8px 0; border-bottom:none;">
+            <div class="leaderboard-avatar">AC</div>
+            <div class="list-item-body" style="margin-left:10px;">
+                <div class="list-item-title">Amy Chen</div>
+                <div class="list-item-sub">Technician</div>
+            </div>
+            <span class="badge badge-gray">Off Site</span>
+        </div>
+    </div>
+
+    <!-- JIT Training -->
+    <div class="section-header">
+        <span class="section-title">JIT Training</span>
+    </div>
+
+    <div class="card" onclick="loadPage('feild-clock')" style="margin-bottom:8px;">
+        <div class="card-row">
+            <div class="card-icon-circle icon-blue">&#127891;</div>
+            <div class="card-body">
+                <div class="card-title">HVAC Safety Procedures</div>
+                <div class="card-subtitle">Required before starting &bull; 5 min</div>
+            </div>
+            <span class="badge badge-green">Done</span>
+        </div>
+    </div>
+
+    <div class="card" onclick="loadPage('feild-clock')">
+        <div class="card-row">
+            <div class="card-icon-circle icon-orange">&#9888;</div>
+            <div class="card-body">
+                <div class="card-title">Refrigerant Handling</div>
+                <div class="card-subtitle">Required &bull; 8 min</div>
+            </div>
+            <span class="badge badge-orange">Pending</span>
+        </div>
+    </div>
+</div>
