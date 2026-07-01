@@ -1,14 +1,14 @@
 <div class="page" style="padding-bottom:80px;">
     <div class="flex-between mb-2">
-        <div>
-            <div class="page-title">Kits &amp; Tools</div>
-            <div class="page-subtitle">Browse kits by category to see tools, materials, and training videos.</div>
-        </div>
         <button class="icon-btn" id="kit-menu-btn" onclick="openKitDrawer()" aria-label="Browse kit categories">
             <span class="hamburger-line"></span>
             <span class="hamburger-line"></span>
             <span class="hamburger-line"></span>
         </button>
+        <div>
+            <div class="page-title">Kits &amp; Tools</div>
+            <div class="page-subtitle">Browse kits by category to see tools, materials, and training videos.</div>
+        </div>
     </div>
     <button class="btn btn-outline btn-sm mb-4" onclick="loadPage('label-generator')">Generate Labels</button>
 
@@ -89,7 +89,8 @@
     function emptyStateHtml() {
         return '<div class="kit-noselect">' +
             '<div class="kit-noselect-title">No kit selected</div>' +
-            '<div class="kit-noselect-sub">Tap the menu icon above to expand a category and choose a kit.</div>' +
+            '<div class="kit-noselect-sub">Expand a category to choose a kit.</div>' +
+            '<button class="btn btn-primary btn-sm" style="margin-top:14px;" onclick="openKitDrawer()">Browse Categories</button>' +
             '</div>';
     }
 

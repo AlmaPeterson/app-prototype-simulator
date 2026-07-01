@@ -884,46 +884,9 @@ header {
 .chip.selected { background: #eff6ff; color: #2563eb; border-color: #93c5fd; }
 
 /* ── Kit Browser ── */
-.kit-browser {
-    display: flex;
-    margin: 0 -20px;
-    border-top: 1px solid #e2e8f0;
-}
-
-.kit-sidebar {
-    width: 108px;
-    flex-shrink: 0;
-    border-right: 1px solid #e2e8f0;
-    padding: 10px 0;
-}
-
-.kit-sidebar-item {
-    display: block;
-    width: 100%;
-    text-align: left;
-    padding: 9px 10px;
-    border: none;
-    border-left: 3px solid transparent;
-    background: none;
-    font-size: 0.72rem;
-    font-weight: 600;
-    line-height: 1.3;
-    color: #64748b;
-    cursor: pointer;
-}
-
-.kit-sidebar-item:hover { color: #0f172a; }
-
-.kit-sidebar-item.active {
-    color: #2563eb;
-    background: #eff6ff;
-    border-left-color: #2563eb;
-}
-
 .kit-content {
     flex: 1;
     min-width: 0;
-    padding: 14px;
 }
 
 .kit-row {
@@ -949,8 +912,6 @@ header {
 .kit-detail-item:last-child { border-bottom: none; }
 
 .kit-empty { font-size: 0.8rem; color: #94a3b8; font-style: italic; padding: 6px 0; }
-
-.kit-content { padding: 0; }
 
 .kit-noselect {
     text-align: center;
@@ -1063,6 +1024,71 @@ header {
 .kit-drawer-kit:first-child { border-top: none; }
 .kit-drawer-kit:hover { color: #2563eb; }
 .kit-drawer-kit.active { color: #2563eb; font-weight: 700; background: #eff6ff; }
+
+/* ── Label Tree (built-in expandable category/kit browser) ── */
+.label-tree {
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.label-cat { border-bottom: 1px solid #e2e8f0; }
+.label-cat:last-child { border-bottom: none; }
+
+.label-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+}
+
+.label-row-cat { background: #f8fafc; }
+.label-row-item { padding-left: 40px; border-top: 1px solid #f1f5f9; }
+.label-row-item:first-child { border-top: none; }
+
+.label-checkbox { width: 16px; height: 16px; flex-shrink: 0; cursor: pointer; }
+
+.label-toggle {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+    border: none;
+    background: none;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+}
+
+.label-name { font-size: 0.85rem; font-weight: 600; color: #0f172a; }
+.label-row-item .label-name { font-weight: 500; }
+.label-subtext { font-size: 0.7rem; font-weight: 500; color: #94a3b8; }
+.label-count { font-size: 0.72rem; color: #94a3b8; flex-shrink: 0; }
+.label-chevron { font-size: 0.6rem; color: #94a3b8; flex-shrink: 0; }
+
+.label-kits { background: white; }
+.label-kit { border-top: 1px solid #f1f5f9; }
+.label-kit:first-child { border-top: none; }
+.label-kit .label-row-kit { padding-left: 26px; }
+
+.label-kit-detail { background: #f8fafc; padding: 4px 0 8px; }
+.label-section-title {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+    padding: 8px 14px 4px 40px;
+}
+
+.label-footer {
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.06);
+}
 
 /* ── Fab Button ── */
 .fab {
