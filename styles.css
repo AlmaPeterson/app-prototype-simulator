@@ -705,6 +705,21 @@ header {
 
 .search-bar:focus { border-color: #2563eb; }
 
+.kit-search-row {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+.kit-search-row .icon-btn { width: 42px; height: 42px; }
+.kit-search-row .search-bar {
+    flex: 1;
+    width: auto;
+    height: 42px;
+    margin-bottom: 0;
+    box-sizing: border-box;
+}
+
 /* ── Progress Bar ── */
 .progress-bar {
     height: 8px;
@@ -943,26 +958,27 @@ header {
     position: absolute;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(0, 0, 0, 0);
     z-index: 200;
     display: flex;
-    justify-content: flex-end;
-    opacity: 0;
+    justify-content: flex-start;
     pointer-events: none;
-    transition: opacity 0.2s ease;
+    transition: background 0.2s ease;
 }
-.kit-drawer-overlay.open { opacity: 1; pointer-events: auto; }
+.kit-drawer-overlay.open { background: rgba(0, 0, 0, 0.45); pointer-events: auto; }
 
 .kit-drawer {
+    position: relative;
     width: 78%;
     max-width: 280px;
     height: 100%;
     background: white;
-    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.15);
+    box-shadow: 8px 0 24px rgba(0, 0, 0, 0.15);
     display: flex;
     flex-direction: column;
-    transform: translateX(100%);
+    transform: translateX(-100%);
     transition: transform 0.25s ease;
+    pointer-events: auto;
 }
 .kit-drawer-overlay.open .kit-drawer { transform: translateX(0); }
 

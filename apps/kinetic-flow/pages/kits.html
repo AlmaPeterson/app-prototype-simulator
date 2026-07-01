@@ -1,18 +1,18 @@
 <div class="page" style="padding-bottom:80px;">
-    <div class="flex-between mb-2">
-        <button class="icon-btn" id="kit-menu-btn" onclick="openKitDrawer()" aria-label="Browse kit categories">
+    <div class="mb-2">
+        <div class="page-title">Kits &amp; Tools</div>
+        <div class="page-subtitle">Browse kits by category to see tools, materials, and training videos.</div>
+    </div>
+    <button class="btn btn-outline btn-sm mb-4" onclick="loadPage('label-generator')">Generate Labels</button>
+
+    <div class="kit-search-row">
+        <button class="icon-btn" onclick="openKitDrawer()" aria-label="Browse kit categories">
             <span class="hamburger-line"></span>
             <span class="hamburger-line"></span>
             <span class="hamburger-line"></span>
         </button>
-        <div>
-            <div class="page-title">Kits &amp; Tools</div>
-            <div class="page-subtitle">Browse kits by category to see tools, materials, and training videos.</div>
-        </div>
+        <input class="search-bar" type="text" id="kit-search" placeholder="Search kits..." oninput="filterKits(this.value)">
     </div>
-    <button class="btn btn-outline btn-sm mb-4" onclick="loadPage('label-generator')">Generate Labels</button>
-
-    <input class="search-bar" type="text" id="kit-search" placeholder="Search kits..." oninput="filterKits(this.value)">
 
     <div class="kit-content" id="kit-content"></div>
 </div>
@@ -72,8 +72,7 @@
     }
 
     function kitDetailHtml(cat, kit) {
-        var html = '<button class="btn btn-secondary btn-sm mb-4" onclick="openKitDrawer()">&larr; Browse Kits</button>';
-        html += '<div class="page-title-sm">' + kit.name + '</div>';
+        var html = '<div class="page-title-sm">' + kit.name + '</div>';
         html += '<div class="page-subtitle mb-4">' + cat.name + '</div>';
         html += listSection('Tools', kit.tools);
         html += listSection('Materials', kit.materials);
