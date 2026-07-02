@@ -220,11 +220,7 @@ const NO_BID_JOBS = ['Westgate Electrical Panel'];
 
 function openJob(jobName) {
     state.currentJob = jobName;
-    loadPage('job-home');
-}
-
-function openJobDetail() {
-    if (NO_BID_JOBS.includes(state.currentJob)) {
+    if (NO_BID_JOBS.includes(jobName)) {
         loadPage('job-detail-nobid');
     } else {
         loadPage('job-detail');
@@ -661,7 +657,7 @@ function activate() {
         showSabbathLock, hideSabbathLock,
         joinCompany, createCompany, submitJoinRequest, submitNewCompany, continueFromSetup, openBranch,
         NO_BID_JOBS,
-        openJob, openJobDetail, createJob, submitJob,
+        openJob, createJob, submitJob,
         openBid, submitBid,
         openDivision, saveDivision, previewProposal,
         openSchedule, openTimeSheet, openKits, openLabelGenerator, openFieldClock, openInventory,
@@ -688,6 +684,14 @@ window.Apps['kinetic-flow'] = {
             loadPage('customer-home');
         } else {
             loadPage('sign-in');
+        }
+    },
+    // Closing back to the OS home screen while looking at a job's full detail
+    // page downgrades it to the lean job-home page — so reopening the app
+    // later resumes on the quick-actions view, not buried in job detail.
+    onClose: function () {
+        if (state.currentJob && (state.currentPage === 'job-detail' || state.currentPage === 'job-detail-nobid')) {
+            loadPage('job-home');
         }
     },
 };

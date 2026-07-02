@@ -1,4 +1,6 @@
 <div class="page" style="padding-bottom:80px;">
+    <button class="btn btn-secondary btn-sm mb-4" onclick="loadPage('jobs')">&larr; Jobs</button>
+
     <div class="page-title" id="job-home-title">Job</div>
     <div class="page-subtitle mb-4" id="job-home-subtitle">&nbsp;</div>
 
@@ -14,7 +16,7 @@
         <button class="btn btn-secondary" style="margin:0;" onclick="openTimeSheet()">Time Sheet</button>
     </div>
 
-    <div class="card" onclick="openJobDetail()">
+    <div class="card" onclick="openJob(state.currentJob)">
         <div class="card-row">
             <div class="card-body">
                 <div class="card-title">Full Job Details</div>

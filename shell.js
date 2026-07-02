@@ -87,7 +87,10 @@ function launchApp(appId) {
 }
 
 function closeApp() {
-    if (currentAppId) showScreen('home');
+    if (!currentAppId) return;
+    const entry = window.Apps && window.Apps[currentAppId];
+    if (entry && entry.onClose) entry.onClose();
+    showScreen('home');
 }
 
 // ── Phone Resize ─────────────────────────────────────────────────────────────
