@@ -401,6 +401,26 @@ body.fullscreen-mode #btn-exit-fullscreen {
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
+/* ── Sabbath Lock overlay (Kinetic Flow) ── */
+.sabbath-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: #0f172a;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px;
+    z-index: 300;
+    animation: fadeIn 0.2s ease;
+}
+
+.sabbath-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 10px; }
+.sabbath-sub { font-size: 0.85rem; opacity: 0.75; line-height: 1.6; }
+
 /* ── Page Layout ── */
 .page {
     padding: 20px;

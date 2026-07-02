@@ -1,0 +1,34 @@
+<div class="page" style="min-height:100%; display:flex; flex-direction:column;">
+    <div class="page-header">
+        <div class="page-title" id="tv-title">Training Required</div>
+        <div class="page-subtitle" id="tv-subtitle">This training is required before every clock-in for this task. It cannot be skipped.</div>
+    </div>
+
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid #e2e8f0; margin-bottom:16px; padding:40px 20px; text-align:center;">
+        <div style="font-size:0.85rem; color:#64748b; margin-bottom:14px;" id="tv-status">Playing training video&hellip;</div>
+        <div class="progress-bar" style="width:100%;">
+            <div class="progress-fill" id="tv-progress" style="width:0%; transition:width 3s linear;"></div>
+        </div>
+    </div>
+
+    <button class="btn btn-primary" id="tv-continue-btn" disabled onclick="trainingVideoComplete()">Continue</button>
+</div>
+
+<script>
+(function () {
+    var task = (typeof state !== 'undefined' && state.clockInTask) || { name: 'Task', level: 'student' };
+
+    var titleEl = document.getElementById('tv-title');
+    if (titleEl) titleEl.textContent = task.name + ' — Safety Training';
+
+    var bar = document.getElementById('tv-progress');
+    var status = document.getElementById('tv-status');
+    var btn = document.getElementById('tv-continue-btn');
+
+    setTimeout(function () { if (bar) bar.style.width = '100%'; }, 50);
+    setTimeout(function () {
+        if (status) status.textContent = 'Training complete';
+        if (btn) btn.disabled = false;
+    }, 3000);
+})();
+</script>

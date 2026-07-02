@@ -1,6 +1,13 @@
 <div class="page" style="padding-bottom:80px;">
     <div class="page-title">Finance</div>
-    <div class="page-subtitle mb-4">June 2024 &bull; Kinetic Solutions LLC</div>
+    <div class="page-subtitle mb-4" id="finance-tier-subtitle">June 2024 &bull; Kinetic Solutions LLC</div>
+
+    <!-- View tier: how much of the org this dashboard is scoped to -->
+    <div class="tab-bar mb-2">
+        <button class="tab-btn active" id="tier-btn-nationwide" onclick="selectFinanceTier('nationwide')">Nationwide</button>
+        <button class="tab-btn" id="tier-btn-branch" onclick="selectFinanceTier('branch')">Branch</button>
+        <button class="tab-btn" id="tier-btn-job" onclick="selectFinanceTier('job')">Job</button>
+    </div>
 
     <div class="tab-bar">
         <button class="tab-btn active">Overview</button>
@@ -10,31 +17,31 @@
 
     <!-- Revenue Hero -->
     <div class="hero-stat">
-        <div style="font-size:0.78rem; opacity:0.7;">Revenue This Month</div>
-        <div class="hero-stat-value">$148,320</div>
-        <div style="font-size:0.82rem; opacity:0.8; margin-top:4px;">+22% vs May &bull; Target: $130,000</div>
+        <div style="font-size:0.78rem; opacity:0.7;" id="finance-hero-label">Revenue This Month</div>
+        <div class="hero-stat-value" id="finance-hero-value">$148,320</div>
+        <div style="font-size:0.82rem; opacity:0.8; margin-top:4px;" id="finance-hero-note">+22% vs May &bull; Target: $130,000</div>
     </div>
 
     <div class="stats-grid" style="margin-bottom:16px;">
         <div class="stat-card">
-            <div class="stat-value">$148K</div>
+            <div class="stat-value" id="finance-revenue">$148K</div>
             <div class="stat-label">Revenue</div>
-            <div class="stat-change">+22%</div>
+            <div class="stat-change" id="finance-revenue-change">+22%</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">$89K</div>
+            <div class="stat-value" id="finance-expenses">$89K</div>
             <div class="stat-label">Expenses</div>
-            <div class="stat-change">+8%</div>
+            <div class="stat-change" id="finance-expenses-change">+8%</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">$59K</div>
+            <div class="stat-value" id="finance-profit">$59K</div>
             <div class="stat-label">Profit</div>
-            <div class="stat-change">39.8% margin</div>
+            <div class="stat-change" id="finance-profit-change">39.8% margin</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">$24K</div>
+            <div class="stat-value" id="finance-outstanding">$24K</div>
             <div class="stat-label">Outstanding</div>
-            <div class="stat-change">3 invoices</div>
+            <div class="stat-change" id="finance-outstanding-change">3 invoices</div>
         </div>
     </div>
 
@@ -114,3 +121,67 @@
 
     <button class="btn btn-outline">Export Report</button>
 </div>
+
+<script>
+(function () {
+    // Outstanding Invoices / Expense Breakdown below stay at branch-level
+    // detail regardless of tier (per the reference doc, Nationwide/Branch
+    // both "show jobs and lead per job" — modeling separate invoice/expense
+    // line items per tier isn't worth the duplicated static data here).
+    var TIERS = {
+        nationwide: {
+            subtitle: 'June 2024 &bull; All Branches',
+            heroLabel: 'Revenue This Month',
+            heroValue: '$312,900',
+            heroNote: '+18% vs May &bull; Target: $280,000',
+            revenue: '$313K', revenueChange: '+18%',
+            expenses: '$198K', expensesChange: '+11%',
+            profit: '$115K', profitChange: '36.7% margin',
+            outstanding: '$41K', outstandingChange: '7 invoices',
+        },
+        branch: {
+            subtitle: 'June 2024 &bull; Kinetic Solutions LLC &mdash; Calgary HQ',
+            heroLabel: 'Revenue This Month',
+            heroValue: '$148,320',
+            heroNote: '+22% vs May &bull; Target: $130,000',
+            revenue: '$148K', revenueChange: '+22%',
+            expenses: '$89K', expensesChange: '+8%',
+            profit: '$59K', profitChange: '39.8% margin',
+            outstanding: '$24K', outstandingChange: '3 invoices',
+        },
+        job: {
+            subtitle: 'June 2024 &bull; Riverside HVAC Retrofit',
+            heroLabel: 'Contract Value',
+            heroValue: '$12,400',
+            heroNote: '65% complete &bull; Lead: Jake Smith',
+            revenue: '$12.4K', revenueChange: 'Bid total',
+            expenses: '$6.2K', expensesChange: 'Labour + materials',
+            profit: '$6.2K', profitChange: '50% margin',
+            outstanding: '$0', outstandingChange: 'No invoices due',
+        },
+    };
+
+    window.selectFinanceTier = function (tier) {
+        var t = TIERS[tier];
+        if (!t) return;
+
+        ['nationwide', 'branch', 'job'].forEach(function (key) {
+            var btn = document.getElementById('tier-btn-' + key);
+            if (btn) btn.classList.toggle('active', key === tier);
+        });
+
+        document.getElementById('finance-tier-subtitle').innerHTML = t.subtitle;
+        document.getElementById('finance-hero-label').textContent = t.heroLabel;
+        document.getElementById('finance-hero-value').textContent = t.heroValue;
+        document.getElementById('finance-hero-note').innerHTML = t.heroNote;
+        document.getElementById('finance-revenue').textContent = t.revenue;
+        document.getElementById('finance-revenue-change').textContent = t.revenueChange;
+        document.getElementById('finance-expenses').textContent = t.expenses;
+        document.getElementById('finance-expenses-change').textContent = t.expensesChange;
+        document.getElementById('finance-profit').textContent = t.profit;
+        document.getElementById('finance-profit-change').textContent = t.profitChange;
+        document.getElementById('finance-outstanding').textContent = t.outstanding;
+        document.getElementById('finance-outstanding-change').textContent = t.outstandingChange;
+    };
+})();
+</script>

@@ -1,0 +1,41 @@
+<div class="page" style="padding-bottom:80px;">
+    <div class="page-title" id="job-home-title">Job</div>
+    <div class="page-subtitle mb-4" id="job-home-subtitle">&nbsp;</div>
+
+    <button class="btn btn-primary mb-4" onclick="openFieldClock()">Clock In / Out</button>
+
+    <div class="section-header">
+        <span class="section-title">Quick Actions</span>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
+        <button class="btn btn-secondary" style="margin:0;" onclick="openSchedule()">Schedule</button>
+        <button class="btn btn-secondary" style="margin:0;" onclick="openKits()">Kits</button>
+        <button class="btn btn-secondary" style="margin:0;" id="job-home-bid-btn" onclick="openBid()">View Bid</button>
+        <button class="btn btn-secondary" style="margin:0;" onclick="openTimeSheet()">Time Sheet</button>
+    </div>
+
+    <div class="card" onclick="openJob(state.currentJob)">
+        <div class="card-row">
+            <div class="card-body">
+                <div class="card-title">Full Job Details</div>
+                <div class="card-subtitle">Progress, team, bid &amp; finance, training</div>
+            </div>
+            <span class="card-arrow">&#8250;</span>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    var job = (typeof state !== 'undefined' && state.currentJob) || 'No Job Selected';
+    var isNoBid = typeof NO_BID_JOBS !== 'undefined' && NO_BID_JOBS.indexOf(job) > -1;
+
+    var titleEl = document.getElementById('job-home-title');
+    var subEl = document.getElementById('job-home-subtitle');
+    var bidBtn = document.getElementById('job-home-bid-btn');
+
+    if (titleEl) titleEl.textContent = job;
+    if (subEl) subEl.textContent = isNoBid ? 'No Bid Yet' : 'Active';
+    if (bidBtn) bidBtn.textContent = isNoBid ? '+ Create Bid' : 'View Bid';
+})();
+</script>

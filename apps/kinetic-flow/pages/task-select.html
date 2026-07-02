@@ -1,0 +1,38 @@
+<div class="page">
+    <button class="btn btn-secondary btn-sm mb-4" onclick="loadPage('job-home')">&larr; Job</button>
+
+    <div class="page-header">
+        <div class="page-title">Select Task</div>
+        <div class="page-subtitle">Choose what you'll be working on for this clock-in.</div>
+    </div>
+
+    <div class="card" onclick="selectClockInTask('Air Handler Install', 'mastery')">
+        <div class="card-row">
+            <div class="card-body">
+                <div class="card-title">Air Handler Install</div>
+                <div class="card-subtitle">Runs this task solo</div>
+            </div>
+            <span class="badge badge-gray">mastery</span>
+        </div>
+    </div>
+
+    <div class="card" onclick="selectClockInTask('Ductwork Sealing', 'competent')">
+        <div class="card-row">
+            <div class="card-body">
+                <div class="card-title">Ductwork Sealing</div>
+                <div class="card-subtitle">Can execute &mdash; co-sign required</div>
+            </div>
+            <span class="badge badge-gray">competent</span>
+        </div>
+    </div>
+
+    <div class="card" onclick="selectClockInTask('Refrigerant Handling', 'exposure')">
+        <div class="card-row">
+            <div class="card-body">
+                <div class="card-title">Refrigerant Handling</div>
+                <div class="card-subtitle">Has assisted &amp; observed &mdash; not solo yet</div>
+            </div>
+            <span class="badge badge-gray">exposure</span>
+        </div>
+    </div>
+</div>

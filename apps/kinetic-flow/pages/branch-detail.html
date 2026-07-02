@@ -1,0 +1,64 @@
+<div class="page">
+    <button class="btn btn-secondary btn-sm mb-4" onclick="loadPage('company-setup')">&larr; Branches</button>
+
+    <div class="page-header">
+        <div class="flex-between mb-1">
+            <div class="page-title" id="branch-name" style="margin:0;">Branch</div>
+            <span class="badge badge-gray" id="branch-primary-badge" style="display:none;">Primary</span>
+        </div>
+        <div class="page-subtitle" id="branch-address">&nbsp;</div>
+    </div>
+
+    <div class="card" style="cursor:default; margin-bottom:16px;">
+        <div class="list-item" style="padding:8px 0;">
+            <div class="list-item-body"><div class="list-item-title">Branch Manager</div></div>
+            <div class="list-item-right"><div class="list-item-value" id="branch-manager"></div></div>
+        </div>
+        <div class="list-item" style="padding:8px 0;">
+            <div class="list-item-body"><div class="list-item-title">Phone</div></div>
+            <div class="list-item-right"><div class="list-item-value" id="branch-phone"></div></div>
+        </div>
+        <div class="list-item" style="padding:8px 0; border-bottom:none;">
+            <div class="list-item-body"><div class="list-item-title">Active Jobs</div></div>
+            <div class="list-item-right"><div class="list-item-value" id="branch-jobs"></div></div>
+        </div>
+    </div>
+
+    <div class="section-header">
+        <span class="section-title">Branch Actions</span>
+    </div>
+
+    <button class="btn btn-secondary" onclick="loadPage('jobs')">View Jobs at This Branch</button>
+    <button class="btn btn-secondary" onclick="loadPage('finance')">View Finance for This Branch</button>
+</div>
+
+<script>
+(function () {
+    var BRANCH_DATA = {
+        'Calgary HQ': {
+            address: '123 Main St, Calgary, AB',
+            manager: 'Jake Smith',
+            phone: '(403) 555-0142',
+            jobs: 3,
+            isPrimary: true,
+        },
+        'Edmonton Branch': {
+            address: '456 Jasper Ave, Edmonton, AB',
+            manager: 'Tyler Wong',
+            phone: '(780) 555-0198',
+            jobs: 1,
+            isPrimary: false,
+        },
+    };
+
+    var name = (typeof state !== 'undefined' && state.currentBranch) || 'Calgary HQ';
+    var data = BRANCH_DATA[name] || BRANCH_DATA['Calgary HQ'];
+
+    document.getElementById('branch-name').textContent = name;
+    document.getElementById('branch-address').textContent = data.address;
+    document.getElementById('branch-manager').textContent = data.manager;
+    document.getElementById('branch-phone').textContent = data.phone;
+    document.getElementById('branch-jobs').textContent = data.jobs;
+    if (data.isPrimary) document.getElementById('branch-primary-badge').style.display = 'inline-block';
+})();
+</script>

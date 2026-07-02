@@ -20,6 +20,8 @@ const state = {
     currentPage: '',
     currentJob: null,
     currentDivision: null,    // 0-based index into bidData.divisions
+    currentBranch: null,
+    clockInTask: null,        // { name, level } — level: student|exposure|competent|mastery
 };
 
 // ── Bottom Nav Definitions ──────────────────────────────────────────────────
@@ -49,7 +51,7 @@ const supplierNav = [
 const mainAppPages = [
     'schedule', 'feild-clock', 'kits', 'label-generator', 'more', 'messages',
     'inventory', 'stats', 'finance', 'customer-home', 'scoreboard',
-    'job-detail', 'job-detail-nobid', 'create-job',
+    'job-home', 'job-detail', 'job-detail-nobid', 'create-job',
 ];
 
 // ── Core Navigation ─────────────────────────────────────────────────────────
@@ -91,7 +93,7 @@ function updateBottomNav() {
                : state.role === 'customer' ? customerNav
                : supplierNav;
 
-    const jobPages = ['job-detail', 'job-detail-nobid', 'bid', 'bid-division', 'bid-proposal', 'create-job'];
+    const jobPages = ['job-home', 'job-detail', 'job-detail-nobid', 'bid', 'bid-division', 'bid-proposal', 'create-job'];
     nav.innerHTML = tabs.map(t => {
         const isActive = state.currentPage === t.page
             || (t.page === 'jobs' && jobPages.includes(state.currentPage))
@@ -105,7 +107,7 @@ function updateBottomNav() {
 
 function navTo(page) {
     if (page === 'jobs') {
-        if (state.currentJob) { openJob(state.currentJob); return; }
+        if (state.currentJob) { loadPage('job-home'); return; }
         loadPage('jobs');
         return;
     }
@@ -179,12 +181,38 @@ function submitAccount() {
 
 function goToSignIn() { loadPage('sign-in'); }
 
+// ── Sabbath Lock ─────────────────────────────────────────────────────────────
+// Real behavior would be a server-enforced Sunday lockout (see project
+// reference doc) — this is a manually-triggered UI preview only, since the
+// prototype has no cron/date logic.
+function showSabbathLock() {
+    if (document.getElementById('sabbath-lock-overlay')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'sabbath-lock-overlay';
+    overlay.className = 'sabbath-overlay';
+    overlay.innerHTML =
+        '<div class="sabbath-title">Day of Rest</div>' +
+        '<div class="sabbath-sub">Kinetic Flow locks every Sunday, midnight to midnight.<br>Rest well &mdash; see you Monday.</div>' +
+        '<button class="btn btn-secondary" style="margin-top:24px; width:auto; padding:10px 24px;" onclick="hideSabbathLock()">Exit Preview</button>';
+    document.getElementById('phone').appendChild(overlay);
+}
+
+function hideSabbathLock() {
+    const overlay = document.getElementById('sabbath-lock-overlay');
+    if (overlay) overlay.remove();
+}
+
 // ── Company Flow ────────────────────────────────────────────────────────────
 function joinCompany() { loadPage('join-company'); }
 function createCompany() { loadPage('new-company'); }
 function submitJoinRequest() { loadPage('companies'); }
 function submitNewCompany() { loadPage('company-setup'); }
 function continueFromSetup() { loadPage('jobs'); }
+
+function openBranch(name) {
+    state.currentBranch = name;
+    loadPage('branch-detail');
+}
 
 // ── Jobs Flow ───────────────────────────────────────────────────────────────
 const NO_BID_JOBS = ['Westgate Electrical Panel'];
@@ -222,8 +250,61 @@ function openSchedule() { loadPage('schedule'); }
 function openTimeSheet() { loadPage('review-time'); }
 function openKits() { loadPage('kits'); }
 function openLabelGenerator() { loadPage('label-generator'); }
-function openFieldClock() { loadPage('feild-clock'); }
+function openFieldClock() { loadPage('task-select'); }
 function openInventory() { loadPage('inventory'); }
+
+// ── Task Select / Training Gate / Co-Sign ─────────────────────────────────────
+// Simulated version of the reference doc's clock-in workflow gates: pick the
+// task you're working, watch the (unskippable) training video, then either
+// unlock the clock-in (mastery), require a co-sign (competent), or stay
+// blocked (student/exposure). No real video or server verification — this is
+// a static nav prototype.
+function selectClockInTask(name, level) {
+    state.clockInTask = { name: name, level: level };
+    loadPage('training-video');
+}
+
+function trainingVideoComplete() {
+    const task = state.clockInTask || {};
+    if (task.level === 'mastery') {
+        loadPage('feild-clock');
+    } else if (task.level === 'competent') {
+        showCoSignModal();
+    } else {
+        const status = document.getElementById('tv-status');
+        const btn = document.getElementById('tv-continue-btn');
+        if (status) status.textContent = 'Not cleared to perform this task solo yet.';
+        if (btn) btn.outerHTML = '<button class="btn btn-secondary" onclick="loadPage(\'job-home\')">Back to Job</button>';
+    }
+}
+
+function showCoSignModal() {
+    const existing = document.getElementById('cosign-modal');
+    if (existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.id = 'cosign-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML =
+        '<div class="modal-sheet">' +
+            '<div class="modal-handle"></div>' +
+            '<div class="page-title-sm mb-2">Master Co-Sign Required</div>' +
+            '<div class="page-subtitle mb-4">This task requires a Master to be clocked into the same job before you can proceed.</div>' +
+            '<button class="btn btn-primary" onclick="confirmCoSign()">Confirm Master Co-Sign</button>' +
+            '<button class="btn btn-secondary" onclick="closeCoSignModal()">Cancel</button>' +
+        '</div>';
+    modal.addEventListener('click', function (e) { if (e.target === modal) closeCoSignModal(); });
+    document.getElementById('phone').appendChild(modal);
+}
+
+function closeCoSignModal() {
+    const modal = document.getElementById('cosign-modal');
+    if (modal) modal.remove();
+}
+
+function confirmCoSign() {
+    closeCoSignModal();
+    loadPage('feild-clock');
+}
 
 // ── Field Clock ─────────────────────────────────────────────────────────────
 let clockedIn = false;
@@ -231,10 +312,22 @@ let timerInterval = null;
 let elapsedSeconds = 0;
 
 function toggleClock() {
-    clockedIn = !clockedIn;
     const btn = document.getElementById('clock-btn');
     const status = document.getElementById('clock-status');
     if (!btn) return;
+
+    if (clockedIn) {
+        // About to clock OUT — require the pre-clock-out checklist first.
+        const gateOk = document.getElementById('gate-materials').checked
+            && document.getElementById('gate-kit-photo').checked
+            && document.getElementById('gate-cleanliness').checked;
+        if (!gateOk) {
+            alert('Complete the "Before You Clock Out" checklist before clocking out.');
+            return;
+        }
+    }
+
+    clockedIn = !clockedIn;
 
     if (clockedIn) {
         btn.textContent = 'Clock Out';
@@ -242,6 +335,10 @@ function toggleClock() {
         if (status) status.textContent = 'Clocked In';
         elapsedSeconds = 0;
         timerInterval = setInterval(tickTimer, 1000);
+        ['gate-materials', 'gate-kit-photo', 'gate-cleanliness'].forEach(function (id) {
+            const el = document.getElementById(id);
+            if (el) el.checked = false;
+        });
     } else {
         btn.textContent = 'Clock In';
         btn.className = 'btn btn-primary';
@@ -520,11 +617,14 @@ function activate() {
         loadPage, navTo, goBack,
         setAccountType, setRole,
         signIn, afterSignIn, showSignUp, closeSignUp, submitAccount, goToSignIn,
-        joinCompany, createCompany, submitJoinRequest, submitNewCompany, continueFromSetup,
+        showSabbathLock, hideSabbathLock,
+        joinCompany, createCompany, submitJoinRequest, submitNewCompany, continueFromSetup, openBranch,
+        NO_BID_JOBS,
         openJob, createJob, submitJob,
         openBid, submitBid,
         openDivision, saveDivision, previewProposal,
         openSchedule, openTimeSheet, openKits, openLabelGenerator, openFieldClock, openInventory,
+        selectClockInTask, trainingVideoComplete, showCoSignModal, closeCoSignModal, confirmCoSign,
         toggleClock, addActivity,
         submitTimeSheet, sendMessage,
         KIT_CATEGORIES,

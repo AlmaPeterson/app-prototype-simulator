@@ -29,7 +29,7 @@
         <button class="section-action">+ Add</button>
     </div>
 
-    <div class="card" style="margin-bottom:8px; cursor:default;">
+    <div class="card" style="margin-bottom:8px;" onclick="openBranch('Calgary HQ')">
         <div class="flex-between">
             <div>
                 <div class="card-title">Calgary HQ</div>
@@ -39,13 +39,13 @@
         </div>
     </div>
 
-    <div class="card" style="cursor:default; margin-bottom:16px;">
+    <div class="card" style="margin-bottom:16px;" onclick="openBranch('Edmonton Branch')">
         <div class="flex-between">
             <div>
                 <div class="card-title">Edmonton Branch</div>
                 <div class="card-subtitle">456 Jasper Ave, Edmonton, AB</div>
             </div>
-            <button class="text-link" style="font-size:0.75rem;">Remove</button>
+            <button class="text-link" style="font-size:0.75rem;" onclick="event.stopPropagation()">Remove</button>
         </div>
     </div>
 

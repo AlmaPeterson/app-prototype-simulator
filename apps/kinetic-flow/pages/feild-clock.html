@@ -16,6 +16,26 @@
 
     <button id="clock-btn" class="btn btn-primary" onclick="toggleClock()">Clock In</button>
 
+    <!-- Clock-out gate -->
+    <div class="section-header mt-4">
+        <span class="section-title">Before You Clock Out</span>
+    </div>
+
+    <div class="card" style="cursor:default; margin-bottom:16px;">
+        <div class="list-item" style="padding:8px 0;">
+            <div class="list-item-body"><div class="list-item-title">Materials logged</div></div>
+            <input type="checkbox" id="gate-materials" class="label-checkbox">
+        </div>
+        <div class="list-item" style="padding:8px 0;">
+            <div class="list-item-body"><div class="list-item-title">Kit photo uploaded</div></div>
+            <input type="checkbox" id="gate-kit-photo" class="label-checkbox">
+        </div>
+        <div class="list-item" style="padding:8px 0; border-bottom:none;">
+            <div class="list-item-body"><div class="list-item-title">Site cleanliness confirmed</div></div>
+            <input type="checkbox" id="gate-cleanliness" class="label-checkbox">
+        </div>
+    </div>
+
     <!-- JIT Training -->
     <div class="section-header mt-4">
         <span class="section-title">JIT Training Required</span>
@@ -25,7 +45,7 @@
         <div class="card-row">
             <div class="card-body">
                 <div class="card-title">HVAC Safety Procedures</div>
-                <div class="card-subtitle">Completed today at 7:12 AM</div>
+                <div class="card-subtitle">Completed today at 7:12 AM &bull; <span class="badge badge-gray" style="font-size:0.6rem;">mastery</span></div>
             </div>
             <span class="badge badge-gray">Done</span>
         </div>
@@ -35,7 +55,7 @@
         <div class="card-row">
             <div class="card-body">
                 <div class="card-title">Refrigerant Handling</div>
-                <div class="card-subtitle">Watch 8-min video to proceed</div>
+                <div class="card-subtitle">Watch 8-min video to proceed &bull; <span class="badge badge-gray" style="font-size:0.6rem;">exposure</span></div>
             </div>
             <span class="badge badge-gray">Pending</span>
         </div>
@@ -83,6 +103,7 @@
             <div class="list-item-body">
                 <div class="list-item-title">Air Handler Install</div>
                 <div class="list-item-sub">7:10 AM &ndash; ongoing</div>
+                <div class="list-item-detail" style="font-family:monospace;">Mark: 7f3a1c9e2b4d&hellip;e91c</div>
             </div>
             <span class="badge badge-gray">Active</span>
         </div>
