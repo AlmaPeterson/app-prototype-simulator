@@ -2,15 +2,7 @@
     <button class="btn btn-secondary btn-sm mb-4" onclick="loadPage('jobs')">&larr; Jobs</button>
 
     <!-- Job Header -->
-    <div style="padding:18px; margin-bottom:16px; border:1px solid #e2e8f0;">
-        <div style="font-size:1.2rem; font-weight:700; margin-bottom:6px;">Westgate Electrical Panel</div>
-        <div class="flex-between mb-2">
-            <span class="badge">JOB-2023</span>
-            <span class="badge">No Bid Yet</span>
-        </div>
-        <div style="font-size:0.82rem;">456 Westgate Blvd, Calgary AB</div>
-        <div style="font-size:0.82rem; margin-top:2px;">Target start: Jun 26, 2024</div>
-    </div>
+    <div id="job-nobid-header" style="padding:18px; margin-bottom:16px; border:1px solid #e2e8f0;"></div>
 
     <!-- No-bid CTA -->
     <div style="padding:20px; text-align:center; margin-bottom:16px; border:1px solid #e2e8f0;">
@@ -37,31 +29,68 @@
         <span class="section-title">Job Details</span>
     </div>
 
-    <div class="card" style="cursor:default; margin-bottom:16px;">
-        <div class="list-item" style="padding:8px 0;">
-            <div class="list-item-body"><div class="list-item-title">Customer</div></div>
-            <div class="list-item-right"><div class="list-item-value">Westgate Commercial</div></div>
-        </div>
-        <div class="list-item" style="padding:8px 0;">
-            <div class="list-item-body"><div class="list-item-title">Job Type</div></div>
-            <div class="list-item-right"><div class="list-item-value">Electrical</div></div>
-        </div>
-        <div class="list-item" style="padding:8px 0;">
-            <div class="list-item-body"><div class="list-item-title">Priority</div></div>
-            <div class="list-item-right"><span class="badge badge-gray">High</span></div>
-        </div>
-        <div class="list-item" style="padding:8px 0; border-bottom:none;">
-            <div class="list-item-body"><div class="list-item-title">Assigned Team</div></div>
-            <div class="list-item-right"><div class="list-item-value" style="color:#94a3b8;">Unassigned</div></div>
-        </div>
-    </div>
+    <div id="job-nobid-details" class="card" style="cursor:default; margin-bottom:16px;"></div>
 
     <!-- Notes -->
     <div class="section-header">
         <span class="section-title">Job Notes</span>
     </div>
 
-    <div class="alert">
-        200A panel replacement. Customer wants quote before scheduling crew. Access via side entrance — call ahead.
-    </div>
+    <div class="alert" id="job-nobid-notes"></div>
 </div>
+
+<script>
+(function () {
+    var jobId = state.currentJobId;
+    var job = jobId ? DB.getById('jobs', jobId) : null;
+    if (!job) {
+        document.getElementById('job-nobid-header').innerHTML = '<div class="alert">No job selected.</div>';
+        document.getElementById('job-nobid-details').innerHTML = '';
+        document.getElementById('job-nobid-notes').textContent = '';
+        return;
+    }
+
+    var addr = job.address_id ? DB.getById('addresses', job.address_id) : null;
+    var customer = job.customer_id ? DB.getById('customers', job.customer_id) : null;
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    function fmtDate(iso) {
+        if (!iso) return '';
+        var d = new Date(iso);
+        return months[d.getUTCMonth()] + ' ' + d.getUTCDate() + ', ' + d.getUTCFullYear();
+    }
+    var shortCode = 'JOB-' + job.id.replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase();
+
+    document.getElementById('job-nobid-header').innerHTML =
+        '<div style="font-size:1.2rem; font-weight:700; margin-bottom:6px;">' + job.name + '</div>' +
+        '<div class="flex-between mb-2">' +
+            '<span class="badge">' + shortCode + '</span>' +
+            '<span class="badge">No Bid Yet</span>' +
+        '</div>' +
+        '<div style="font-size:0.82rem;">' + (addr ? addr.street + ', ' + addr.city + ' ' + addr.state : 'No address on file') + '</div>' +
+        '<div style="font-size:0.82rem; margin-top:2px;">Target start: ' + (fmtDate(job.scheduled_start) || 'TBD') + '</div>';
+
+    var lead = DB.findOne('job_assignments', function (a) { return a.job_id === job.id && a.role_on_job === 'lead'; });
+    var leadUser = lead ? DB.getById('users', lead.user_id) : null;
+    var priorityLabel = (job.priority || 'normal').replace(/^./, function (c) { return c.toUpperCase(); });
+
+    document.getElementById('job-nobid-details').innerHTML =
+        '<div class="list-item" style="padding:8px 0;">' +
+            '<div class="list-item-body"><div class="list-item-title">Customer</div></div>' +
+            '<div class="list-item-right"><div class="list-item-value">' + (customer ? customer.full_name : 'Unknown') + '</div></div>' +
+        '</div>' +
+        '<div class="list-item" style="padding:8px 0;">' +
+            '<div class="list-item-body"><div class="list-item-title">Job Type</div></div>' +
+            '<div class="list-item-right"><div class="list-item-value">' + (job.job_type || 'General') + '</div></div>' +
+        '</div>' +
+        '<div class="list-item" style="padding:8px 0;">' +
+            '<div class="list-item-body"><div class="list-item-title">Priority</div></div>' +
+            '<div class="list-item-right"><span class="badge badge-gray">' + priorityLabel + '</span></div>' +
+        '</div>' +
+        '<div class="list-item" style="padding:8px 0; border-bottom:none;">' +
+            '<div class="list-item-body"><div class="list-item-title">Assigned Team</div></div>' +
+            '<div class="list-item-right"><div class="list-item-value" style="color:' + (leadUser ? '#0f172a' : '#94a3b8') + ';">' + (leadUser ? leadUser.full_name : 'Unassigned') + '</div></div>' +
+        '</div>';
+
+    document.getElementById('job-nobid-notes').textContent = job.notes || (customer && customer.notes) || 'No notes on file.';
+})();
+</script>

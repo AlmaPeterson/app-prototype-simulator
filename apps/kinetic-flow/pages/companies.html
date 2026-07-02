@@ -12,24 +12,7 @@
         </div>
     </div>
 
-    <div id="company-list">
-        <div class="card" onclick="selectCompany('Kinetic Solutions LLC')">
-            <div class="flex-between mb-1">
-                <div class="card-title" style="margin:0;">Kinetic Solutions LLC</div>
-                <span style="font-size:0.78rem; color:#64748b;">Active</span>
-            </div>
-            <div class="card-subtitle mb-2">Member &bull; 12 team members</div>
-            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); manageCompany('Kinetic Solutions LLC')">Manage</button>
-        </div>
-
-        <div class="card" onclick="selectCompany('ProFlow Industries')">
-            <div class="flex-between mb-1">
-                <div class="card-title" style="margin:0;">ProFlow Industries</div>
-                <span style="font-size:0.78rem; color:#64748b;">Pending</span>
-            </div>
-            <div class="card-subtitle">Technician &bull; 8 team members</div>
-        </div>
-    </div>
+    <div id="company-list"></div>
 
     <!-- Empty state: shown when no companies -->
     <div id="company-empty" style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center;">
@@ -51,6 +34,35 @@
         </div>
     </div>
 </div>
+
+<script>
+(function () {
+    var companies = DB.find('companies', function (c) { return !c.deleted_at; });
+    document.getElementById('company-list').innerHTML = companies.map(function (c) {
+        var memberCount = DB.find('users', function (u) { return u.company_id === c.id && !u.deleted_at; }).length;
+        // Badge reflects the signed-in user's own membership in this company
+        // (joined role -> role.company_id), not a real access-control check —
+        // a company the user has no role row for just shows no badge.
+        var myRole = DB.findOne('user_roles', function (ur) {
+            if (ur.user_id !== state.currentUserId) return false;
+            var role = DB.getById('roles', ur.role_id);
+            return role && role.company_id === c.id;
+        });
+        var badge = myRole ? '<span style="font-size:0.78rem; color:#64748b;">' + (myRole.status === 'pending' ? 'Pending' : 'Active') + '</span>' : '';
+        var manageBtn = myRole
+            ? '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); manageCompany(\'' + c.id + '\')">Manage</button>'
+            : '';
+        return '<div class="card" onclick="selectCompany(\'' + c.id + '\')">' +
+            '<div class="flex-between mb-1">' +
+                '<div class="card-title" style="margin:0;">' + c.name + '</div>' +
+                badge +
+            '</div>' +
+            '<div class="card-subtitle mb-2">' + memberCount + ' team member' + (memberCount === 1 ? '' : 's') + '</div>' +
+            manageBtn +
+        '</div>';
+    }).join('');
+})();
+</script>
 
 <script>
 (function() {

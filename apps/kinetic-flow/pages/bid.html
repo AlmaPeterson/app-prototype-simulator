@@ -1,9 +1,9 @@
 <div class="page">
-    <button class="btn btn-secondary btn-sm mb-4" onclick="openJob(state.currentJob)">&larr; Job Detail</button>
+    <button class="btn btn-secondary btn-sm mb-4" onclick="openJob(state.currentJobId)">&larr; Job Detail</button>
 
     <div class="page-header">
         <div class="page-title" id="bid-page-title">Bid Creation</div>
-        <div class="page-subtitle">Building Forward LLC &bull; Bid Creation</div>
+        <div class="page-subtitle" id="bid-page-subtitle">Bid Creation</div>
     </div>
 
     <!-- Job Header -->
@@ -77,21 +77,21 @@
         <div class="form-row">
             <div class="form-group" style="margin:0; flex:1;">
                 <label>Est. Start Date</label>
-                <input type="date" id="sched-start" oninput="window.bidData.startDate=this.value">
+                <input type="date" id="sched-start">
             </div>
             <div class="form-group" style="margin:0; flex:1;">
                 <label>Est. Completion</label>
-                <input type="date" id="sched-end" oninput="window.bidData.completionDate=this.value">
+                <input type="date" id="sched-end">
             </div>
         </div>
         <div class="form-row" style="margin-top:8px;">
             <div class="form-group" style="margin:0; flex:1;">
                 <label>Procurement (bus. days)</label>
-                <input type="number" id="sched-proc" min="0" oninput="window.bidData.procurementDays=+this.value">
+                <input type="number" id="sched-proc" min="0">
             </div>
             <div class="form-group" style="margin:0; flex:1;">
                 <label>On-Site (bus. days)</label>
-                <input type="number" id="sched-build" min="0" oninput="window.bidData.constructionDays=+this.value">
+                <input type="number" id="sched-build" min="0">
             </div>
         </div>
         <p style="font-size:0.75rem; color:#64748b; margin:6px 0 0 0;">On-site days auto-sum from division sheets. Override here if needed.</p>
@@ -114,8 +114,7 @@
                 <div style="flex:1;">
                     <div style="font-weight:600;">Progress Draw 1 — 20%</div>
                     <input type="text" id="pay-m1" placeholder="Milestone description..."
-                        style="margin-top:4px; font-size:0.8rem; width:100%; box-sizing:border-box;"
-                        oninput="window.bidData.milestone1=this.value">
+                        style="margin-top:4px; font-size:0.8rem; width:100%; box-sizing:border-box;">
                 </div>
                 <strong id="pay-d1" style="color:#0f172a; margin-left:12px; white-space:nowrap;">$0.00</strong>
             </div>
@@ -125,8 +124,7 @@
                 <div style="flex:1;">
                     <div style="font-weight:600;">Progress Draw 2 — 20%</div>
                     <input type="text" id="pay-m2" placeholder="Milestone description..."
-                        style="margin-top:4px; font-size:0.8rem; width:100%; box-sizing:border-box;"
-                        oninput="window.bidData.milestone2=this.value">
+                        style="margin-top:4px; font-size:0.8rem; width:100%; box-sizing:border-box;">
                 </div>
                 <strong id="pay-d2" style="color:#0f172a; margin-left:12px; white-space:nowrap;">$0.00</strong>
             </div>
@@ -141,7 +139,7 @@
     </div>
 
     <button class="btn btn-primary" style="margin-bottom:8px;" onclick="previewProposal()">Preview Proposal &rarr;</button>
-    <button class="btn btn-secondary" onclick="openJob(state.currentJob)">Save Draft</button>
+    <button class="btn btn-secondary" onclick="openJob(state.currentJobId)">Save Draft</button>
 </div>
 
 <script>
@@ -150,213 +148,136 @@
     // Sourced from the company's configurable division list (see
     // company-divisions.html / app.js DIVISIONS) rather than a hardcoded
     // array, so admins can add/remove/reorder/deactivate divisions and every
-    // new bid picks up the change.
+    // new bid picks up the change. This part of the config system is
+    // unrelated to (and unchanged by) the bid-data-source rewrite below.
     var NAMES = window.DIVISIONS.filter(function (d) { return d.isActive; })
                                  .map(function (d) { return d.name; });
 
-    if (!window.bidData) {
-        var today = new Date();
-        var exp   = new Date(today); exp.setDate(today.getDate() + 7);
-        var iso   = function(d) { return d.toISOString().split('T')[0]; };
+    var bidId = state.currentBidId;
+    var bid   = DB.getById('bids', bidId);
+    var job   = DB.getById('jobs', state.currentJobId);
+    var customer = bid.customer_id ? DB.getById('customers', bid.customer_id) : null;
+    var address  = bid.address_id ? DB.getById('addresses', bid.address_id) : null;
+    var company  = DB.getById('companies', state.currentCompanyId);
+    var leadUser = job && job.lead_id ? DB.getById('users', job.lead_id) : null;
 
-        function blankDiv(i) {
-            return { name: NAMES[i], included: false, scope: '', laborRate: 120, guys: 1, tasks: [] };
-        }
-        var divs = NAMES.map(function(_, i) { return blankDiv(i); });
-
-        // Looks up by name rather than a fixed index so the sample data below
-        // still lands on the right division if a company reorders/removes
-        // divisions via company-divisions.html.
-        function findDiv(name) {
-            for (var i = 0; i < divs.length; i++) { if (divs[i].name === name) return i; }
-            return -1;
-        }
-        var fcp2Idx = findDiv('Finish Carpentry — Phase 2');
-        var paintIdx = findDiv('Painting');
-        var floorIdx = findDiv('Floor Coverings — Phase 2');
-
-        if (fcp2Idx >= 0) Object.assign(divs[fcp2Idx], {
-            included: true,
-            scope: 'Install hollow core doors, door casing FJP, and baseboard FJP throughout.',
-            tasks: [
-                {
-                    category: 'Pre-hung Doors', name: 'Hollow Core Door Install',
-                    included: true, scope: 'Hang hollow core pre-hung units. Shim, secure, and trim jamb.',
-                    qtyType: 'C', qty: 2, hrsEach: 1.5,
-                    materials: [
-                        { item: 'Door 30"x80" Hollow Core', supplier: 'WoodGrain', price: 155, qty: 2 },
-                        { item: 'Shims', supplier: 'Home Depot', price: 3, qty: 3 },
-                        { item: 'Box Finish Nails', supplier: 'Home Depot', price: 60, qty: 0.5 },
-                        { item: '3.5" Stainless Screws', supplier: 'Home Depot', price: 15, qty: 4 },
-                        { item: 'Spackle', supplier: 'Amazon', price: 22, qty: 0.5 }
-                    ]
-                },
-                {
-                    category: 'Trim', name: 'Door Casing FJP',
-                    included: true, scope: 'Install FJP primed door casing, TM 380 profile.',
-                    qtyType: 'LF', qty: 45, hrsEach: 0.03,
-                    materials: [
-                        { item: "TM 380 Casing 7'", supplier: 'SunPro', price: 7.25, qty: 16.5 }
-                    ]
-                },
-                {
-                    category: 'Trim', name: 'Baseboard FJP',
-                    included: true, scope: "Install FJP baseboard, TM 730 profile, 16' lengths.",
-                    qtyType: 'LF', qty: 45, hrsEach: 0.05,
-                    materials: [
-                        { item: "TM 730 Baseboard 16'", supplier: 'SunPro', price: 20.56, qty: 3 }
-                    ]
-                }
-            ]
-        });
-
-        if (paintIdx >= 0) Object.assign(divs[paintIdx], {
-            included: false,
-            scope: 'Full interior paint: spackle, caulk, prime, and paint walls, trim, and doors.',
-            tasks: [
-                {
-                    category: 'Paint Prep', name: 'Spackle & Fill',
-                    included: true, scope: 'Fill all nail holes and surface imperfections.',
-                    qtyType: 'LF', qty: 40, hrsEach: 0.02,
-                    materials: [{ item: 'Famo Wood Filler', supplier: 'Amazon', price: 22, qty: 0.5 }]
-                },
-                {
-                    category: 'Paint Prep', name: 'Caulk Door & Window Trim',
-                    included: true, scope: "Caulk all door and window trim with painter's caulk.",
-                    qtyType: 'LF', qty: 70, hrsEach: 0.02,
-                    materials: [{ item: "Painter's Caulk", supplier: 'Amazon', price: 3, qty: 1.4 }]
-                },
-                {
-                    category: 'Priming', name: 'Spray Primer — Trim',
-                    included: true, scope: 'Spray prime all trim with Gallery Series primer.',
-                    qtyType: 'LF', qty: 45, hrsEach: 0.007,
-                    materials: [{ item: 'Gallery Series Primer', supplier: 'Sherwin Williams', price: 58, qty: 0.5 }]
-                },
-                {
-                    category: 'Painting', name: 'Doors — Gallery Series',
-                    included: true, scope: 'Apply Gallery Series enamel to all doors, 2 coats.',
-                    qtyType: 'C', qty: 4, hrsEach: 1.0,
-                    materials: [{ item: 'Gallery Series Paint', supplier: 'Sherwin Williams', price: 124, qty: 1 }]
-                },
-                {
-                    category: 'Painting', name: 'Walls — 2 Coats',
-                    included: true, scope: 'Apply 2 coats of wall paint to all interior walls.',
-                    qtyType: 'SF', qty: 624, hrsEach: 0.004,
-                    materials: [{ item: 'Wall Paint', supplier: 'Sherwin Williams', price: 80, qty: 3.12 }]
-                }
-            ]
-        });
-
-        if (floorIdx >= 0) Object.assign(divs[floorIdx], {
-            included: true,
-            scope: 'Install tack strip, stretch, cut, and lay carpet in place.',
-            tasks: [
-                {
-                    category: 'Carpet', name: 'Stretch & Install Carpet',
-                    included: true, scope: 'Install 9 ft of tack strip, stretch, cut and install carpet.',
-                    qtyType: 'LF', qty: 15, hrsEach: 0.09,
-                    materials: [
-                        { item: 'Tac Strip', supplier: 'Home Depot', price: 3.40, qty: 1.25 },
-                        { item: 'Clean-Up Fee', supplier: '', price: 100, qty: 1 }
-                    ]
-                }
-            ]
-        });
-
-        window.bidData = {
-            date: iso(today), expires: iso(exp),
-            bidNumber: '260701', project: 'Westgate Electrical Panel',
-            customer: 'Jordan Blake', craftsman: 'Alex Rivera',
-            address: '742 Evergreen Terrace, Springfield ST 00000',
-            phone: '(555) 555-0100', email: 'customer@example.com',
-            startDate: '', procurementDays: 10, constructionDays: 8, completionDate: '',
-            milestone1: 'Finish Carpentry Phase 2 complete',
-            milestone2: 'Painting complete',
-            divisions: divs
-        };
-    }
-
-    var bd = window.bidData;
-
-    document.getElementById('bid-page-title').textContent = bd.project;
-
-    // Populate header fields
-    document.getElementById('hdr-date').value      = bd.date;
-    document.getElementById('hdr-expires').value   = bd.expires;
-    document.getElementById('hdr-bidnum').value    = bd.bidNumber;
-    document.getElementById('hdr-project').value   = bd.project;
-    document.getElementById('hdr-customer').value  = bd.customer;
-    document.getElementById('hdr-craftsman').value = bd.craftsman;
-    document.getElementById('hdr-address').value   = bd.address;
-    document.getElementById('hdr-phone').value     = bd.phone;
-    document.getElementById('hdr-email').value     = bd.email;
-    document.getElementById('sched-start').value   = bd.startDate;
-    document.getElementById('sched-end').value     = bd.completionDate;
-    document.getElementById('sched-proc').value    = bd.procurementDays;
-    document.getElementById('sched-build').value   = bd.constructionDays;
-    document.getElementById('pay-m1').value        = bd.milestone1;
-    document.getElementById('pay-m2').value        = bd.milestone2;
-
-    // Wire header saves
-    var hdrMap = {
-        'hdr-date':'date','hdr-expires':'expires','hdr-bidnum':'bidNumber',
-        'hdr-project':'project','hdr-customer':'customer','hdr-craftsman':'craftsman',
-        'hdr-address':'address','hdr-phone':'phone','hdr-email':'email'
-    };
-    Object.keys(hdrMap).forEach(function(id) {
-        var el = document.getElementById(id);
-        if (el) el.addEventListener('input', function() { bd[hdrMap[id]] = this.value; });
-    });
-
-    // Calculate total for one division
-    function divTotal(d) {
-        var labor = 0, mat = 0;
-        (d.tasks || []).forEach(function(t) {
-            if (!t.included) return;
-            var hrs = (t.qty || 0) * (t.hrsEach || 0);
-            labor += hrs * (d.laborRate || 120);
-            (t.materials || []).forEach(function(m) { mat += (m.price || 0) * (m.qty || 0); });
-        });
-        return labor + mat + labor * 0.10 + mat * 0.10;
-    }
-    window.calcDivTotal = divTotal;
+    document.getElementById('bid-page-title').textContent = job ? job.name : 'Bid Creation';
+    document.getElementById('bid-page-subtitle').textContent = (company ? company.name : '') + ' • Bid Creation';
 
     function fmt(n) {
         return '$' + n.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
     }
+    function isoDate(s) {
+        // bids.created_at/expires_at/etc. are full ISO timestamps or plain
+        // "YYYY-MM-DD" strings depending on where they were written from;
+        // <input type="date"> only accepts the latter.
+        if (!s) return '';
+        return s.slice(0, 10);
+    }
 
-    // Render the 40-division list
+    // ── Header fields — read from the real bids row + joined customers/
+    // addresses, not window.bidData. Every input writes straight back via
+    // DB.update() on blur/input so nothing is held in page-local memory.
+    document.getElementById('hdr-date').value      = isoDate(bid.created_at);
+    document.getElementById('hdr-expires').value   = isoDate(bid.expires_at);
+    document.getElementById('hdr-bidnum').value    = bid.bid_number || '';
+    // "Project" shows/edits bids.title. Bids are created as "<job name> —
+    // Bid" (see app.js openBid()); strip that suffix for display so the
+    // field reads as a plain project name, but whatever the user types is
+    // saved back verbatim as the new title.
+    document.getElementById('hdr-project').value   = (bid.title || '').replace(/ — Bid$/, '');
+    document.getElementById('hdr-customer').value  = customer ? customer.full_name : '';
+    document.getElementById('hdr-craftsman').value = bid.lead_craftsman_name || (leadUser ? leadUser.full_name : '');
+    document.getElementById('hdr-address').value   = (bid.site_address_override != null)
+        ? bid.site_address_override
+        : (address ? address.street + ', ' + address.city + ', ' + address.state + ' ' + address.zip : '');
+    document.getElementById('hdr-phone').value     = customer ? (customer.phone || '') : '';
+    document.getElementById('hdr-email').value     = customer ? (customer.email || '') : '';
+    document.getElementById('sched-start').value   = isoDate(bid.start_date);
+    document.getElementById('sched-end').value     = isoDate(bid.completion_date);
+    document.getElementById('sched-proc').value    = (bid.procurement_days != null) ? bid.procurement_days : 10;
+    document.getElementById('sched-build').value   = (bid.construction_days != null) ? bid.construction_days : '';
+    document.getElementById('pay-m1').value        = bid.milestone_1 || '';
+    document.getElementById('pay-m2').value         = bid.milestone_2 || '';
+
+    document.getElementById('hdr-date').addEventListener('input', function () { DB.update('bids', bidId, { created_at: this.value }); });
+    document.getElementById('hdr-expires').addEventListener('input', function () { DB.update('bids', bidId, { expires_at: this.value }); });
+    document.getElementById('hdr-bidnum').addEventListener('input', function () { DB.update('bids', bidId, { bid_number: this.value }); });
+    document.getElementById('hdr-project').addEventListener('input', function () { DB.update('bids', bidId, { title: this.value }); });
+    document.getElementById('hdr-customer').addEventListener('input', function () {
+        if (customer) DB.update('customers', customer.id, { full_name: this.value });
+    });
+    document.getElementById('hdr-craftsman').addEventListener('input', function () { DB.update('bids', bidId, { lead_craftsman_name: this.value }); });
+    document.getElementById('hdr-address').addEventListener('input', function () { DB.update('bids', bidId, { site_address_override: this.value }); });
+    document.getElementById('hdr-phone').addEventListener('input', function () {
+        if (customer) DB.update('customers', customer.id, { phone: this.value });
+    });
+    document.getElementById('hdr-email').addEventListener('input', function () {
+        if (customer) DB.update('customers', customer.id, { email: this.value });
+    });
+    document.getElementById('sched-start').addEventListener('input', function () { DB.update('bids', bidId, { start_date: this.value }); });
+    document.getElementById('sched-end').addEventListener('input', function () { DB.update('bids', bidId, { completion_date: this.value }); });
+    document.getElementById('sched-proc').addEventListener('input', function () { DB.update('bids', bidId, { procurement_days: +this.value || 0 }); });
+    document.getElementById('sched-build').addEventListener('input', function () { DB.update('bids', bidId, { construction_days: +this.value || 0 }); });
+    document.getElementById('pay-m1').addEventListener('input', function () { DB.update('bids', bidId, { milestone_1: this.value }); });
+    document.getElementById('pay-m2').addEventListener('input', function () { DB.update('bids', bidId, { milestone_2: this.value }); });
+
+    // ── Division rows — "included" now means "has a live bid_divisions row",
+    // matched by division_name. Cost fields (labor_cost/material_cost) are
+    // rollups written by bid-division.html's saveDivision() whenever that
+    // division's line items change; this page just reads and displays them
+    // (it never recomputes from bid_line_items itself).
+    function findDivisionRow(name) {
+        return DB.findOne('bid_divisions', function (d) {
+            return d.bid_id === bidId && !d.deleted_at && d.division_name === name;
+        });
+    }
+    function divTotal(row) {
+        var labor = row.labor_cost || 0, mat = row.material_cost || 0;
+        return labor + mat + labor * 0.10 + mat * 0.10;
+    }
+    // Exposed for parity with the old window.calcDivTotal — nothing in this
+    // app currently calls it cross-page, but keeping the name avoids
+    // surprising anyone who greps for it.
+    window.calcDivTotal = divTotal;
+
+    function taskCount(row) {
+        if (!row) return 0;
+        return DB.find('bid_line_items', function (li) {
+            return li.bid_division_id === row.id && !li.deleted_at && li.type === 'labor' && li.task_included !== false;
+        }).length;
+    }
+
     function renderDivList() {
         var html = '';
-        bd.divisions.forEach(function(d, i) {
-            var inc   = d.included;
-            var total = divTotal(d);
-            var taskCount = (d.tasks || []).filter(function(t){ return t.included; }).length;
+        NAMES.forEach(function (name, i) {
+            var row = findDivisionRow(name);
+            var inc = !!row;
+            var tCount = taskCount(row);
 
             html += '<div style="border-bottom:1px solid #e2e8f0; padding:6px 0;">';
 
-            // Main row: checkbox + number + name + (cost if included)
             html += '<div style="display:flex; align-items:center; gap:8px;">';
             html += '<input type="checkbox"' + (inc ? ' checked' : '') +
                     ' style="width:16px; height:16px; flex-shrink:0;"' +
                     ' onchange="window.toggleDiv(' + i + ')">';
             html += '<span style="color:#94a3b8; font-size:0.75rem; min-width:18px;">' + (i + 1) + '</span>';
-            html += '<span style="flex:1; font-weight:' + (inc ? '600' : '400') + ';">' + d.name + '</span>';
+            html += '<span style="flex:1; font-weight:' + (inc ? '600' : '400') + ';">' + name + '</span>';
             if (inc) {
-                html += '<span style="color:#0f172a; font-weight:700; font-size:0.9rem; white-space:nowrap;">' + fmt(total) + '</span>';
+                html += '<span style="color:#0f172a; font-weight:700; font-size:0.9rem; white-space:nowrap;">' + fmt(divTotal(row)) + '</span>';
             }
             html += '</div>';
 
-            // Expanded section when included
             if (inc) {
+                var scope = row.form_data && row.form_data.scope;
                 html += '<div style="padding-left:24px; margin-top:4px;">';
-                if (d.scope) {
-                    html += '<div style="font-size:0.78rem; color:#475569; margin-bottom:6px;">' + d.scope + '</div>';
+                if (scope) {
+                    html += '<div style="font-size:0.78rem; color:#475569; margin-bottom:6px;">' + scope + '</div>';
                 }
                 html += '<div style="display:flex; align-items:center; gap:12px;">';
-                html += '<button class="btn btn-secondary btn-sm" onclick="openDivision(' + i + ')">Edit Division Sheet &rarr;</button>';
-                if (taskCount > 0) {
-                    html += '<span style="font-size:0.75rem; color:#64748b;">' + taskCount + ' task' + (taskCount !== 1 ? 's' : '') + '</span>';
+                html += '<button class="btn btn-secondary btn-sm" onclick="openDivision(\'' + row.id + '\')">Edit Division Sheet &rarr;</button>';
+                if (tCount > 0) {
+                    html += '<span style="font-size:0.75rem; color:#64748b;">' + tCount + ' task' + (tCount !== 1 ? 's' : '') + '</span>';
                 }
                 html += '</div>';
                 html += '</div>';
@@ -367,22 +288,38 @@
         document.getElementById('div-list').innerHTML = html;
     }
 
-    // Recalculate grand total and payments
+    // Recalculate the client-facing grand total (with 10% contingency baked
+    // in, same as the old divTotal() formula) and the payment schedule, and
+    // bubble the plain (no-contingency) rollup into bids.total_labor/
+    // total_materials/total_cost so job-detail.html's "Estimated Value" and
+    // jobs.html's list stay current.
     function recalc() {
-        var total = 0, count = 0;
-        bd.divisions.forEach(function(d) {
-            if (d.included) { count++; total += divTotal(d); }
-        });
+        var rows = DB.find('bid_divisions', function (d) { return d.bid_id === bidId && !d.deleted_at; });
+        var total = 0;
+        rows.forEach(function (row) { total += divTotal(row); });
+
         document.getElementById('grand-total').textContent = fmt(total);
-        document.getElementById('div-summary').textContent = count + ' selected';
+        document.getElementById('div-summary').textContent = rows.length + ' selected';
         document.getElementById('pay-dep').textContent = fmt(total * 0.50);
         document.getElementById('pay-d1').textContent  = fmt(total * 0.20);
         document.getElementById('pay-d2').textContent  = fmt(total * 0.20);
         document.getElementById('pay-fin').textContent = fmt(total * 0.10);
+
+        recalcBidTotals(bidId);
     }
 
-    window.toggleDiv = function(i) {
-        bd.divisions[i].included = !bd.divisions[i].included;
+    window.toggleDiv = function (i) {
+        var name = NAMES[i];
+        var existing = findDivisionRow(name);
+        if (existing) {
+            DB.softDelete('bid_divisions', existing.id);
+        } else {
+            DB.insert('bid_divisions', {
+                company_id: state.currentCompanyId, bid_id: bidId,
+                division_number: null, division_name: name,
+                form_data: {}, labor_cost: 0, material_cost: 0,
+            });
+        }
         renderDivList();
         recalc();
     };

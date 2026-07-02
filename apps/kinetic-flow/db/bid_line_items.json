@@ -10,7 +10,16 @@
     "line_total": 950,
     "type": "labor",
     "sort_order": 0,
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "task_key": null,
+    "task_category": null,
+    "task_scope": null,
+    "task_included": true,
+    "qty_type": null,
+    "task_qty": null,
+    "hrs_each": null,
+    "supplier": null,
+    "deleted_at": null
   },
   {
     "id": "5a98a1a2-5a5a-482c-894a-7063435b56e1",
@@ -23,7 +32,16 @@
     "line_total": 1700,
     "type": "labor",
     "sort_order": 1,
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "task_key": null,
+    "task_category": null,
+    "task_scope": null,
+    "task_included": true,
+    "qty_type": null,
+    "task_qty": null,
+    "hrs_each": null,
+    "supplier": null,
+    "deleted_at": null
   },
   {
     "id": "c20bb4b8-5630-406b-9ecc-027c989b309f",
@@ -36,7 +54,16 @@
     "line_total": 2400,
     "type": "material",
     "sort_order": 2,
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "task_key": null,
+    "task_category": null,
+    "task_scope": null,
+    "task_included": true,
+    "qty_type": null,
+    "task_qty": null,
+    "hrs_each": null,
+    "supplier": null,
+    "deleted_at": null
   },
   {
     "id": "852e071c-a3b7-4e05-b44d-d5c9075a6c1e",
@@ -49,7 +76,16 @@
     "line_total": 1800,
     "type": "material",
     "sort_order": 3,
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "task_key": null,
+    "task_category": null,
+    "task_scope": null,
+    "task_included": true,
+    "qty_type": null,
+    "task_qty": null,
+    "hrs_each": null,
+    "supplier": null,
+    "deleted_at": null
   },
   {
     "id": "85603932-dda8-4d32-abc4-381095367dd5",
@@ -62,7 +98,16 @@
     "line_total": 800,
     "type": "labor",
     "sort_order": 0,
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "task_key": null,
+    "task_category": null,
+    "task_scope": null,
+    "task_included": true,
+    "qty_type": null,
+    "task_qty": null,
+    "hrs_each": null,
+    "supplier": null,
+    "deleted_at": null
   },
   {
     "id": "d78f8bf9-62b1-4673-bf94-72cca603c38f",
@@ -75,7 +120,16 @@
     "line_total": 1200,
     "type": "material",
     "sort_order": 1,
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "task_key": null,
+    "task_category": null,
+    "task_scope": null,
+    "task_included": true,
+    "qty_type": null,
+    "task_qty": null,
+    "hrs_each": null,
+    "supplier": null,
+    "deleted_at": null
   },
   {
     "id": "428387da-9de9-426e-83c6-161817301515",
@@ -88,7 +142,16 @@
     "line_total": 2160,
     "type": "labor",
     "sort_order": 0,
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "task_key": null,
+    "task_category": null,
+    "task_scope": null,
+    "task_included": true,
+    "qty_type": null,
+    "task_qty": null,
+    "hrs_each": null,
+    "supplier": null,
+    "deleted_at": null
   },
   {
     "id": "5a5208db-b7e6-4750-8b92-b6b24e6bf0aa",
@@ -101,7 +164,16 @@
     "line_total": 680,
     "type": "labor",
     "sort_order": 1,
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "task_key": null,
+    "task_category": null,
+    "task_scope": null,
+    "task_included": true,
+    "qty_type": null,
+    "task_qty": null,
+    "hrs_each": null,
+    "supplier": null,
+    "deleted_at": null
   },
   {
     "id": "a0d4c4b4-92a7-48a4-a951-2b7167c65c32",
@@ -114,7 +186,16 @@
     "line_total": 1650,
     "type": "material",
     "sort_order": 2,
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "task_key": null,
+    "task_category": null,
+    "task_scope": null,
+    "task_included": true,
+    "qty_type": null,
+    "task_qty": null,
+    "hrs_each": null,
+    "supplier": null,
+    "deleted_at": null
   },
   {
     "id": "213857f3-358e-401e-8624-59340d1b5f9a",
@@ -127,7 +208,16 @@
     "line_total": 800,
     "type": "material",
     "sort_order": 3,
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "task_key": null,
+    "task_category": null,
+    "task_scope": null,
+    "task_included": true,
+    "qty_type": null,
+    "task_qty": null,
+    "hrs_each": null,
+    "supplier": null,
+    "deleted_at": null
   },
   {
     "id": "4aed8f7b-d4f7-4c93-8787-cb767a66c575",
@@ -140,7 +230,16 @@
     "line_total": 5400,
     "type": "labor",
     "sort_order": 0,
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "task_key": null,
+    "task_category": null,
+    "task_scope": null,
+    "task_included": true,
+    "qty_type": null,
+    "task_qty": null,
+    "hrs_each": null,
+    "supplier": null,
+    "deleted_at": null
   },
   {
     "id": "09e721a4-7995-4116-9f44-b5d50e99381b",
@@ -153,7 +252,16 @@
     "line_total": 3200,
     "type": "material",
     "sort_order": 1,
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "task_key": null,
+    "task_category": null,
+    "task_scope": null,
+    "task_included": true,
+    "qty_type": null,
+    "task_qty": null,
+    "hrs_each": null,
+    "supplier": null,
+    "deleted_at": null
   },
   {
     "id": "4634b277-cec1-43b7-ae87-6a27c1ec408a",
@@ -166,6 +274,15 @@
     "line_total": 1900,
     "type": "material",
     "sort_order": 2,
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "task_key": null,
+    "task_category": null,
+    "task_scope": null,
+    "task_included": true,
+    "qty_type": null,
+    "task_qty": null,
+    "hrs_each": null,
+    "supplier": null,
+    "deleted_at": null
   }
 ]

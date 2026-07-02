@@ -6,33 +6,48 @@
         <div class="page-subtitle">Choose what you'll be working on for this clock-in.</div>
     </div>
 
-    <div class="card" onclick="selectClockInTask('Air Handler Install', 'mastery', true)">
-        <div class="card-row">
-            <div class="card-body">
-                <div class="card-title">Air Handler Install</div>
-                <div class="card-subtitle">Runs this task solo &bull; high-hazard, PPE required</div>
-            </div>
-            <span class="badge badge-gray">mastery</span>
-        </div>
-    </div>
-
-    <div class="card" onclick="selectClockInTask('Ductwork Sealing', 'competent', false)">
-        <div class="card-row">
-            <div class="card-body">
-                <div class="card-title">Ductwork Sealing</div>
-                <div class="card-subtitle">Can execute &mdash; co-sign required</div>
-            </div>
-            <span class="badge badge-gray">competent</span>
-        </div>
-    </div>
-
-    <div class="card" onclick="selectClockInTask('Refrigerant Handling', 'exposure', false)">
-        <div class="card-row">
-            <div class="card-body">
-                <div class="card-title">Refrigerant Handling</div>
-                <div class="card-subtitle">Has assisted &amp; observed &mdash; not solo yet</div>
-            </div>
-            <span class="badge badge-gray">exposure</span>
-        </div>
-    </div>
+    <div id="task-select-list"></div>
 </div>
+
+<script>
+(function () {
+    var modules = DB.find('task_modules', function (m) {
+        return !m.deleted_at && m.company_id === state.currentCompanyId;
+    });
+
+    var list = document.getElementById('task-select-list');
+    if (!modules.length) {
+        list.innerHTML = '<div class="alert">No task modules configured for this company.</div>';
+        return;
+    }
+
+    list.innerHTML = modules.map(function (m) {
+        var wtc = DB.findOne('worker_task_competency', function (w) {
+            return w.user_id === state.currentUserId && w.task_module_id === m.id;
+        });
+        // No worker_task_competency row for this user+task means they've
+        // never been evaluated on it — default to 'student', the safest
+        // level (blocks solo work until a master explicitly promotes them),
+        // matching the gate chain's existing student/exposure dead-end.
+        var level = (wtc && wtc.competency_level) || 'student';
+        var levelInfo = window.COMPETENCY_LEVELS.find(function (c) { return c.slug === level; });
+        var levelName = levelInfo ? levelInfo.name : level;
+
+        var subtitle = level === 'mastery' ? 'Runs this task solo'
+            : level === 'competent' ? 'Can execute &mdash; co-sign required'
+            : level === 'exposure' ? 'Has assisted &amp; observed &mdash; not solo yet'
+            : 'Not yet cleared for this task';
+        if (m.is_high_hazard) subtitle += ' &bull; high-hazard, PPE required';
+
+        return '<div class="card" onclick="selectClockInTask(\'' + m.id + '\', \'' + level + '\', ' + (m.is_high_hazard ? 'true' : 'false') + ')">' +
+            '<div class="card-row">' +
+                '<div class="card-body">' +
+                    '<div class="card-title">' + m.task_name + '</div>' +
+                    '<div class="card-subtitle">' + subtitle + '</div>' +
+                '</div>' +
+                '<span class="badge badge-gray">' + levelName + '</span>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+})();
+</script>

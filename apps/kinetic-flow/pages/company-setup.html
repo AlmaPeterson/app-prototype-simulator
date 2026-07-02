@@ -29,25 +29,7 @@
         <button class="section-action">+ Add</button>
     </div>
 
-    <div class="card" style="margin-bottom:8px;" onclick="openBranch('Calgary HQ')">
-        <div class="flex-between">
-            <div>
-                <div class="card-title">Calgary HQ</div>
-                <div class="card-subtitle">123 Main St, Calgary, AB</div>
-            </div>
-            <span class="badge badge-gray">Primary</span>
-        </div>
-    </div>
-
-    <div class="card" style="margin-bottom:16px;" onclick="openBranch('Edmonton Branch')">
-        <div class="flex-between">
-            <div>
-                <div class="card-title">Edmonton Branch</div>
-                <div class="card-subtitle">456 Jasper Ave, Edmonton, AB</div>
-            </div>
-            <button class="text-link" style="font-size:0.75rem;" onclick="event.stopPropagation()">Remove</button>
-        </div>
-    </div>
+    <div id="branch-list" style="margin-bottom:16px;"></div>
 
     <!-- Company Configuration -->
     <div class="section-header">
@@ -130,5 +112,22 @@
     document.getElementById('division-count-sub').textContent = activeDivisions + ' of ' + window.DIVISIONS.length + ' active';
     document.getElementById('level-count-sub').textContent = window.LEVELS.length + ' configured';
     document.getElementById('competency-count-sub').textContent = window.COMPETENCY_LEVELS.length + ' configured';
+
+    var branches = DB.find('branches', function (b) { return b.company_id === state.currentCompanyId && !b.deleted_at; });
+    document.getElementById('branch-list').innerHTML = branches.map(function (b) {
+        var addr = b.address_id ? DB.getById('addresses', b.address_id) : null;
+        var badge = b.is_primary
+            ? '<span class="badge badge-gray">Primary</span>'
+            : '<button class="text-link" style="font-size:0.75rem;" onclick="event.stopPropagation()">Remove</button>';
+        return '<div class="card" style="margin-bottom:8px;" onclick="openBranch(\'' + b.id + '\')">' +
+            '<div class="flex-between">' +
+                '<div>' +
+                    '<div class="card-title">' + b.name + '</div>' +
+                    '<div class="card-subtitle">' + (addr ? addr.street + ', ' + addr.city + ', ' + addr.state : '') + '</div>' +
+                '</div>' +
+                badge +
+            '</div>' +
+        '</div>';
+    }).join('');
 })();
 </script>

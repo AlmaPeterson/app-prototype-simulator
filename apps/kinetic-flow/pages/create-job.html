@@ -8,23 +8,22 @@
 
     <div class="form-group">
         <label>Job Name</label>
-        <input type="text" placeholder="e.g. Riverside HVAC Retrofit">
+        <input type="text" id="cj-name" placeholder="e.g. Riverside HVAC Retrofit">
     </div>
 
     <div class="form-group">
         <label>Customer / Client</label>
-        <select>
+        <select id="cj-customer">
             <option value="">Select customer...</option>
-            <option>Riverside Properties</option>
-            <option>Westgate Commercial</option>
-            <option>Summit Corp</option>
-            <option>+ Add New Customer</option>
         </select>
     </div>
 
     <div class="form-group">
         <label>Job Type</label>
-        <select>
+        <select id="cj-type">
+            <option>HVAC</option>
+            <option>Electrical</option>
+            <option>Plumbing</option>
             <option>Installation</option>
             <option>Maintenance</option>
             <option>Repair</option>
@@ -34,46 +33,35 @@
         </select>
     </div>
 
-    <div class="form-group">
-        <label>Site Address</label>
-        <input type="text" placeholder="123 Main St, Calgary, AB">
-    </div>
-
     <div class="form-row">
         <div class="form-group">
             <label>Start Date</label>
-            <input type="date">
+            <input type="date" id="cj-start">
         </div>
         <div class="form-group">
             <label>End Date</label>
-            <input type="date">
+            <input type="date" id="cj-end">
         </div>
     </div>
 
     <div class="form-group">
         <label>Priority</label>
-        <select>
-            <option>Normal</option>
-            <option>High</option>
-            <option>Urgent</option>
-            <option>Low</option>
+        <select id="cj-priority">
+            <option value="normal">Normal</option>
+            <option value="high">High</option>
+            <option value="urgent">Urgent</option>
+            <option value="low">Low</option>
         </select>
     </div>
 
     <div class="form-group">
         <label>Assign Team Members</label>
-        <div style="display:flex; flex-wrap:wrap; margin-top:4px;">
-            <span class="chip selected" onclick="toggleChip(this)">J. Smith</span>
-            <span class="chip" onclick="toggleChip(this)">A. Chen</span>
-            <span class="chip" onclick="toggleChip(this)">T. Wong</span>
-            <span class="chip" onclick="toggleChip(this)">R. Davis</span>
-            <span class="chip" onclick="toggleChip(this)">+ Invite</span>
-        </div>
+        <div id="cj-team" style="display:flex; flex-wrap:wrap; margin-top:4px;"></div>
     </div>
 
     <div class="form-group">
         <label>Job Notes</label>
-        <textarea placeholder="Special instructions, access codes, hazard notes..."></textarea>
+        <textarea id="cj-notes" placeholder="Special instructions, access codes, hazard notes..."></textarea>
     </div>
 
     <div class="form-group">
@@ -84,13 +72,23 @@
         </select>
     </div>
 
-    <button class="btn btn-primary" onclick="handleCreateJob()">Create Job</button>
+    <button class="btn btn-primary" onclick="submitJob()">Create Job</button>
     <button class="btn btn-secondary" onclick="loadPage('jobs')">Cancel</button>
 </div>
 
 <script>
-function handleCreateJob() {
-    const opt = document.getElementById('create-bid-opt').value;
-    if (opt === 'now') { openBid(); } else { submitJob(); }
-}
+(function () {
+    var customers = DB.find('customers', function (c) { return c.company_id === state.currentCompanyId && !c.deleted_at; });
+    var customerSelect = document.getElementById('cj-customer');
+    customerSelect.innerHTML = '<option value="">Select customer...</option>' +
+        customers.map(function (c) { return '<option value="' + c.id + '">' + c.full_name + '</option>'; }).join('') +
+        '<option value="">+ Add New Customer</option>';
+
+    var users = DB.find('users', function (u) { return u.company_id === state.currentCompanyId && !u.deleted_at; });
+    document.getElementById('cj-team').innerHTML = users.map(function (u) {
+        var isSelf = u.id === state.currentUserId;
+        var label = isSelf ? u.full_name + ' (You)' : u.full_name;
+        return '<span class="chip' + (isSelf ? ' selected' : '') + '" data-user-id="' + u.id + '" onclick="' + (isSelf ? '' : 'toggleChip(this)') + '">' + label + '</span>';
+    }).join('') + '<span class="chip" onclick="toggleChip(this)">+ Invite</span>';
+})();
 </script>

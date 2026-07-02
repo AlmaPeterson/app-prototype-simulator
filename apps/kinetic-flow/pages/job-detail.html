@@ -2,19 +2,7 @@
     <button class="btn btn-secondary btn-sm mb-4" onclick="loadPage('jobs')">&larr; Jobs</button>
 
     <!-- Job Header -->
-    <div style="padding:18px; margin-bottom:16px; border:1px solid #e2e8f0;">
-        <div style="font-size:1.2rem; font-weight:700; margin-bottom:6px;">Riverside HVAC Retrofit</div>
-        <div class="flex-between mb-2">
-            <span class="badge">JOB-2024</span>
-            <span class="badge badge-gray">Active</span>
-        </div>
-        <div style="font-size:0.82rem;">123 Riverside Dr, Calgary AB</div>
-        <div style="font-size:0.82rem; margin-top:2px;">Jun 24 &ndash; Jul 10, 2024</div>
-        <div class="progress-bar mt-4">
-            <div style="width:65%; height:100%; border-radius:99px;"></div>
-        </div>
-        <div style="font-size:0.72rem; margin-top:4px;">65% complete</div>
-    </div>
+    <div id="job-detail-header" style="padding:18px; margin-bottom:16px; border:1px solid #e2e8f0;"></div>
 
     <!-- Quick Actions -->
     <div class="section-header">
@@ -33,20 +21,7 @@
         <button class="section-action" onclick="openBid()">View Bid</button>
     </div>
 
-    <div class="card" style="cursor:default; margin-bottom:16px;">
-        <div class="list-item" style="padding:8px 0;">
-            <div class="list-item-body"><div class="list-item-title">Estimated Value</div></div>
-            <div class="list-item-right"><div class="list-item-value">$12,400</div></div>
-        </div>
-        <div class="list-item" style="padding:8px 0;">
-            <div class="list-item-body"><div class="list-item-title">Labour to Date</div></div>
-            <div class="list-item-right"><div class="list-item-value">$4,320</div></div>
-        </div>
-        <div class="list-item" style="padding:8px 0; border-bottom:none;">
-            <div class="list-item-body"><div class="list-item-title">Materials Used</div></div>
-            <div class="list-item-right"><div class="list-item-value">$1,890</div></div>
-        </div>
-    </div>
+    <div id="job-detail-finance" class="card" style="cursor:default; margin-bottom:16px;"></div>
 
     <!-- Team -->
     <div class="section-header">
@@ -54,26 +29,7 @@
         <button class="section-action">+ Add</button>
     </div>
 
-    <div class="card" style="cursor:default; margin-bottom:16px;">
-        <div class="list-item" style="padding:8px 0; cursor:pointer;" onclick="openScorecard('Jake Smith')">
-            <div class="leaderboard-avatar">JS</div>
-            <div class="list-item-body" style="margin-left:10px;">
-                <div class="list-item-title">Jake Smith</div>
-                <div class="list-item-sub">Lead Technician &bull; <span class="badge badge-gray" style="font-size:0.6rem;">Fellow Craft</span></div>
-            </div>
-            <span class="badge badge-gray">Clocked In</span>
-            <span class="card-arrow">&#8250;</span>
-        </div>
-        <div class="list-item" style="padding:8px 0; border-bottom:none; cursor:pointer;" onclick="openScorecard('Amy Chen')">
-            <div class="leaderboard-avatar">AC</div>
-            <div class="list-item-body" style="margin-left:10px;">
-                <div class="list-item-title">Amy Chen</div>
-                <div class="list-item-sub">Technician &bull; <span class="badge badge-gray" style="font-size:0.6rem;">Fellow Craft</span></div>
-            </div>
-            <span class="badge badge-gray">Off Site</span>
-            <span class="card-arrow">&#8250;</span>
-        </div>
-    </div>
+    <div id="job-detail-team" class="card" style="cursor:default; margin-bottom:16px;"></div>
 
     <!-- JIT Training -->
     <div class="section-header">
@@ -83,7 +39,7 @@
     <div class="card" onclick="loadPage('feild-clock')" style="margin-bottom:8px;">
         <div class="card-row">
             <div class="card-body">
-                <div class="card-title">HVAC Safety Procedures</div>
+                <div class="card-title">Job Safety Procedures</div>
                 <div class="card-subtitle">Required before starting &bull; 5 min</div>
             </div>
             <span class="badge badge-gray">Done</span>
@@ -93,10 +49,90 @@
     <div class="card" onclick="loadPage('feild-clock')">
         <div class="card-row">
             <div class="card-body">
-                <div class="card-title">Refrigerant Handling</div>
+                <div class="card-title">Hazard Handling</div>
                 <div class="card-subtitle">Required &bull; 8 min</div>
             </div>
             <span class="badge badge-gray">Pending</span>
         </div>
     </div>
 </div>
+
+<script>
+(function () {
+    var jobId = state.currentJobId;
+    var job = jobId ? DB.getById('jobs', jobId) : null;
+    if (!job) {
+        document.getElementById('job-detail-header').innerHTML = '<div class="alert">No job selected.</div>';
+        document.getElementById('job-detail-finance').innerHTML = '';
+        document.getElementById('job-detail-team').innerHTML = '';
+        return;
+    }
+
+    var addr = job.address_id ? DB.getById('addresses', job.address_id) : null;
+    var bid = job.bid_id ? DB.getById('bids', job.bid_id) : null;
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    function fmtDate(iso) {
+        if (!iso) return '';
+        var d = new Date(iso);
+        return months[d.getUTCMonth()] + ' ' + d.getUTCDate();
+    }
+    var dateRange = fmtDate(job.scheduled_start) + (job.scheduled_end ? ' – ' + fmtDate(job.scheduled_end) : '');
+    var shortCode = 'JOB-' + job.id.replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase();
+
+    document.getElementById('job-detail-header').innerHTML =
+        '<div style="font-size:1.2rem; font-weight:700; margin-bottom:6px;">' + job.name + '</div>' +
+        '<div class="flex-between mb-2">' +
+            '<span class="badge">' + shortCode + '</span>' +
+            '<span class="badge badge-gray">' + job.status.charAt(0).toUpperCase() + job.status.slice(1) + '</span>' +
+        '</div>' +
+        '<div style="font-size:0.82rem;">' + (addr ? addr.street + ', ' + addr.city + ' ' + addr.state : 'No address on file') + '</div>' +
+        '<div style="font-size:0.82rem; margin-top:2px;">' + (dateRange || 'Not scheduled') + '</div>' +
+        '<div class="progress-bar mt-4">' +
+            // No real per-job completion tracking exists yet (no task/phase
+            // rollup wired to jobs in this phase) — static placeholder value.
+            '<div style="width:65%; height:100%; border-radius:99px;"></div>' +
+        '</div>' +
+        '<div style="font-size:0.72rem; margin-top:4px;">65% complete</div>';
+
+    var expenses = DB.find('expense_entries', function (e) { return e.job_id === job.id; });
+    var laborTotal = expenses.filter(function (e) { return e.category === 'employee'; }).reduce(function (s, e) { return s + e.amount; }, 0);
+    var materialTotal = expenses.filter(function (e) { return e.category === 'material'; }).reduce(function (s, e) { return s + e.amount; }, 0);
+
+    document.getElementById('job-detail-finance').innerHTML =
+        '<div class="list-item" style="padding:8px 0;">' +
+            '<div class="list-item-body"><div class="list-item-title">Estimated Value</div></div>' +
+            '<div class="list-item-right"><div class="list-item-value">' + (bid ? '$' + bid.total_cost.toLocaleString() : 'No Bid') + '</div></div>' +
+        '</div>' +
+        '<div class="list-item" style="padding:8px 0;">' +
+            '<div class="list-item-body"><div class="list-item-title">Labour to Date</div></div>' +
+            '<div class="list-item-right"><div class="list-item-value">$' + laborTotal.toLocaleString() + '</div></div>' +
+        '</div>' +
+        '<div class="list-item" style="padding:8px 0; border-bottom:none;">' +
+            '<div class="list-item-body"><div class="list-item-title">Materials Used</div></div>' +
+            '<div class="list-item-right"><div class="list-item-value">$' + materialTotal.toLocaleString() + '</div></div>' +
+        '</div>';
+
+    var assignments = DB.find('job_assignments', function (a) { return a.job_id === job.id; });
+    var teamHtml = assignments.map(function (a, i) {
+        var user = DB.getById('users', a.user_id);
+        if (!user) return '';
+        var initials = user.full_name.split(' ').map(function (p) { return (p.replace(/[^A-Za-z]/g, '')[0] || ''); }).join('').toUpperCase().slice(0, 2);
+        var level = window.LEVELS.find(function (l) { return l.slug === user.global_level; });
+        var roleLabel = a.role_on_job === 'lead' ? 'Lead' : 'Team Member';
+        var openEntry = DB.findOne('time_entries', function (t) { return t.user_id === user.id && t.job_id === job.id && !t.clock_out_at; });
+        var statusLabel = openEntry ? 'Clocked In' : 'Off Site';
+        var isLast = i === assignments.length - 1;
+        return '<div class="list-item" style="padding:8px 0;' + (isLast ? ' border-bottom:none;' : '') + ' cursor:pointer;" onclick="openScorecard(\'' + user.id + '\')">' +
+            '<div class="leaderboard-avatar">' + initials + '</div>' +
+            '<div class="list-item-body" style="margin-left:10px;">' +
+                '<div class="list-item-title">' + user.full_name + '</div>' +
+                '<div class="list-item-sub">' + roleLabel + ' &bull; <span class="badge badge-gray" style="font-size:0.6rem;">' + (level ? level.name : user.global_level) + '</span></div>' +
+            '</div>' +
+            '<span class="badge badge-gray">' + statusLabel + '</span>' +
+            '<span class="card-arrow">&#8250;</span>' +
+        '</div>';
+    }).join('');
+    document.getElementById('job-detail-team').innerHTML = teamHtml ||
+        '<div class="list-item" style="padding:8px 0; border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">Unassigned</div></div>';
+})();
+</script>

@@ -44,20 +44,128 @@
 <script>
 (function initDivisionPage() {
 
-    var di  = state.currentDivision;
-    var div = window.bidData.divisions[di];
+    // ── Load the real bid_divisions row, and rebuild the nested
+    // task->materials working shape this page's UI edits, from the flatter
+    // bid_line_items table. bid_line_items has no native task-grouping
+    // column beyond description/quantity/unit/unit_cost/line_total/type/
+    // sort_order, so this app's schema (see db/bid_line_items.json) adds a
+    // handful of nullable columns to preserve the task shape losslessly:
+    //   task_key       — groups one labor row + N material rows into a task
+    //   task_category, task_scope, task_included, qty_type, task_qty,
+    //   hrs_each       — the task's own fields, carried on its labor row
+    //   supplier       — carried on material rows
+    // Every task is stored as exactly one 'labor'-type row (representing the
+    // task itself, even if its hours are 0) plus zero or more 'material'-type
+    // rows sharing the same task_key — written by persistDivision() below.
+    var divRow = DB.getById('bid_divisions', state.currentDivisionId);
+    var bidId  = divRow.bid_id;
+
+    var NAMES = window.DIVISIONS.filter(function (d) { return d.isActive; }).map(function (d) { return d.name; });
+    var idx   = NAMES.indexOf(divRow.division_name);
+
+    var formData = divRow.form_data || {};
+
+    function buildTasksFromLineItems() {
+        var items = DB.find('bid_line_items', function (li) {
+            return li.bid_division_id === divRow.id && !li.deleted_at;
+        }).slice().sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+
+        var laborRate = formData.laborRate || 120;
+        var groups = {};
+        var order = [];
+
+        items.forEach(function (li) {
+            var key = li.task_key;
+            if (key == null) {
+                // Legacy/seeded rows predate this per-task grouping model —
+                // real seed data (e.g. Riverside HVAC Retrofit's "Rough HVAC"
+                // division) was written as flat labor/material lines with no
+                // task concept.
+                // Give every such row its own synthetic one-row task so
+                // nothing is silently merged or dropped; the user can
+                // reorganize into real multi-material tasks from here.
+                key = '__legacy_' + li.id;
+            }
+            if (!groups[key]) { groups[key] = { labor: null, materials: [], legacyMaterial: null }; order.push(key); }
+            if (li.type === 'labor') {
+                groups[key].labor = li;
+            } else if (li.task_key == null) {
+                groups[key].legacyMaterial = li;
+            } else {
+                groups[key].materials.push(li);
+            }
+        });
+
+        return order.map(function (key) {
+            var g = groups[key];
+
+            if (g.legacyMaterial) {
+                var m = g.legacyMaterial;
+                return {
+                    category: '', name: m.description || '(legacy material)', included: true, scope: '',
+                    qtyType: 'EA', qty: 0, hrsEach: 0,
+                    materials: [{ item: m.description || '', supplier: m.supplier || '', price: m.unit_cost || 0, qty: m.quantity || 0 }],
+                };
+            }
+
+            var labor = g.labor;
+            var qtyType, qty, hrsEach;
+            if (labor.hrs_each != null) {
+                qtyType = labor.qty_type || 'C';
+                qty = labor.task_qty != null ? labor.task_qty : (labor.quantity || 0);
+                hrsEach = labor.hrs_each;
+            } else {
+                // Legacy labor row: real seed data carries its own per-line
+                // $/hr rate (unit_cost), but this UI only has one shared
+                // laborRate per division. Back out an hrsEach so
+                // qty * hrsEach * laborRate reproduces this row's original
+                // line_total exactly under the division's shared rate.
+                qtyType = 'HR';
+                qty = labor.quantity || 0;
+                hrsEach = laborRate ? (labor.unit_cost || 0) / laborRate : 0;
+            }
+
+            return {
+                category: labor.task_category || '',
+                name: labor.description || '',
+                included: labor.task_included !== false,
+                scope: labor.task_scope || '',
+                qtyType: qtyType, qty: qty, hrsEach: hrsEach,
+                materials: g.materials.map(function (m) {
+                    return { item: m.description || '', supplier: m.supplier || '', price: m.unit_cost || 0, qty: m.quantity || 0 };
+                }),
+            };
+        });
+    }
+
+    // Page-local working copy — edited freely while this page is open (same
+    // responsive-editing UX as before), committed to bid_line_items only on
+    // Save (see window.saveDivision at the bottom).
+    var div = {
+        name: divRow.division_name,
+        laborRate: formData.laborRate || 120,
+        guys: formData.guys || 1,
+        scope: formData.scope || '',
+        tasks: buildTasksFromLineItems(),
+    };
+    // Also reachable as window.divWorking: the task/material card markup
+    // below is injected via innerHTML, so its inline oninput/onclick
+    // attributes run in global scope and can't close over the local `div`
+    // var the way the real closures (addTask, calcDiv, saveDivision, ...)
+    // below do — they need a window-scoped handle onto the same object.
+    window.divWorking = div;
 
     // Header
     document.getElementById('div-name-label').textContent = div.name;
-    document.getElementById('div-num-label').textContent  = 'Division ' + (di + 1) + ' of 40';
+    document.getElementById('div-num-label').textContent  = 'Division ' + (idx >= 0 ? idx + 1 : '?') + ' of ' + NAMES.length;
 
     // Populate settings
     var rateEl  = document.getElementById('labor-rate');
     var guysEl  = document.getElementById('guys-count');
     var scopeEl = document.getElementById('div-scope');
-    rateEl.value  = div.laborRate || 120;
-    guysEl.value  = div.guys      || 1;
-    scopeEl.value = div.scope     || '';
+    rateEl.value  = div.laborRate;
+    guysEl.value  = div.guys;
+    scopeEl.value = div.scope;
     rateEl.addEventListener('input',  function() { div.laborRate = +this.value || 120; window.bidRecalcDiv(); });
     guysEl.addEventListener('input',  function() { div.guys      = +this.value || 1;   window.bidRecalcDiv(); });
     scopeEl.addEventListener('input', function() { div.scope = this.value; });
@@ -145,24 +253,24 @@
                 '<div class="form-group" style="margin:0; flex:2;">' +
                 '<label>Item</label>' +
                 '<input type="text" value="' + esc(m.item) + '" placeholder="Item name" ' +
-                'oninput="window.bidData.divisions[' + di + '].tasks[' + ti + '].materials[' + mi + '].item=this.value;">' +
+                'oninput="window.divWorking.tasks[' + ti + '].materials[' + mi + '].item=this.value;">' +
                 '</div>' +
                 '<div class="form-group" style="margin:0; flex:1;">' +
                 '<label>Supplier</label>' +
                 '<input type="text" value="' + esc(m.supplier) + '" placeholder="Supplier" ' +
-                'oninput="window.bidData.divisions[' + di + '].tasks[' + ti + '].materials[' + mi + '].supplier=this.value;">' +
+                'oninput="window.divWorking.tasks[' + ti + '].materials[' + mi + '].supplier=this.value;">' +
                 '</div>' +
                 '</div>' +
                 '<div class="form-row" style="align-items:center;">' +
                 '<div class="form-group" style="margin:0; flex:1;">' +
                 '<label>Price</label>' +
                 '<input type="number" min="0" step="0.01" value="' + (m.price||'') + '" placeholder="0.00" ' +
-                'oninput="window.bidData.divisions[' + di + '].tasks[' + ti + '].materials[' + mi + '].price=+this.value; window.bidRecalcDiv();">' +
+                'oninput="window.divWorking.tasks[' + ti + '].materials[' + mi + '].price=+this.value; window.bidRecalcDiv();">' +
                 '</div>' +
                 '<div class="form-group" style="margin:0; flex:1;">' +
                 '<label>Qty</label>' +
                 '<input type="number" min="0" step="0.01" value="' + (m.qty||'') + '" placeholder="0" ' +
-                'oninput="window.bidData.divisions[' + di + '].tasks[' + ti + '].materials[' + mi + '].qty=+this.value; window.bidRecalcDiv();">' +
+                'oninput="window.divWorking.tasks[' + ti + '].materials[' + mi + '].qty=+this.value; window.bidRecalcDiv();">' +
                 '</div>' +
                 '<div style="padding-top:18px; min-width:64px; text-align:right;">' +
                 '<strong data-mat-total="' + ti + '-' + mi + '">' + fmt((m.price||0)*(m.qty||0)) + '</strong>' +
@@ -182,14 +290,14 @@
             '<div style="display:flex; align-items:flex-start; gap:8px; margin-bottom:10px;">' +
             '<input type="checkbox"' + (t.included ? ' checked' : '') +
             ' style="width:16px; height:16px; margin-top:3px; flex-shrink:0;"' +
-            ' onchange="window.bidData.divisions[' + di + '].tasks[' + ti + '].included=this.checked; window.bidRecalcDiv();">' +
+            ' onchange="window.divWorking.tasks[' + ti + '].included=this.checked; window.bidRecalcDiv();">' +
             '<div style="flex:1; min-width:0;">' +
             '<input type="text" value="' + esc(t.category) + '" placeholder="Category" ' +
             'style="font-size:0.75rem; color:#64748b; border:none; background:transparent; width:100%; padding:0; outline:none;"' +
-            ' oninput="window.bidData.divisions[' + di + '].tasks[' + ti + '].category=this.value;">' +
+            ' oninput="window.divWorking.tasks[' + ti + '].category=this.value;">' +
             '<input type="text" value="' + esc(t.name) + '" placeholder="Task name" ' +
             'style="font-size:0.92rem; font-weight:600; border:none; background:transparent; width:100%; padding:2px 0 0 0; outline:none;"' +
-            ' oninput="window.bidData.divisions[' + di + '].tasks[' + ti + '].name=this.value;">' +
+            ' oninput="window.divWorking.tasks[' + ti + '].name=this.value;">' +
             '</div>' +
             '<strong data-task-total="' + ti + '" style="white-space:nowrap; color:#0f172a;">' + fmt(tc.lc + tc.mc) + '</strong>' +
             '<button onclick="window.removeTask(' + ti + ')" ' +
@@ -200,7 +308,7 @@
             '<div class="form-group" style="margin-bottom:10px;">' +
             '<label>Scope of Task</label>' +
             '<textarea rows="2" placeholder="Describe the work for this task..."' +
-            ' oninput="window.bidData.divisions[' + di + '].tasks[' + ti + '].scope=this.value;">' + esc(t.scope) + '</textarea>' +
+            ' oninput="window.divWorking.tasks[' + ti + '].scope=this.value;">' + esc(t.scope) + '</textarea>' +
             '</div>' +
 
             // Labor
@@ -209,17 +317,17 @@
             '<div class="form-row">' +
             '<div class="form-group" style="margin:0; flex:1;">' +
             '<label>Qty Type</label>' +
-            '<select oninput="window.bidData.divisions[' + di + '].tasks[' + ti + '].qtyType=this.value;">' +
+            '<select oninput="window.divWorking.tasks[' + ti + '].qtyType=this.value;">' +
             ['SF','LF','C','EA','HR'].map(function(o){ return '<option' + (t.qtyType===o?' selected':'') + '>' + o + '</option>'; }).join('') +
             '</select></div>' +
             '<div class="form-group" style="margin:0; flex:1;">' +
             '<label>Qty</label>' +
             '<input type="number" min="0" step="0.01" value="' + (t.qty||'') + '" placeholder="0"' +
-            ' oninput="window.bidData.divisions[' + di + '].tasks[' + ti + '].qty=+this.value; window.bidRecalcDiv();"></div>' +
+            ' oninput="window.divWorking.tasks[' + ti + '].qty=+this.value; window.bidRecalcDiv();"></div>' +
             '<div class="form-group" style="margin:0; flex:1;">' +
             '<label>Hrs / Each</label>' +
             '<input type="number" min="0" step="0.001" value="' + (t.hrsEach||'') + '" placeholder="0"' +
-            ' oninput="window.bidData.divisions[' + di + '].tasks[' + ti + '].hrsEach=+this.value; window.bidRecalcDiv();"></div>' +
+            ' oninput="window.divWorking.tasks[' + ti + '].hrsEach=+this.value; window.bidRecalcDiv();"></div>' +
             '</div>' +
             '<div style="display:flex; gap:16px; font-size:0.85rem; margin-top:4px;">' +
             '<span>Total Hrs: <strong data-task-hrs="' + ti + '">' + tc.hrs.toFixed(2) + '</strong></span>' +
@@ -254,6 +362,10 @@
     }
 
     // ── Task / material actions ───────────────────────────────────────────
+    // These are real closures (assigned as function objects, not injected
+    // via innerHTML), so they can reference the local `div` var directly —
+    // unlike the card markup's inline oninput/onclick attributes above,
+    // which go through window.divWorking instead (see its declaration up top).
     window.addTask = function() {
         div.tasks.push({ category:'', name:'', included:true, scope:'', qtyType:'C', qty:0, hrsEach:0, materials:[] });
         renderTasks();
@@ -271,6 +383,61 @@
         div.tasks[ti].materials.splice(mi, 1);
         document.getElementById('mats-' + ti).innerHTML = buildMatsHTML(div.tasks[ti], ti);
         updateStats();
+    };
+
+    // ── Save: flatten the working `div` object back into real bid_line_items
+    // rows, recompute this division's labor_cost/material_cost rollup, then
+    // bubble the bid-level rollup via the shared app.js helper. Shadows
+    // app.js's window.saveDivision for as long as this page is displayed —
+    // same pattern this file already uses for addTask/bidRecalcDiv/etc.
+    window.saveDivision = function() {
+        var old = DB.find('bid_line_items', function (li) {
+            return li.bid_division_id === divRow.id && !li.deleted_at;
+        });
+        old.forEach(function (li) { DB.softDelete('bid_line_items', li.id); });
+
+        var laborRate = div.laborRate || 120;
+        var sortOrder = 0;
+        var laborTotal = 0, materialTotal = 0;
+
+        div.tasks.forEach(function (t, ti) {
+            var taskKey = 'task-' + ti;
+            var hrs = (t.qty || 0) * (t.hrsEach || 0);
+            var laborLineTotal = hrs * laborRate;
+            var matSum = 0;
+            (t.materials || []).forEach(function (m) { matSum += (m.price || 0) * (m.qty || 0); });
+
+            DB.insert('bid_line_items', {
+                company_id: state.currentCompanyId, bid_division_id: divRow.id,
+                description: t.name || '', quantity: hrs, unit: 'hr', unit_cost: laborRate,
+                line_total: laborLineTotal, type: 'labor', sort_order: sortOrder++,
+                task_key: taskKey, task_category: t.category || null, task_scope: t.scope || null,
+                task_included: !!t.included, qty_type: t.qtyType || null, task_qty: t.qty || 0,
+                hrs_each: t.hrsEach || 0, supplier: null,
+            });
+
+            (t.materials || []).forEach(function (m) {
+                DB.insert('bid_line_items', {
+                    company_id: state.currentCompanyId, bid_division_id: divRow.id,
+                    description: m.item || '', quantity: m.qty || 0, unit: 'each', unit_cost: m.price || 0,
+                    line_total: (m.price || 0) * (m.qty || 0), type: 'material', sort_order: sortOrder++,
+                    task_key: taskKey, task_category: null, task_scope: null,
+                    task_included: null, qty_type: null, task_qty: null, hrs_each: null,
+                    supplier: m.supplier || null,
+                });
+            });
+
+            if (t.included) { laborTotal += laborLineTotal; materialTotal += matSum; }
+        });
+
+        DB.update('bid_divisions', divRow.id, {
+            labor_cost: laborTotal,
+            material_cost: materialTotal,
+            form_data: { scope: div.scope || '', laborRate: laborRate, guys: div.guys || 1 },
+        });
+
+        recalcBidTotals(bidId);
+        loadPage('bid');
     };
 
     renderTasks();

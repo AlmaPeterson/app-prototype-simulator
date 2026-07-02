@@ -16,7 +16,7 @@
         <button class="btn btn-secondary" style="margin:0;" onclick="openTimeSheet()">Time Sheet</button>
     </div>
 
-    <div class="card" onclick="openJob(state.currentJob)">
+    <div class="card" onclick="openJob(state.currentJobId)">
         <div class="card-row">
             <div class="card-body">
                 <div class="card-title">Full Job Details</div>
@@ -29,14 +29,14 @@
 
 <script>
 (function () {
-    var job = (typeof state !== 'undefined' && state.currentJob) || 'No Job Selected';
-    var isNoBid = typeof NO_BID_JOBS !== 'undefined' && NO_BID_JOBS.indexOf(job) > -1;
+    var job = state.currentJobId ? DB.getById('jobs', state.currentJobId) : null;
+    var isNoBid = !job || job.bid_id === null;
 
     var titleEl = document.getElementById('job-home-title');
     var subEl = document.getElementById('job-home-subtitle');
     var bidBtn = document.getElementById('job-home-bid-btn');
 
-    if (titleEl) titleEl.textContent = job;
+    if (titleEl) titleEl.textContent = job ? job.name : 'No Job Selected';
     if (subEl) subEl.textContent = isNoBid ? 'No Bid Yet' : 'Active';
     if (bidBtn) bidBtn.textContent = isNoBid ? '+ Create Bid' : 'View Bid';
 })();

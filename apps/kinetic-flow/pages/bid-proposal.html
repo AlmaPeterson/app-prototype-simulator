@@ -2,7 +2,7 @@
     <button class="btn btn-secondary btn-sm mb-4" onclick="loadPage('bid')">&larr; Edit Bid</button>
 
     <div style="text-align:center; border-bottom:2px solid #0f172a; padding-bottom:12px; margin-bottom:16px;">
-        <div style="font-size:1rem; font-weight:900; letter-spacing:0.04em;">BUILDING FORWARD LLC</div>
+        <div id="prop-company-name" style="font-size:1rem; font-weight:900; letter-spacing:0.04em;"></div>
         <div style="font-size:0.75rem; color:#64748b;">General Contracting &bull; Construction Management</div>
         <div style="font-size:0.9rem; font-weight:700; margin-top:6px;">BID PROPOSAL</div>
     </div>
@@ -42,10 +42,10 @@
         <p style="font-size:0.78rem; color:#475569; margin:0 0 12px 0; line-height:1.5;">By signing below, the client acknowledges they have read and agree to all terms, conditions, specifications, and pricing in this proposal.</p>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:0.8rem;">
             <div>
-                <div style="font-weight:700; margin-bottom:6px;">Building Forward LLC</div>
+                <div id="prop-signer-company" style="font-weight:700; margin-bottom:6px;"></div>
                 <div style="border-bottom:1px solid #000; height:28px; margin-bottom:4px;"></div>
-                <div>Alex Rivera</div>
-                <div style="color:#64748b; font-size:0.72rem;">Managing Member / President</div>
+                <div id="prop-signer-name"></div>
+                <div id="prop-signer-title" style="color:#64748b; font-size:0.72rem;">Managing Member / President</div>
                 <div style="border-bottom:1px solid #e2e8f0; height:20px; margin-top:10px; margin-bottom:2px;"></div>
                 <div style="color:#94a3b8; font-size:0.72rem;">Date</div>
             </div>
@@ -66,58 +66,67 @@
 <script>
 (function renderProposal() {
 
-    var bd = window.bidData;
-    if (!bd) {
+    if (!state.currentBidId) {
         document.getElementById('prop-header').innerHTML = '<p style="color:red;">No bid data. Go back and create a bid first.</p>';
         return;
     }
+
+    var bidId = state.currentBidId;
+    var bid   = DB.getById('bids', bidId);
+    var customer = bid.customer_id ? DB.getById('customers', bid.customer_id) : null;
+    var address  = bid.address_id ? DB.getById('addresses', bid.address_id) : null;
+    var company  = DB.getById('companies', state.currentCompanyId);
+    var job      = DB.getById('jobs', state.currentJobId);
+    var leadUser = job && job.lead_id ? DB.getById('users', job.lead_id) : null;
 
     function fmt(n) {
         return '$' + n.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
     }
     function fmtDate(iso) {
         if (!iso) return '—';
-        return new Date(iso + 'T12:00:00').toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
+        return new Date(iso.slice(0, 10) + 'T12:00:00').toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
     }
-    function divTotal(d) {
-        var labor = 0, mat = 0;
-        (d.tasks || []).forEach(function(t) {
-            if (!t.included) return;
-            var hrs = (t.qty||0) * (t.hrsEach||0);
-            labor += hrs * (d.laborRate||120);
-            (t.materials||[]).forEach(function(m){ mat += (m.price||0)*(m.qty||0); });
-        });
-        return labor + mat + labor*0.10 + mat*0.10;
+    function divTotal(row) {
+        var labor = row.labor_cost || 0, mat = row.material_cost || 0;
+        return labor + mat + labor * 0.10 + mat * 0.10;
     }
 
-    // Header block
+    document.getElementById('prop-company-name').textContent = (company ? company.name : '').toUpperCase();
+
+    // Header block — same real bids/customers/addresses join as bid.html.
+    var siteAddress = (bid.site_address_override != null)
+        ? bid.site_address_override
+        : (address ? address.street + ', ' + address.city + ', ' + address.state + ' ' + address.zip : '—');
+    var projectName = (bid.title || '').replace(/ — Bid$/, '') || '—';
+    var craftsman = bid.lead_craftsman_name || (leadUser ? leadUser.full_name : '') || '—';
+
     document.getElementById('prop-header').innerHTML =
         '<div style="border:1px solid #e2e8f0; border-radius:6px; padding:12px; margin-bottom:16px; font-size:0.82rem;">' +
         '<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px 16px;">' +
-        '<div><span style="color:#64748b; font-size:0.72rem; display:block;">DATE</span><strong>' + fmtDate(bd.date) + '</strong></div>' +
-        '<div><span style="color:#64748b; font-size:0.72rem; display:block;">EXPIRES</span><strong>' + fmtDate(bd.expires) + '</strong></div>' +
-        '<div><span style="color:#64748b; font-size:0.72rem; display:block;">BID #</span><strong>' + (bd.bidNumber||'—') + '</strong></div>' +
-        '<div><span style="color:#64748b; font-size:0.72rem; display:block;">PROJECT</span><strong>' + (bd.project||'—') + '</strong></div>' +
-        '<div style="margin-top:4px;"><span style="color:#64748b; font-size:0.72rem; display:block;">CUSTOMER</span><strong>' + (bd.customer||'—') + '</strong></div>' +
-        '<div style="margin-top:4px;"><span style="color:#64748b; font-size:0.72rem; display:block;">LEAD CRAFTSMAN</span><strong>' + (bd.craftsman||'—') + '</strong></div>' +
-        '<div style="margin-top:4px; grid-column:1/-1;"><span style="color:#64748b; font-size:0.72rem; display:block;">SITE ADDRESS</span><strong>' + (bd.address||'—') + '</strong></div>' +
+        '<div><span style="color:#64748b; font-size:0.72rem; display:block;">DATE</span><strong>' + fmtDate(bid.created_at) + '</strong></div>' +
+        '<div><span style="color:#64748b; font-size:0.72rem; display:block;">EXPIRES</span><strong>' + fmtDate(bid.expires_at) + '</strong></div>' +
+        '<div><span style="color:#64748b; font-size:0.72rem; display:block;">BID #</span><strong>' + (bid.bid_number || '—') + '</strong></div>' +
+        '<div><span style="color:#64748b; font-size:0.72rem; display:block;">PROJECT</span><strong>' + projectName + '</strong></div>' +
+        '<div style="margin-top:4px;"><span style="color:#64748b; font-size:0.72rem; display:block;">CUSTOMER</span><strong>' + (customer ? customer.full_name : '—') + '</strong></div>' +
+        '<div style="margin-top:4px;"><span style="color:#64748b; font-size:0.72rem; display:block;">LEAD CRAFTSMAN</span><strong>' + craftsman + '</strong></div>' +
+        '<div style="margin-top:4px; grid-column:1/-1;"><span style="color:#64748b; font-size:0.72rem; display:block;">SITE ADDRESS</span><strong>' + siteAddress + '</strong></div>' +
         '</div></div>';
 
-    // Included divisions
-    var included = bd.divisions.filter(function(d){ return d.included; });
+    // Included divisions — every non-deleted bid_divisions row for this bid.
+    var divisions = DB.find('bid_divisions', function (d) { return d.bid_id === bidId && !d.deleted_at; });
     var grandTotal = 0;
-    if (included.length === 0) {
+    if (divisions.length === 0) {
         document.getElementById('prop-divisions').innerHTML =
             '<p style="color:#94a3b8; font-size:0.85rem; padding:12px 0;">No divisions selected.</p>';
     } else {
-        var rows = included.map(function(d) {
-            var total = divTotal(d);
+        var rows = divisions.map(function(row, i) {
+            var total = divTotal(row);
             grandTotal += total;
-            var num = bd.divisions.indexOf(d) + 1;
+            var scope = row.form_data && row.form_data.scope;
             return '<div style="border-bottom:1px solid #f1f5f9; padding:8px 0;">' +
                 '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">' +
-                '<div><span style="font-size:0.72rem; color:#64748b;">Div ' + num + ' &mdash; </span><strong>' + d.name + '</strong>' +
-                (d.scope ? '<div style="font-size:0.78rem; color:#475569; margin-top:3px;">' + d.scope + '</div>' : '') +
+                '<div><span style="font-size:0.72rem; color:#64748b;">Div ' + (i + 1) + ' &mdash; </span><strong>' + row.division_name + '</strong>' +
+                (scope ? '<div style="font-size:0.78rem; color:#475569; margin-top:3px;">' + scope + '</div>' : '') +
                 '</div>' +
                 '<strong style="white-space:nowrap; color:#0f172a;">' + fmt(total) + '</strong>' +
                 '</div></div>';
@@ -126,27 +135,33 @@
     }
     document.getElementById('prop-total').textContent = fmt(grandTotal);
 
-    // Schedule
-    var totalDays = bd.constructionDays || bd.divisions.reduce(function(sum, d) {
-        if (!d.included) return sum;
-        var hrs = (d.tasks||[]).reduce(function(s,t){ return t.included ? s+(t.qty||0)*(t.hrsEach||0) : s; }, 0);
-        return sum + Math.ceil(hrs / (8 * (d.guys||1)));
+    // Schedule — bid.construction_days overrides the auto-summed total, same
+    // as bid.html's "On-site days auto-sum..." note. The auto-sum reads each
+    // division's total labor hours (bid_line_items labor rows' `quantity`,
+    // which stores hours directly — see bid-division.html's saveDivision())
+    // divided by 8hrs * that division's crew size (form_data.guys).
+    var totalDays = bid.construction_days || divisions.reduce(function (sum, row) {
+        var hours = DB.find('bid_line_items', function (li) {
+            return li.bid_division_id === row.id && !li.deleted_at && li.type === 'labor' && li.task_included !== false;
+        }).reduce(function (s, li) { return s + (li.quantity || 0); }, 0);
+        var guys = (row.form_data && row.form_data.guys) || 1;
+        return sum + Math.ceil(hours / (8 * guys));
     }, 0);
 
     document.getElementById('prop-schedule').innerHTML =
         '<div style="font-size:0.82rem; display:flex; flex-direction:column; gap:6px;">' +
-        '<div style="display:flex; justify-content:space-between;"><span style="color:#64748b;">Estimated Start Date</span><strong>' + fmtDate(bd.startDate) + '</strong></div>' +
-        '<div style="display:flex; justify-content:space-between;"><span style="color:#64748b;">Material Procurement</span><strong>~' + (bd.procurementDays||10) + ' business days from deposit</strong></div>' +
-        '<div style="display:flex; justify-content:space-between;"><span style="color:#64748b;">On-Site Duration</span><strong>~' + (totalDays||'—') + ' business days</strong></div>' +
-        '<div style="display:flex; justify-content:space-between; border-top:1px solid #e2e8f0; padding-top:6px;"><span style="color:#64748b; font-weight:600;">Est. Completion</span><strong>' + fmtDate(bd.completionDate) + '</strong></div>' +
+        '<div style="display:flex; justify-content:space-between;"><span style="color:#64748b;">Estimated Start Date</span><strong>' + fmtDate(bid.start_date) + '</strong></div>' +
+        '<div style="display:flex; justify-content:space-between;"><span style="color:#64748b;">Material Procurement</span><strong>~' + (bid.procurement_days || 10) + ' business days from deposit</strong></div>' +
+        '<div style="display:flex; justify-content:space-between;"><span style="color:#64748b;">On-Site Duration</span><strong>~' + (totalDays || '—') + ' business days</strong></div>' +
+        '<div style="display:flex; justify-content:space-between; border-top:1px solid #e2e8f0; padding-top:6px;"><span style="color:#64748b; font-weight:600;">Est. Completion</span><strong>' + fmtDate(bid.completion_date) + '</strong></div>' +
         '</div>';
 
     // Payments
     document.getElementById('prop-payments').innerHTML =
         '<div style="font-size:0.82rem; display:flex; flex-direction:column; gap:0;">' +
         payRow('Deposit — 50%',           fmt(grandTotal*0.50), 'Due upon acceptance. Required to secure scheduling and initiate material orders.') +
-        payRow('Progress Draw 1 — 20%',   fmt(grandTotal*0.20), 'Due upon completion of: ' + (bd.milestone1 || '_______________')) +
-        payRow('Progress Draw 2 — 20%',   fmt(grandTotal*0.20), 'Due upon completion of: ' + (bd.milestone2 || '_______________')) +
+        payRow('Progress Draw 1 — 20%',   fmt(grandTotal*0.20), 'Due upon completion of: ' + (bid.milestone_1 || '_______________')) +
+        payRow('Progress Draw 2 — 20%',   fmt(grandTotal*0.20), 'Due upon completion of: ' + (bid.milestone_2 || '_______________')) +
         payRow('Final Balance — 10%',     fmt(grandTotal*0.10), 'Due upon completion of agreed-upon punch list.', true) +
         '</div>';
 
@@ -156,6 +171,11 @@
             '<strong style="color:#0f172a; white-space:nowrap; padding-left:12px;">' + amount + '</strong>' +
             '</div>';
     }
+
+    // Signature block — no dedicated "authorized signer" concept yet (Phase
+    // 2 scope), so the signing user is a reasonable stand-in per the plan.
+    document.getElementById('prop-signer-company').textContent = company ? company.name : '';
+    document.getElementById('prop-signer-name').textContent = (state.currentUser && state.currentUser.name) || '—';
 
 })();
 </script>

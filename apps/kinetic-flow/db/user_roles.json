@@ -3,48 +3,56 @@
     "id": "68cb89fc-cc01-4430-b399-1276edcf1800",
     "user_id": "31c3942e-fc82-440b-990c-9b51c97a0d3a",
     "role_id": "4789b81e-61b1-4c14-9f3c-476a78eaa372",
-    "assigned_at": "2026-02-18T12:00:00Z"
+    "assigned_at": "2026-02-18T12:00:00Z",
+    "status": "active"
   },
   {
     "id": "b1406e50-1603-4168-8273-d1b697a1bfd9",
     "user_id": "292d4893-242f-48b7-9e52-73a717a1f128",
     "role_id": "a865397b-f4bc-4218-8f54-56c27e59d8be",
-    "assigned_at": "2026-02-28T12:00:00Z"
+    "assigned_at": "2026-02-28T12:00:00Z",
+    "status": "active"
   },
   {
     "id": "7c36842d-e64f-4a9d-b1ee-d0ae03c04e64",
     "user_id": "97c5b5b7-16c8-4e84-81c4-5817847f7dac",
     "role_id": "3e6f677a-980b-40e8-9532-b3ec2a5a4bca",
-    "assigned_at": "2025-05-09T12:00:00Z"
+    "assigned_at": "2025-05-09T12:00:00Z",
+    "status": "active"
   },
   {
     "id": "3ee47e3b-f6d2-4e4b-b3f0-d6031baca7f1",
     "user_id": "caa1abbf-fee3-4885-addc-7dd4b97028aa",
     "role_id": "3e6f677a-980b-40e8-9532-b3ec2a5a4bca",
-    "assigned_at": "2026-02-23T12:00:00Z"
+    "assigned_at": "2026-02-23T12:00:00Z",
+    "status": "active"
   },
   {
     "id": "3e30e005-0499-4553-8983-7155c1d29756",
     "user_id": "4507df68-54ca-4767-a78a-5a8526f402a9",
     "role_id": "3e6f677a-980b-40e8-9532-b3ec2a5a4bca",
-    "assigned_at": "2025-05-31T12:00:00Z"
+    "assigned_at": "2025-05-31T12:00:00Z",
+    "status": "active"
   },
   {
     "id": "88dba454-a889-4fb1-aab4-bbfd4fc187dd",
     "user_id": "fb6a3bc4-26c1-4c2b-929c-792f3cf3acf9",
     "role_id": "3e6f677a-980b-40e8-9532-b3ec2a5a4bca",
-    "assigned_at": "2025-06-15T12:00:00Z"
+    "assigned_at": "2025-06-15T12:00:00Z",
+    "status": "active"
   },
   {
     "id": "523e14c7-73a2-4cb5-adf6-058329e0338a",
     "user_id": "ceca224d-14c1-411a-ab9a-599207b8b4b2",
     "role_id": "bc071500-c3bc-41ea-b9ce-b50e81da0ace",
-    "assigned_at": "2024-09-22T12:00:00Z"
+    "assigned_at": "2024-09-22T12:00:00Z",
+    "status": "active"
   },
   {
     "id": "8cdfc9fa-f38a-4512-8890-86b8a72aec06",
     "user_id": "6e012e95-dcdb-489b-8935-ac8f1f49b3b1",
     "role_id": "f136eb29-f12f-4101-992f-e7a7dafc6cea",
-    "assigned_at": "2025-09-05T12:00:00Z"
+    "assigned_at": "2025-09-05T12:00:00Z",
+    "status": "active"
   }
 ]

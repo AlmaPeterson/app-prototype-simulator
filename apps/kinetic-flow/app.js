@@ -22,11 +22,11 @@ const state = {
     signedIn: false,
     currentPage: '',
     currentJob: null,
+    currentJobId: null,
     currentCompany: null,
-    currentDivision: null,    // 0-based index into bidData.divisions
     currentBranch: null,
-    clockInTask: null,        // { name, level, isHighHazard } — level: student|exposure|competent|mastery
-    scorecardWorker: null,
+    clockInTask: null,        // { taskModuleId, name, level, isHighHazard, ppeVerified, cosignedBy, cosignedAt } — level: student|exposure|competent|mastery
+    scorecardWorkerId: null,  // users.id of the worker whose scorecard is being filled out (set by openScorecard())
     // Real-identity fields populated by afterSignIn() once auth is backed by
     // the mock DB (see DB module below) — kept alongside the legacy
     // name-string fields above until each consuming page is migrated to ids.
@@ -34,6 +34,12 @@ const state = {
     currentUser: null,        // { id, name, email, globalLevel }
     currentCompanyId: null,
     currentBranchId: null,
+    // Bid flow (Phase 2) — real DB-backed ids, replacing the old in-memory
+    // window.bidData blob. currentBidId is the bids row for state.currentJobId
+    // (set by openBid()); currentDivisionId is the bid_divisions row being
+    // edited on bid-division.html (set by openDivision()).
+    currentBidId: null,
+    currentDivisionId: null,
 };
 
 // ── Mock DB ──────────────────────────────────────────────────────────────
@@ -41,9 +47,9 @@ const state = {
 // serves all reads/writes against that in-memory copy for the rest of the
 // session. The on-disk JSON files are seed data only — nothing here ever
 // writes back to them (there's no server); saveState()/restoreState()
-// snapshot the mutated tables into localStorage instead, the same way
-// state/bidData already are, so a reload resumes without re-fetching or
-// losing any inserts/updates made during the session.
+// snapshot the mutated tables into localStorage instead, the same way state
+// already is, so a reload resumes without re-fetching or losing any
+// inserts/updates made during the session.
 const TABLES = [
     'companies', 'branches', 'users', 'roles', 'user_roles', 'customers',
     'addresses', 'jobs', 'bids', 'bid_divisions', 'bid_line_items', 'divisions',
@@ -104,7 +110,28 @@ const DB = {
 };
 
 function resetDemoData() {
-    DB.reset().then(function () { location.reload(); });
+    // DB.reset() alone isn't enough: session fields (currentUserId, signedIn,
+    // etc.) would still point at pre-reset data, and the beforeunload
+    // listener's saveState() fires during location.reload() and would
+    // re-persist that stale session on top of the freshly-cleared
+    // localStorage. So explicitly clear session state and save the clean
+    // snapshot *before* reloading, making the beforeunload save a no-op repeat
+    // of the same clean state rather than a race that undoes the reset.
+    DB.reset().then(function () {
+        Object.assign(state, {
+            signedIn: false, currentPage: '', currentJob: null, currentJobId: null, currentCompany: null,
+            currentBranch: null, clockInTask: null, scorecardWorkerId: null,
+            currentUserId: null, currentUser: null, currentCompanyId: null, currentBranchId: null,
+            currentBidId: null, currentDivisionId: null,
+        });
+        clockedIn = false;
+        clockStartedAt = null;
+        elapsedSeconds = 0;
+        currentTimeEntryId = null;
+        currentPhaseLogId = null;
+        saveState();
+        location.reload();
+    });
 }
 
 // ── Bottom Nav Definitions ──────────────────────────────────────────────────
@@ -192,7 +219,7 @@ function updateBottomNav() {
 
 function navTo(page) {
     if (page === 'jobs') {
-        if (state.currentJob) { loadPage('job-home'); return; }
+        if (state.currentJobId) { loadPage('job-home'); return; }
         loadPage('jobs');
         return;
     }
@@ -344,18 +371,18 @@ function submitJoinRequest() { loadPage('companies'); }
 function submitNewCompany() { loadPage('company-setup'); }
 function continueFromSetup() { loadPage('jobs'); }
 
-function openBranch(name) {
-    state.currentBranch = name;
+function openBranch(branchId) {
+    state.currentBranchId = branchId;
     loadPage('branch-detail');
 }
 
-function selectCompany(name) {
-    state.currentCompany = name;
+function selectCompany(companyId) {
+    state.currentCompanyId = companyId;
     loadPage('jobs');
 }
 
-function manageCompany(name) {
-    state.currentCompany = name;
+function manageCompany(companyId) {
+    state.currentCompanyId = companyId;
     loadPage('company-setup');
 }
 
@@ -399,30 +426,136 @@ function openCompanyLevels() { loadPage('company-levels'); }
 function openCompanyCompetencyLevels() { loadPage('company-competency-levels'); }
 
 // ── Jobs Flow ───────────────────────────────────────────────────────────────
-const NO_BID_JOBS = ['Westgate Electrical Panel'];
-
-function openJob(jobName) {
-    state.currentJob = jobName;
-    if (NO_BID_JOBS.includes(jobName)) {
-        loadPage('job-detail-nobid');
-    } else {
-        loadPage('job-detail');
-    }
+function openJob(jobId) {
+    state.currentJobId = jobId;
+    const job = DB.getById('jobs', jobId);
+    loadPage(job && job.bid_id === null ? 'job-detail-nobid' : 'job-detail');
 }
 
 function createJob() { loadPage('create-job'); }
-function submitJob() { loadPage('jobs'); }
+
+// Real form-driven insert — reads create-job.html's fields (see that
+// fragment's #cj-* inputs), inserts a jobs row plus one job_assignments row
+// per selected/invited team-member chip, then hands off to bid creation or
+// straight back to the job list depending on the "create bid now?" choice.
+function submitJob() {
+    const name = val('cj-name') || 'Untitled Job';
+    const customerId = val('cj-customer');
+    const customer = customerId ? DB.getById('customers', customerId) : null;
+    const jobType = val('cj-type') || 'General';
+    const priority = val('cj-priority') || 'normal';
+    const addressId = customer ? customer.address_id : null;
+    const notes = val('cj-notes');
+    const startInput = document.getElementById('cj-start');
+    const endInput = document.getElementById('cj-end');
+    const scheduledStart = startInput && startInput.value ? new Date(startInput.value).toISOString() : null;
+    const scheduledEnd = endInput && endInput.value ? new Date(endInput.value).toISOString() : null;
+
+    const job = DB.insert('jobs', {
+        company_id: state.currentCompanyId,
+        branch_id: state.currentBranchId,
+        customer_id: customerId || null,
+        address_id: addressId,
+        bid_id: null,
+        lead_id: state.currentUserId,
+        name: name,
+        status: 'scheduled',
+        job_type: jobType,
+        priority: priority,
+        scheduled_start: scheduledStart,
+        scheduled_end: scheduledEnd,
+        notes: notes || null,
+    });
+
+    // Lead gets an explicit job_assignments row too, alongside any invited members.
+    if (state.currentUserId) {
+        DB.insert('job_assignments', {
+            company_id: state.currentCompanyId,
+            job_id: job.id,
+            user_id: state.currentUserId,
+            role_on_job: 'lead',
+            assigned_at: new Date().toISOString(),
+        });
+    }
+    document.querySelectorAll('#cj-team .chip.selected').forEach(function (chip) {
+        const userId = chip.dataset.userId;
+        if (!userId || userId === state.currentUserId) return;
+        DB.insert('job_assignments', {
+            company_id: state.currentCompanyId,
+            job_id: job.id,
+            user_id: userId,
+            role_on_job: 'member',
+            assigned_at: new Date().toISOString(),
+        });
+    });
+
+    state.currentJobId = job.id;
+    const opt = document.getElementById('create-bid-opt');
+    if (opt && opt.value === 'now') {
+        openBid();
+    } else {
+        loadPage('jobs');
+    }
+}
 
 // ── Job Actions ─────────────────────────────────────────────────────────────
-function openBid() { window.bidData = null; loadPage('bid'); } // reset bid on new open
+// Loads the job's real bid (creating one on first visit) instead of wiping
+// and reseeding an in-memory window.bidData blob every time. Once created, a
+// job keeps the same bids row (linked via jobs.bid_id) for its whole life —
+// reopening "View Bid" always resumes the same draft/sent/signed record.
+function openBid() {
+    const job = DB.getById('jobs', state.currentJobId);
+    let bid = job.bid_id ? DB.getById('bids', job.bid_id) : null;
+    if (!bid) {
+        bid = DB.insert('bids', {
+            company_id: state.currentCompanyId, branch_id: state.currentBranchId,
+            customer_id: job.customer_id, address_id: job.address_id,
+            title: job.name + ' — Bid', status: 'draft',
+            total_labor: 0, total_materials: 0, total_cost: 0,
+            created_by: state.currentUserId, sent_at: null, signed_at: null,
+            signature_url: null, notes: null,
+        });
+        DB.update('jobs', job.id, { bid_id: bid.id });
+    }
+    state.currentBidId = bid.id;
+    loadPage('bid');
+}
 function submitBid() { loadPage('job-detail'); }
 
+// Recomputes a bid's total_labor/total_materials/total_cost from its
+// non-deleted bid_divisions rows and writes the rollup back to the bids row.
+// Deliberately does NOT bake in the 10% contingency that bid.html/
+// bid-proposal.html add on top for the client-facing "Grand Total" —
+// total_cost here matches the plain labor+materials convention already used
+// by the seeded bids (see db/bids.json: Riverside HVAC's 7000+5400=12400,
+// no contingency folded in), since that's the figure job-detail.html and
+// jobs.html surface as "Estimated Value". Shared by bid.html (division
+// checkbox toggle) and bid-division.html (saveDivision's persist path) — the
+// two places that can change a division's labor_cost/material_cost.
+function recalcBidTotals(bidId) {
+    const divisions = DB.find('bid_divisions', function (d) { return d.bid_id === bidId && !d.deleted_at; });
+    let labor = 0, materials = 0;
+    divisions.forEach(function (d) {
+        labor += d.labor_cost || 0;
+        materials += d.material_cost || 0;
+    });
+    return DB.update('bids', bidId, {
+        total_labor: labor,
+        total_materials: materials,
+        total_cost: labor + materials,
+    });
+}
+
 // ── Bid Flow ─────────────────────────────────────────────────────────────────
-function openDivision(index) {
-    state.currentDivision = index;
+function openDivision(bidDivisionId) {
+    state.currentDivisionId = bidDivisionId;
     loadPage('bid-division');
 }
 
+// bid-division.html shadows this with its own window.saveDivision (same
+// pattern as its window.addTask/window.bidRecalcDiv/etc.) so Save has access
+// to that page's in-progress working data. This app.js version is the
+// fallback restored by activate() whenever this page isn't the active one.
 function saveDivision() {
     loadPage('bid');
 }
@@ -438,11 +571,67 @@ function openFieldClock() { loadPage('task-select'); }
 function openInventory() { loadPage('inventory'); }
 
 // ── PM Scorecard ─────────────────────────────────────────────────────────────
-function openScorecard(workerName) {
-    state.scorecardWorker = workerName;
+function openScorecard(userId) {
+    state.scorecardWorkerId = userId;
     loadPage('scorecard');
 }
-function submitScorecard() { loadPage('job-detail'); }
+
+// Reads the 10 score inputs straight out of the DOM at submit time (the
+// slider/toggle math in scorecard.html's inline script already maintains
+// these live — no need to duplicate that logic here) and inserts one real
+// scorecard_entries row.
+function submitScorecard() {
+    function toggleOn(key) {
+        const el = document.getElementById('toggle-' + key);
+        return !!(el && el.classList.contains('on'));
+    }
+    function sliderVal(key) {
+        const el = document.getElementById('slider-' + key);
+        return el ? Number(el.value) : 0;
+    }
+
+    const scoreJobWellDone = toggleOn('jwd') ? 55 : 0;
+    const scoreMaterialAccountability = toggleOn('materials') ? 5 : 0;
+    const scoreToolDiscipline = toggleOn('tools') ? 5 : 0;
+    const scoreSiteCleanliness = toggleOn('cleanliness') ? 5 : 0;
+    const scoreProductionSpeed = 4; // fixed auto-calc demo value — matches scorecard.html's recalcScorecard()
+    const scoreInitiative = sliderVal('initiative');
+    const scoreHabitualSafety = sliderVal('safety');
+    const scoreConstructiveHeart = sliderVal('heart');
+    const scoreDispositionToLearn = sliderVal('learn');
+    const scoreEliteCharacter = sliderVal('elite');
+
+    const totalScore = scoreJobWellDone + scoreMaterialAccountability + scoreToolDiscipline + scoreSiteCleanliness
+        + scoreProductionSpeed + scoreInitiative + scoreHabitualSafety + scoreConstructiveHeart
+        + scoreDispositionToLearn + scoreEliteCharacter;
+
+    const recentEntry = DB.find('time_entries', function (t) { return t.user_id === state.scorecardWorkerId; })
+        .slice()
+        .sort(function (a, b) { return new Date(b.clock_in_at) - new Date(a.clock_in_at); })[0];
+
+    DB.insert('scorecard_entries', {
+        company_id: state.currentCompanyId,
+        user_id: state.scorecardWorkerId,
+        time_entry_id: recentEntry ? recentEntry.id : null,
+        job_id: state.currentJobId,
+        shift_date: new Date().toISOString().slice(0, 10),
+        score_job_well_done: scoreJobWellDone,
+        score_production_speed: scoreProductionSpeed,
+        score_material_accountability: scoreMaterialAccountability,
+        score_tool_discipline: scoreToolDiscipline,
+        score_site_cleanliness: scoreSiteCleanliness,
+        score_initiative: scoreInitiative,
+        score_habitual_safety: scoreHabitualSafety,
+        score_constructive_heart: scoreConstructiveHeart,
+        score_disposition_to_learn: scoreDispositionToLearn,
+        score_elite_character: scoreEliteCharacter,
+        total_score: totalScore,
+        tool_discipline_photo_url: null,
+        reviewed_by: state.currentUserId,
+        reviewed_at: new Date().toISOString(),
+    });
+    loadPage('job-detail');
+}
 
 // ── Task Select / Training Gate / Co-Sign ─────────────────────────────────────
 // Simulated version of the reference doc's clock-in workflow gates: pick the
@@ -450,8 +639,14 @@ function submitScorecard() { loadPage('job-detail'); }
 // unlock the clock-in (mastery), require a co-sign (competent), or stay
 // blocked (student/exposure). No real video or server verification — this is
 // a static nav prototype.
-function selectClockInTask(name, level, isHighHazard) {
-    state.clockInTask = { name: name, level: level, isHighHazard: !!isHighHazard };
+function selectClockInTask(taskModuleId, level, isHighHazard) {
+    const taskModule = DB.getById('task_modules', taskModuleId);
+    state.clockInTask = {
+        taskModuleId: taskModuleId,
+        name: taskModule ? taskModule.task_name : 'Task',
+        level: level,
+        isHighHazard: !!isHighHazard,
+    };
     loadPage('training-video');
 }
 
@@ -466,11 +661,43 @@ function proceedPastGates() {
     }
 }
 
+// Looks up the training_modules row tied to this task_module (not every
+// task_module necessarily has one) and records/updates a training_assignments
+// row so there's a real persisted trail of "this user watched this training"
+// alongside the phase_logs.video_completion_verified flag set at clock-in.
+function recordTrainingCompletion() {
+    const task = state.clockInTask || {};
+    if (!task.taskModuleId) return;
+    const module = DB.findOne('training_modules', function (m) { return m.task_module_id === task.taskModuleId; });
+    if (!module) return; // no matching training module — nothing to record
+    const now = new Date().toISOString();
+    const existing = DB.findOne('training_assignments', function (a) {
+        return a.user_id === state.currentUserId && a.module_id === module.id;
+    });
+    if (existing) {
+        DB.update('training_assignments', existing.id, { viewed_at: now });
+    } else {
+        DB.insert('training_assignments', {
+            company_id: state.currentCompanyId,
+            user_id: state.currentUserId,
+            module_id: module.id,
+            job_id: state.currentJobId,
+            assigned_at: now,
+            send_at: now,
+            viewed_at: now,
+            ai_triggered: false,
+        });
+    }
+}
+
 function trainingVideoComplete() {
     const task = state.clockInTask || {};
+    const levelInfo = window.COMPETENCY_LEVELS.find(function (c) { return c.slug === task.level; });
+    const requiresCosign = !!(levelInfo && levelInfo.requiresCosign);
     if (task.level === 'mastery') {
+        recordTrainingCompletion();
         proceedPastGates();
-    } else if (task.level === 'competent') {
+    } else if (requiresCosign) {
         showCoSignModal();
     } else {
         const status = document.getElementById('tv-status');
@@ -505,6 +732,24 @@ function closeCoSignModal() {
 
 function confirmCoSign() {
     closeCoSignModal();
+    const task = state.clockInTask;
+    if (task) {
+        // No real second-user session exists in this prototype to be "the
+        // master who co-signed" — stand in with the first master assigned to
+        // this job (falling back to any master in the company), and stash
+        // who/when on state.clockInTask so toggleClock()'s clock-in path can
+        // attach it to the phase_logs row it creates.
+        const assignedUserIds = DB.find('job_assignments', function (a) { return a.job_id === state.currentJobId; })
+            .map(function (a) { return a.user_id; });
+        const master = DB.findOne('users', function (u) {
+            return u.company_id === state.currentCompanyId && u.global_level === 'master' && assignedUserIds.indexOf(u.id) !== -1;
+        }) || DB.findOne('users', function (u) { return u.company_id === state.currentCompanyId && u.global_level === 'master'; });
+        if (master) {
+            task.cosignedBy = master.id;
+            task.cosignedAt = new Date().toISOString();
+        }
+    }
+    recordTrainingCompletion();
     proceedPastGates();
 }
 
@@ -523,6 +768,10 @@ function recordPpeVideo() {
 }
 
 function ppeVideoComplete() {
+    // Stash the "PPE was recorded" fact for toggleClock()'s clock-in path to
+    // read when it creates this session's phase_logs row — a phase_logs
+    // insert can't happen yet since no time_entries row exists until clock-in.
+    if (state.clockInTask) state.clockInTask.ppeVerified = true;
     loadPage('feild-clock');
 }
 
@@ -531,6 +780,8 @@ let clockedIn = false;
 let timerInterval = null;
 let elapsedSeconds = 0;
 let clockStartedAt = null; // epoch ms — lets a reload recompute elapsed time from a real timestamp instead of resuming a stale counter
+let currentTimeEntryId = null; // the time_entries row id for the in-progress clock session, so clock-out can find it again
+let currentPhaseLogId = null;  // the phase_logs row (if any) tied to that session, so clock-out can stamp ended_at on it
 
 function toggleClock() {
     const btn = document.getElementById('clock-btn');
@@ -561,12 +812,64 @@ function toggleClock() {
             const el = document.getElementById(id);
             if (el) el.checked = false;
         });
+
+        const clockInAt = new Date(clockStartedAt).toISOString();
+        const timeEntry = DB.insert('time_entries', {
+            company_id: state.currentCompanyId,
+            user_id: state.currentUserId,
+            job_id: state.currentJobId,
+            clock_in_at: clockInAt,
+            clock_out_at: null,
+            clock_in_lat: null,
+            clock_in_lng: null,
+            unpaid_break_minutes: 0,
+            auto_clocked_out: false,
+            status: 'active',
+        });
+        currentTimeEntryId = timeEntry.id;
+        currentPhaseLogId = null;
+
+        // Only real gate-chain clock-ins (task-select → training-video →
+        // [co-sign/PPE] → here) set state.clockInTask — the bottom-nav
+        // "Field" tab shortcut clocks in without one, so no phase_logs row
+        // is created for that path.
+        if (state.clockInTask) {
+            const task = state.clockInTask;
+            const fakeHex = Date.now().toString(16).padStart(16, '0') + (_nextIdSeq++).toString(16).padStart(4, '0');
+            const phaseLog = DB.insert('phase_logs', {
+                company_id: state.currentCompanyId,
+                time_entry_id: currentTimeEntryId,
+                user_id: state.currentUserId,
+                task_module_id: task.taskModuleId || null,
+                job_id: state.currentJobId,
+                masons_mark: 'sha256:' + fakeHex,
+                competency_at_time_of_log: task.level || null,
+                cosigned_by: task.cosignedBy || null,
+                cosigned_at: task.cosignedAt || null,
+                video_completion_verified: true,
+                ppe_video_url: task.ppeVerified ? 'https://r2.kineticflow.app/ppe/local-capture.mp4' : null,
+                started_at: clockInAt,
+                ended_at: null,
+            });
+            currentPhaseLogId = phaseLog.id;
+        }
     } else {
         btn.textContent = 'Clock In';
         btn.className = 'btn btn-primary';
         if (status) status.textContent = 'Clocked Out';
         clearInterval(timerInterval);
         clockStartedAt = null;
+
+        const clockOutAt = new Date().toISOString();
+        if (currentTimeEntryId) {
+            DB.update('time_entries', currentTimeEntryId, { clock_out_at: clockOutAt, status: 'pending' });
+        }
+        if (currentPhaseLogId) {
+            DB.update('phase_logs', currentPhaseLogId, { ended_at: clockOutAt });
+        }
+        currentTimeEntryId = null;
+        currentPhaseLogId = null;
+        state.clockInTask = null;
     }
     saveState();
 }
@@ -627,21 +930,17 @@ function addActivity(type) {
 // ── Material Log Modal ───────────────────────────────────────────────────────
 // Unlike Driving/Lunch/Task, using a material isn't an event with a duration —
 // it's a record of what was consumed. So it opens a picker scoped to kits
-// already checked out for this job instead of starting an ongoing activity.
-// Kit/material text is looked up from KIT_CATEGORIES (not duplicated here) so
-// it stays in sync with the shared catalog.
-const CHECKED_OUT_KIT_REFS = [
-    { category: 'Fixtures & HVAC', kit: 'HVAC Kit' },
-    { category: 'Plumbing', kit: 'Copper Kit' },
-    { category: 'Electrical', kit: 'Miscellaneous Electrical' },
-];
-
+// actually checked out for this job (real kit_checkouts rows, resolved to
+// inventory_kits for display name and kit_items for the material list) instead
+// of starting an ongoing activity.
 function getCheckedOutKits() {
-    return CHECKED_OUT_KIT_REFS.map(function (ref) {
-        const cat = KIT_CATEGORIES.find(function (c) { return c.name === ref.category; });
-        const kit = cat && cat.kits.find(function (k) { return k.name === ref.kit; });
-        return kit ? { name: kit.name, materials: kit.materials } : null;
-    }).filter(Boolean);
+    return DB.find('kit_checkouts', function (k) { return k.job_id === state.currentJobId && !k.checked_in_at; })
+        .map(function (checkout) {
+            const kit = DB.getById('inventory_kits', checkout.kit_id);
+            if (!kit) return null;
+            const items = DB.find('kit_items', function (ki) { return ki.kit_id === kit.id; });
+            return { name: kit.name, materials: items };
+        }).filter(Boolean);
 }
 
 function openMaterialLog() {
@@ -656,17 +955,17 @@ function openMaterialLog() {
             '<div class="modal-handle"></div>' +
             '<div class="page-title-sm mb-2">Log Material Used</div>' +
             '<div class="page-subtitle mb-4">Select from kits checked out for this job and enter how much was used.</div>' +
-            kits.map(function (kit, ki) {
+            (kits.length ? kits.map(function (kit, ki) {
                 return '<div class="section-header" style="margin-top:10px;"><span class="section-title">' + kit.name + '</span></div>' +
                     '<div class="card" style="cursor:default;">' +
                     kit.materials.map(function (mat, mi) {
                         return '<div class="list-item" style="padding:8px 0;">' +
-                            '<div class="list-item-body"><div class="list-item-title">' + mat + '</div></div>' +
+                            '<div class="list-item-body"><div class="list-item-title">' + mat.name + '</div></div>' +
                             '<input type="number" min="0" step="1" placeholder="0" class="material-qty-input" data-kit="' + ki + '" data-item="' + mi + '" style="width:56px; padding:8px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:0.85rem; text-align:center;">' +
                             '</div>';
                     }).join('') +
                     '</div>';
-            }).join('') +
+            }).join('') : '<div class="alert">No kits checked out for this job.</div>') +
             '<button class="btn btn-primary mt-4" onclick="saveMaterialLog()">Log Materials</button>' +
             '<button class="btn btn-secondary" onclick="closeMaterialModal()">Cancel</button>' +
         '</div>';
@@ -696,11 +995,20 @@ function saveMaterialLog() {
             entry.className = 'list-item';
             entry.innerHTML =
                 '<div class="list-item-body">' +
-                    '<div class="list-item-title">' + qty + '&times; ' + material + '</div>' +
+                    '<div class="list-item-title">' + qty + '&times; ' + material.name + '</div>' +
                     '<div class="list-item-sub">' + kit.name + ' &bull; Logged at ' + time + '</div>' +
                 '</div>';
             log.prepend(entry);
         }
+        DB.insert('task_materials', {
+            company_id: state.currentCompanyId,
+            task_id: null, // no active `tasks` row exists yet for in-progress work — see db/tasks.json note
+            material_id: material.material_id || null,
+            name: material.name,
+            quantity: qty,
+            unit: 'each',
+            sync_status: 'local',
+        });
     });
     if (!loggedAny) {
         alert('Enter a quantity for at least one material.');
@@ -932,19 +1240,25 @@ function toggleChip(el) {
 }
 
 // ── Persistence ──────────────────────────────────────────────────────────────
-// Snapshots state/bidData/clock to localStorage so a browser reload can
-// resume the app instead of dropping back to sign-in. Saved from loadPage()
-// (covers almost every state change, since nearly everything in this app
-// ends by navigating), plus explicit call sites that change state without
-// navigating (setRole, toggleClock), plus beforeunload as a safety net for
-// bid.html/bid-division.html's inline oninput/onchange handlers, which mutate
-// window.bidData directly and never call loadPage().
+// Snapshots state/clock/db to localStorage so a browser reload can resume the
+// app instead of dropping back to sign-in. Saved from loadPage() (covers
+// almost every state change, since nearly everything in this app ends by
+// navigating), plus explicit call sites that change state without navigating
+// (setRole, toggleClock), plus beforeunload as a safety net — DB.insert()/
+// DB.update() already call saveState() themselves (see the Mock DB module
+// above), which is what bid.html/bid-division.html's inline oninput/onchange
+// handlers go through now (Phase 2) instead of mutating a bare in-memory
+// window.bidData object.
 function saveState() {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
             state: state,
-            clock: { clockedIn: clockedIn, startedAt: clockStartedAt },
-            bidData: window.bidData || null,
+            clock: {
+                clockedIn: clockedIn,
+                startedAt: clockStartedAt,
+                timeEntryId: currentTimeEntryId,
+                phaseLogId: currentPhaseLogId,
+            },
             db: _dbLoaded ? _tables : null,
         }));
     } catch (e) { /* localStorage unavailable (private mode, quota, etc.) */ }
@@ -960,12 +1274,13 @@ function restoreState() {
     if (!saved) return;
 
     if (saved.state) Object.assign(state, saved.state);
-    window.bidData = saved.bidData || null;
     if (saved.db) { _tables = saved.db; _dbLoaded = true; }
 
     if (saved.clock && saved.clock.clockedIn) {
         clockedIn = true;
         clockStartedAt = saved.clock.startedAt;
+        currentTimeEntryId = saved.clock.timeEntryId || null;
+        currentPhaseLogId = saved.clock.phaseLogId || null;
         elapsedSeconds = Math.max(0, Math.floor((Date.now() - clockStartedAt) / 1000));
         timerInterval = setInterval(tickTimer, 1000);
     }
@@ -1003,9 +1318,8 @@ function activate() {
         selectCompany, manageCompany,
         DIVISIONS, LEVELS, COMPETENCY_LEVELS,
         openCompanyDivisions, openCompanyLevels, openCompanyCompetencyLevels,
-        NO_BID_JOBS,
         openJob, createJob, submitJob,
-        openBid, submitBid,
+        openBid, submitBid, recalcBidTotals,
         openDivision, saveDivision, previewProposal,
         openSchedule, openTimeSheet, openKits, openLabelGenerator, openFieldClock, openInventory,
         openScorecard, submitScorecard,
@@ -1045,7 +1359,7 @@ window.Apps['kinetic-flow'] = {
     // page downgrades it to the lean job-home page — so reopening the app
     // later resumes on the quick-actions view, not buried in job detail.
     onClose: function () {
-        if (state.currentJob && (state.currentPage === 'job-detail' || state.currentPage === 'job-detail-nobid')) {
+        if (state.currentJobId && (state.currentPage === 'job-detail' || state.currentPage === 'job-detail-nobid')) {
             loadPage('job-home');
         }
     },

@@ -34,31 +34,21 @@
 
 <script>
 (function () {
-    var BRANCH_DATA = {
-        'Calgary HQ': {
-            address: '123 Main St, Calgary, AB',
-            manager: 'Jake Smith',
-            phone: '(403) 555-0142',
-            jobs: 3,
-            isPrimary: true,
-        },
-        'Edmonton Branch': {
-            address: '456 Jasper Ave, Edmonton, AB',
-            manager: 'Tyler Wong',
-            phone: '(780) 555-0198',
-            jobs: 1,
-            isPrimary: false,
-        },
-    };
+    var branch = state.currentBranchId ? DB.getById('branches', state.currentBranchId) : null;
+    if (!branch) {
+        document.getElementById('branch-name').textContent = 'No Branch Selected';
+        return;
+    }
 
-    var name = (typeof state !== 'undefined' && state.currentBranch) || 'Calgary HQ';
-    var data = BRANCH_DATA[name] || BRANCH_DATA['Calgary HQ'];
+    var addr = branch.address_id ? DB.getById('addresses', branch.address_id) : null;
+    var manager = branch.manager_id ? DB.getById('users', branch.manager_id) : null;
+    var activeJobs = DB.find('jobs', function (j) { return j.branch_id === branch.id && !j.deleted_at; }).length;
 
-    document.getElementById('branch-name').textContent = name;
-    document.getElementById('branch-address').textContent = data.address;
-    document.getElementById('branch-manager').textContent = data.manager;
-    document.getElementById('branch-phone').textContent = data.phone;
-    document.getElementById('branch-jobs').textContent = data.jobs;
-    if (data.isPrimary) document.getElementById('branch-primary-badge').style.display = 'inline-block';
+    document.getElementById('branch-name').textContent = branch.name;
+    document.getElementById('branch-address').textContent = addr ? (addr.street + ', ' + addr.city + ', ' + addr.state) : '';
+    document.getElementById('branch-manager').textContent = manager ? manager.full_name : 'Unassigned';
+    document.getElementById('branch-phone').textContent = manager ? manager.phone : '';
+    document.getElementById('branch-jobs').textContent = activeJobs;
+    if (branch.is_primary) document.getElementById('branch-primary-badge').style.display = 'inline-block';
 })();
 </script>

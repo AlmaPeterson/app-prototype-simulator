@@ -2,75 +2,21 @@
     <button class="btn btn-secondary btn-sm mb-4" onclick="loadPage('feild-clock')">&larr; Field Clock</button>
 
     <div class="page-title">Time Sheet</div>
-    <div class="page-subtitle mb-4">Week of Jun 24 &ndash; Jun 30, 2024</div>
+    <div class="page-subtitle mb-4" id="rt-subtitle">Recent Entries</div>
 
     <!-- Summary Hero -->
     <div class="hero-stat">
-        <div style="font-size:0.78rem; opacity:0.7; margin-bottom:4px;">Total Hours This Week</div>
-        <div class="hero-stat-value">42.5 hrs</div>
-        <div style="font-size:0.82rem; opacity:0.8; margin-top:4px;">
-            Regular: 40h &nbsp;|&nbsp; OT: 2.5h
-        </div>
+        <div style="font-size:0.78rem; opacity:0.7; margin-bottom:4px;">Total Hours (Recent Entries)</div>
+        <div class="hero-stat-value" id="rt-total-hours">0 hrs</div>
+        <div style="font-size:0.82rem; opacity:0.8; margin-top:4px;" id="rt-total-sub"></div>
     </div>
 
     <!-- Daily breakdown -->
     <div class="section-header">
-        <span class="section-title">Daily Breakdown</span>
+        <span class="section-title">Recent Time Entries</span>
     </div>
 
-    <div style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;">
-        <div class="list-item">
-            <div class="list-item-body">
-                <div class="list-item-title">Monday, Jun 24</div>
-                <div class="list-item-sub">Riverside HVAC Retrofit</div>
-                <div class="list-item-detail" style="font-family:monospace;">Mark: 4c8e2a1f9d03&hellip;7b56</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">8.5 hrs</div>
-                <div class="list-item-detail">7:00 AM &ndash; 3:30 PM</div>
-            </div>
-        </div>
-        <div class="list-item">
-            <div class="list-item-body">
-                <div class="list-item-title">Tuesday, Jun 25</div>
-                <div class="list-item-sub">Riverside HVAC Retrofit</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">9.0 hrs</div>
-                <div class="list-item-detail">7:00 AM &ndash; 4:00 PM</div>
-            </div>
-        </div>
-        <div class="list-item">
-            <div class="list-item-body">
-                <div class="list-item-title">Wednesday, Jun 26</div>
-                <div class="list-item-sub">Westgate Electrical Panel</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">8.0 hrs</div>
-                <div class="list-item-detail">8:00 AM &ndash; 4:00 PM</div>
-            </div>
-        </div>
-        <div class="list-item">
-            <div class="list-item-body">
-                <div class="list-item-title">Thursday, Jun 27</div>
-                <div class="list-item-sub">Northview Plumbing</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">8.0 hrs</div>
-                <div class="list-item-detail">7:30 AM &ndash; 3:30 PM</div>
-            </div>
-        </div>
-        <div class="list-item" style="border-bottom:none;">
-            <div class="list-item-body">
-                <div class="list-item-title">Friday, Jun 28</div>
-                <div class="list-item-sub">Riverside HVAC Retrofit</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">9.0 hrs</div>
-                <div class="list-item-detail">7:00 AM &ndash; 4:00 PM</div>
-            </div>
-        </div>
-    </div>
+    <div id="rt-entries" style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;"></div>
 
     <!-- Activity Details -->
     <div class="section-header">
@@ -79,7 +25,7 @@
 
     <div class="stats-grid" style="margin-bottom:16px;">
         <div class="stat-card">
-            <div class="stat-value">34.5</div>
+            <div class="stat-value" id="rt-onsite-hrs">0</div>
             <div class="stat-label">On-Site hrs</div>
         </div>
         <div class="stat-card">
@@ -91,7 +37,7 @@
             <div class="stat-label">Lunch hrs</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">$4,718</div>
+            <div class="stat-value" id="rt-est-pay">$0</div>
             <div class="stat-label">Est. Pay</div>
         </div>
     </div>
@@ -101,16 +47,7 @@
         <span class="section-title">Materials Recorded</span>
     </div>
 
-    <div style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;">
-        <div class="list-item">
-            <div class="list-item-body"><div class="list-item-title">Refrigerant R-410A 25lb</div></div>
-            <div class="list-item-right"><div class="list-item-value">2 units</div></div>
-        </div>
-        <div class="list-item" style="border-bottom:none;">
-            <div class="list-item-body"><div class="list-item-title">Wire 12 AWG 100ft roll</div></div>
-            <div class="list-item-right"><div class="list-item-value">3 rolls</div></div>
-        </div>
-    </div>
+    <div id="rt-materials" style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;"></div>
 
     <div class="form-group">
         <label>Notes for Supervisor</label>
@@ -124,3 +61,69 @@
     <button class="btn btn-primary" onclick="submitTimeSheet()">Submit Timesheet</button>
     <button class="btn btn-secondary" onclick="loadPage('feild-clock')">Save Draft</button>
 </div>
+
+<script>
+(function () {
+    function fmtDate(iso) {
+        return new Date(iso).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+    }
+    function fmtTime(iso) {
+        return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    }
+
+    // Seed-data clock-in dates are in the past relative to "this week" in any
+    // real sense, so rather than a brittle week-window filter, just show the
+    // signed-in user's most recent entries — simpler and always has content.
+    var entries = DB.find('time_entries', function (t) { return t.user_id === state.currentUserId; })
+        .slice()
+        .sort(function (a, b) { return new Date(b.clock_in_at) - new Date(a.clock_in_at); })
+        .slice(0, 5);
+
+    var totalHours = 0;
+    var entriesHtml = entries.map(function (t, i) {
+        var job = DB.getById('jobs', t.job_id);
+        var clockOutDate = t.clock_out_at ? new Date(t.clock_out_at) : new Date();
+        var hrs = Math.max(0, (clockOutDate - new Date(t.clock_in_at)) / 3600000 - (t.unpaid_break_minutes || 0) / 60);
+        totalHours += hrs;
+        var phaseLog = DB.findOne('phase_logs', function (p) { return p.time_entry_id === t.id; });
+        var isLast = i === entries.length - 1;
+        return '<div class="list-item"' + (isLast ? ' style="border-bottom:none;"' : '') + '>' +
+            '<div class="list-item-body">' +
+                '<div class="list-item-title">' + fmtDate(t.clock_in_at) + '</div>' +
+                '<div class="list-item-sub">' + (job ? job.name : 'Unknown Job') + '</div>' +
+                (phaseLog ? '<div class="list-item-detail" style="font-family:monospace;">Mark: ' + phaseLog.masons_mark.replace('sha256:', '').slice(0, 12) + '&hellip;' + phaseLog.masons_mark.slice(-4) + '</div>' : '') +
+            '</div>' +
+            '<div class="list-item-right">' +
+                '<div class="list-item-value">' + hrs.toFixed(1) + ' hrs</div>' +
+                '<div class="list-item-detail">' + fmtTime(t.clock_in_at) + (t.clock_out_at ? ' &ndash; ' + fmtTime(t.clock_out_at) : ' &ndash; ongoing') + '</div>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+    document.getElementById('rt-entries').innerHTML = entriesHtml ||
+        '<div class="list-item" style="border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">No time entries yet.</div></div>';
+
+    document.getElementById('rt-subtitle').textContent = entries.length
+        ? entries.length + ' most recent ' + (entries.length === 1 ? 'entry' : 'entries')
+        : 'No entries yet';
+    document.getElementById('rt-total-hours').textContent = totalHours.toFixed(1) + ' hrs';
+    document.getElementById('rt-total-sub').textContent = 'Across ' + entries.length + ' ' + (entries.length === 1 ? 'entry' : 'entries');
+    document.getElementById('rt-onsite-hrs').textContent = totalHours.toFixed(1);
+    document.getElementById('rt-est-pay').textContent = '$' + Math.round(totalHours * 35).toLocaleString();
+
+    // Materials Recorded — task_materials has no direct user_id/job_id (only
+    // an optional task_id, which itself only exists once a `tasks` row is
+    // created after work completes), so there's no clean join back to "this
+    // user's recent activity." Rather than force one, just show the most
+    // recently logged materials for the company as an illustrative feed.
+    var materials = DB.find('task_materials', function (m) { return m.company_id === state.currentCompanyId; }).slice(-5).reverse();
+    var materialsHtml = materials.map(function (m, i) {
+        var isLast = i === materials.length - 1;
+        return '<div class="list-item"' + (isLast ? ' style="border-bottom:none;"' : '') + '>' +
+            '<div class="list-item-body"><div class="list-item-title">' + m.name + '</div></div>' +
+            '<div class="list-item-right"><div class="list-item-value">' + m.quantity + ' ' + (m.unit || '') + '</div></div>' +
+        '</div>';
+    }).join('');
+    document.getElementById('rt-materials').innerHTML = materialsHtml ||
+        '<div class="list-item" style="border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">No materials recorded recently.</div></div>';
+})();
+</script>

@@ -5,6 +5,7 @@
     "name": "Salt Lake City",
     "address_id": "ee570876-d90a-4f4a-9314-43f6f831796b",
     "manager_id": "31c3942e-fc82-440b-990c-9b51c97a0d3a",
+    "is_primary": true,
     "created_at": "2024-04-03T12:00:00Z",
     "updated_at": "2026-05-03T12:00:00Z",
     "deleted_at": null
@@ -15,6 +16,7 @@
     "name": "Phoenix",
     "address_id": "1bdddd16-452e-4c6f-8f46-d0ef5d833c9d",
     "manager_id": "292d4893-242f-48b7-9e52-73a717a1f128",
+    "is_primary": false,
     "created_at": "2024-11-09T12:00:00Z",
     "updated_at": "2026-05-03T12:00:00Z",
     "deleted_at": null
@@ -25,6 +27,7 @@
     "name": "Denver",
     "address_id": "fbc855a0-bd15-4c79-9915-2133635355ba",
     "manager_id": "ceca224d-14c1-411a-ab9a-599207b8b4b2",
+    "is_primary": true,
     "created_at": "2025-05-18T12:00:00Z",
     "updated_at": "2026-04-03T12:00:00Z",
     "deleted_at": null

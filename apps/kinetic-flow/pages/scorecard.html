@@ -3,7 +3,7 @@
 
     <div class="page-header">
         <div class="page-title" id="sc-worker-name">Workman Scorecard</div>
-        <div class="page-subtitle">Riverside HVAC Retrofit &bull; Today's Shift</div>
+        <div class="page-subtitle" id="sc-worker-subtitle">Today's Shift</div>
     </div>
 
     <div class="hero-stat" style="margin-bottom:16px;">
@@ -95,9 +95,15 @@
 
 <script>
 (function () {
-    var name = (typeof state !== 'undefined' && state.scorecardWorker) || 'Jake Smith';
+    var userId = (typeof state !== 'undefined' && state.scorecardWorkerId) || null;
+    var user = userId ? DB.getById('users', userId) : null;
+    var name = user ? user.full_name : 'Team Member';
     var nameEl = document.getElementById('sc-worker-name');
     if (nameEl) nameEl.textContent = name + ' — Workman Scorecard';
+
+    var job = (typeof state !== 'undefined' && state.currentJobId) ? DB.getById('jobs', state.currentJobId) : null;
+    var subtitleEl = document.getElementById('sc-worker-subtitle');
+    if (subtitleEl) subtitleEl.textContent = (job ? job.name + ' • ' : '') + "Today's Shift";
 
     var binaries = { jwd: false, materials: false, tools: false, cleanliness: false };
     var sliderKeys = ['initiative', 'safety', 'heart', 'learn', 'elite'];

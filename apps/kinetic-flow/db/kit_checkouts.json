@@ -1,1 +1,29 @@
-[]
+[
+  {
+    "id": "9f3a2e1a-6b4c-4d8e-9f1a-2b3c4d5e6f70",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "kit_id": "1cd01261-e7ff-4b53-b20e-11318262b050",
+    "job_id": "c229964f-71e9-4d66-af48-fdb1db4c7404",
+    "checked_out_by": "31c3942e-fc82-440b-990c-9b51c97a0d3a",
+    "checked_out_at": "2026-07-01T05:45:00Z",
+    "checked_in_at": null
+  },
+  {
+    "id": "7c1d2e3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "kit_id": "e461a5c7-091f-4987-a65d-d25636f98467",
+    "job_id": "cc299530-4485-4030-a22c-c2fe2adc84ce",
+    "checked_out_by": "292d4893-242f-48b7-9e52-73a717a1f128",
+    "checked_out_at": "2026-06-20T05:45:00Z",
+    "checked_in_at": null
+  },
+  {
+    "id": "3d4e5f60-7a8b-4c9d-8e0f-1a2b3c4d5e6f",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "kit_id": "2623935c-c752-4d9d-95d2-02c72a049e40",
+    "job_id": "d7150afc-b7a4-4419-9a84-45542b4c173b",
+    "checked_out_by": "caa1abbf-fee3-4885-addc-7dd4b97028aa",
+    "checked_out_at": "2026-06-30T05:45:00Z",
+    "checked_in_at": null
+  }
+]
