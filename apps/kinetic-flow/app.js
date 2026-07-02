@@ -77,7 +77,7 @@ function loadPage(name, data) {
         })
         .catch(err => {
             document.getElementById('main').innerHTML =
-                `<div class="page"><div class="alert alert-warn">Page "${name}" not found.</div>` +
+                `<div class="page"><div class="alert">Page "${name}" not found.</div>` +
                 `<button class="btn btn-secondary" onclick="goBack()">&#8592; Back</button></div>`;
         });
 }
@@ -238,13 +238,13 @@ function toggleClock() {
 
     if (clockedIn) {
         btn.textContent = 'Clock Out';
-        btn.className = 'btn btn-danger';
+        btn.className = 'btn btn-primary';
         if (status) status.textContent = 'Clocked In';
         elapsedSeconds = 0;
         timerInterval = setInterval(tickTimer, 1000);
     } else {
         btn.textContent = 'Clock In';
-        btn.className = 'btn btn-green';
+        btn.className = 'btn btn-primary';
         if (status) status.textContent = 'Clocked Out';
         clearInterval(timerInterval);
     }
@@ -268,17 +268,14 @@ function addActivity(type) {
     const log = document.getElementById('activity-log');
     if (!log) return;
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const icons = { driving: '&#128663;', lunch: '&#127869;', task: '&#10003;', material: '&#128295;' };
-    const colors = { driving: 'icon-orange', lunch: 'icon-blue', task: 'icon-green', material: 'icon-purple' };
     const entry = document.createElement('div');
     entry.className = 'list-item';
     entry.innerHTML = `
-        <div class="list-item-icon ${colors[type]}">${icons[type]}</div>
         <div class="list-item-body">
             <div class="list-item-title">${type.charAt(0).toUpperCase() + type.slice(1)}</div>
             <div class="list-item-sub">Started at ${time}</div>
         </div>
-        <span class="badge badge-green">Active</span>`;
+        <span class="badge badge-gray">Active</span>`;
     log.prepend(entry);
 }
 

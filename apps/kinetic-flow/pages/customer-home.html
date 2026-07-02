@@ -18,7 +18,7 @@
     <div class="card" onclick="loadPage('job-detail')">
         <div class="card-title">Riverside HVAC Retrofit</div>
         <div class="flex-between mb-2">
-            <span class="badge badge-green">In Progress</span>
+            <span class="badge badge-gray">In Progress</span>
             <span style="font-size:0.75rem; color:#94a3b8;">Est. complete Jul 10</span>
         </div>
         <div class="card-subtitle">123 Riverside Dr &bull; Jake Smith (Lead)</div>
@@ -31,7 +31,7 @@
     <div class="card" onclick="loadPage('schedule')">
         <div class="card-title">Office Electrical Upgrade</div>
         <div class="flex-between mb-2">
-            <span class="badge badge-purple">Scheduled</span>
+            <span class="badge badge-gray">Scheduled</span>
             <span style="font-size:0.75rem; color:#94a3b8;">Starts Jul 8</span>
         </div>
         <div class="card-subtitle">55 Summit Ave &bull; Awaiting crew assign</div>
@@ -43,11 +43,11 @@
         <button class="section-action" onclick="loadPage('schedule')">Full Schedule</button>
     </div>
 
-    <div class="schedule-slot schedule-slot-blue" style="margin-bottom:8px;">
+    <div class="schedule-slot" style="margin-bottom:8px;">
         <div class="slot-title">HVAC Inspection &mdash; Day 4</div>
         <div class="slot-time">Jul 1 &bull; 7:00 AM &ndash; 3:30 PM</div>
     </div>
-    <div class="schedule-slot schedule-slot-purple" style="margin-bottom:16px;">
+    <div class="schedule-slot" style="margin-bottom:16px;">
         <div class="slot-title">Final Walkthrough</div>
         <div class="slot-time">Jul 10 &bull; 10:00 AM &bull; With Jake Smith</div>
     </div>
@@ -62,11 +62,11 @@
             <div class="leaderboard-avatar" style="width:32px; height:32px; font-size:0.75rem;">JS</div>
             <div>
                 <div style="font-size:0.85rem;">Jake Smith</div>
-                <div style="font-size:0.72rem; color:#16a34a;">On Site Now</div>
+                <div style="font-size:0.72rem; color:#64748b;">On Site Now</div>
             </div>
         </div>
 
-        <div id="message-sent" class="alert alert-success" style="display:none;">Message sent!</div>
+        <div id="message-sent" class="alert" style="display:none;">Message sent!</div>
 
         <div style="display:flex; gap:8px;">
             <input type="text" id="customer-msg" placeholder="Type a message..."

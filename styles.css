@@ -514,19 +514,9 @@ body.fullscreen-mode #btn-exit-fullscreen {
 .btn-secondary { background: #f1f5f9; color: #334155; border: 1.5px solid #e2e8f0; }
 .btn-secondary:hover { background: #e2e8f0; }
 
-.btn-purple { background: #7c3aed; color: white; }
-.btn-purple:hover { background: #6d28d9; }
-
-.btn-green { background: #16a34a; color: white; }
-.btn-green:hover { background: #15803d; }
-
-.btn-orange { background: #ea580c; color: white; }
-.btn-orange:hover { background: #c2410c; }
-
 .btn-outline { background: transparent; color: #2563eb; border: 1.5px solid #2563eb; }
 .btn-outline:hover { background: #eff6ff; }
 
-.btn-danger { background: #dc2626; color: white; }
 .btn-sm {
     padding: 8px 14px;
     font-size: 0.8rem;
@@ -613,12 +603,6 @@ body.fullscreen-mode #btn-exit-fullscreen {
     flex-shrink: 0;
 }
 
-.icon-blue { background: #dbeafe; }
-.icon-green { background: #dcfce7; }
-.icon-purple { background: #ede9fe; }
-.icon-orange { background: #ffedd5; }
-.icon-red { background: #fee2e2; }
-
 /* ── Badges ── */
 .badge {
     display: inline-block;
@@ -630,11 +614,6 @@ body.fullscreen-mode #btn-exit-fullscreen {
     letter-spacing: 0.06em;
 }
 
-.badge-blue { background: #dbeafe; color: #1d4ed8; }
-.badge-green { background: #dcfce7; color: #15803d; }
-.badge-orange { background: #ffedd5; color: #c2410c; }
-.badge-purple { background: #ede9fe; color: #7c3aed; }
-.badge-red { background: #fee2e2; color: #dc2626; }
 .badge-gray { background: #f1f5f9; color: #475569; }
 
 /* ── Section Headers ── */
@@ -699,13 +678,12 @@ body.fullscreen-mode #btn-exit-fullscreen {
     font-size: 0.72rem;
     font-weight: 700;
     margin-top: 2px;
+    color: #64748b;
 }
-.stat-up { color: #16a34a; }
-.stat-down { color: #dc2626; }
 
 /* ── Hero Stat ── */
 .hero-stat {
-    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    background: #0f172a;
     border-radius: 18px;
     padding: 20px;
     color: white;
@@ -800,7 +778,7 @@ body.fullscreen-mode #btn-exit-fullscreen {
 .progress-fill {
     height: 100%;
     border-radius: 99px;
-    background: linear-gradient(90deg, #2563eb, #7c3aed);
+    background: #2563eb;
 }
 
 /* ── Timer ── */
@@ -854,19 +832,16 @@ body.fullscreen-mode #btn-exit-fullscreen {
 }
 
 .schedule-slot {
+    background: #f8fafc;
     border-radius: 10px;
     padding: 10px 12px;
     margin-bottom: 6px;
-    border-left: 4px solid;
+    border-left: 4px solid #cbd5e1;
     cursor: pointer;
     transition: opacity 0.2s;
 }
 
 .schedule-slot:hover { opacity: 0.85; }
-.schedule-slot-blue { background: #eff6ff; border-color: #2563eb; }
-.schedule-slot-green { background: #f0fdf4; border-color: #16a34a; }
-.schedule-slot-purple { background: #faf5ff; border-color: #7c3aed; }
-.schedule-slot-orange { background: #fff7ed; border-color: #ea580c; }
 
 .slot-title { font-size: 0.82rem; font-weight: 700; color: #0f172a; }
 .slot-time { font-size: 0.72rem; color: #64748b; margin-top: 2px; }
@@ -893,18 +868,15 @@ body.fullscreen-mode #btn-exit-fullscreen {
     font-size: 0.8rem;
     font-weight: 800;
     flex-shrink: 0;
+    background: #f1f5f9;
+    color: #475569;
 }
-
-.rank-1 { background: #fef3c7; color: #b45309; }
-.rank-2 { background: #f1f5f9; color: #475569; }
-.rank-3 { background: #ffedd5; color: #c2410c; }
-.rank-other { background: #f8fafc; color: #94a3b8; }
 
 .leaderboard-avatar {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    background: #475569;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -944,10 +916,10 @@ body.fullscreen-mode #btn-exit-fullscreen {
     font-weight: 500;
     line-height: 1.4;
     margin-bottom: 14px;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
 }
-.alert-info { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-.alert-success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
-.alert-warn { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
 
 .chip {
     display: inline-flex;
@@ -1200,16 +1172,3 @@ body.fullscreen-mode #btn-exit-fullscreen {
 /* ── Scrollbar ── */
 #main::-webkit-scrollbar { width: 3px; }
 #main::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
-
-/* ── Sign-in specific ── */
-.signin-logo {
-    width: 72px;
-    height: 72px;
-    background: linear-gradient(135deg, #2563eb, #7c3aed);
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-    margin: 0 auto 16px;
-}

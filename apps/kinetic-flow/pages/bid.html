@@ -66,7 +66,7 @@
     <!-- Grand Total -->
     <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-top:2px solid #0f172a; border-bottom:1px solid #e2e8f0; margin:8px 0 16px 0;">
         <strong>Grand Total</strong>
-        <strong id="grand-total" style="font-size:1.1rem; color:#16a34a;">$0.00</strong>
+        <strong id="grand-total" style="font-size:1.1rem; color:#0f172a;">$0.00</strong>
     </div>
 
     <!-- Project Schedule -->
@@ -107,7 +107,7 @@
                 <div style="font-weight:600;">Deposit — 50%</div>
                 <div style="font-size:0.75rem; color:#64748b;">Due upon acceptance</div>
             </div>
-            <strong id="pay-dep" style="color:#16a34a;">$0.00</strong>
+            <strong id="pay-dep" style="color:#0f172a;">$0.00</strong>
         </div>
         <div style="padding:6px 0; border-bottom:1px solid #f1f5f9;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
@@ -117,7 +117,7 @@
                         style="margin-top:4px; font-size:0.8rem; width:100%; box-sizing:border-box;"
                         oninput="window.bidData.milestone1=this.value">
                 </div>
-                <strong id="pay-d1" style="color:#16a34a; margin-left:12px; white-space:nowrap;">$0.00</strong>
+                <strong id="pay-d1" style="color:#0f172a; margin-left:12px; white-space:nowrap;">$0.00</strong>
             </div>
         </div>
         <div style="padding:6px 0; border-bottom:1px solid #f1f5f9;">
@@ -128,7 +128,7 @@
                         style="margin-top:4px; font-size:0.8rem; width:100%; box-sizing:border-box;"
                         oninput="window.bidData.milestone2=this.value">
                 </div>
-                <strong id="pay-d2" style="color:#16a34a; margin-left:12px; white-space:nowrap;">$0.00</strong>
+                <strong id="pay-d2" style="color:#0f172a; margin-left:12px; white-space:nowrap;">$0.00</strong>
             </div>
         </div>
         <div style="display:flex; justify-content:space-between; padding:6px 0;">
@@ -136,7 +136,7 @@
                 <div style="font-weight:600;">Final Balance — 10%</div>
                 <div style="font-size:0.75rem; color:#64748b;">Punch list completion</div>
             </div>
-            <strong id="pay-fin" style="color:#16a34a;">$0.00</strong>
+            <strong id="pay-fin" style="color:#0f172a;">$0.00</strong>
         </div>
     </div>
 
@@ -371,7 +371,7 @@
             html += '<span style="color:#94a3b8; font-size:0.75rem; min-width:18px;">' + (i + 1) + '</span>';
             html += '<span style="flex:1; font-weight:' + (inc ? '600' : '400') + ';">' + d.name + '</span>';
             if (inc) {
-                html += '<span style="color:#16a34a; font-weight:700; font-size:0.9rem; white-space:nowrap;">' + fmt(total) + '</span>';
+                html += '<span style="color:#0f172a; font-weight:700; font-size:0.9rem; white-space:nowrap;">' + fmt(total) + '</span>';
             }
             html += '</div>';
 

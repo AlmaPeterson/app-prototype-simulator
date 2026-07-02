@@ -6,7 +6,7 @@
         <div style="font-size:1.2rem; font-weight:700; margin-bottom:6px;">Riverside HVAC Retrofit</div>
         <div class="flex-between mb-2">
             <span class="badge">JOB-2024</span>
-            <span class="badge badge-green">Active</span>
+            <span class="badge badge-gray">Active</span>
         </div>
         <div style="font-size:0.82rem;">123 Riverside Dr, Calgary AB</div>
         <div style="font-size:0.82rem; margin-top:2px;">Jun 24 &ndash; Jul 10, 2024</div>
@@ -22,9 +22,9 @@
     </div>
 
     <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:16px;">
-        <button class="btn btn-green" style="margin:0;" onclick="openFieldClock()">Clock In</button>
-        <button class="btn btn-purple" style="margin:0;" onclick="openSchedule()">Schedule</button>
-        <button class="btn btn-orange" style="margin:0;" onclick="openKits()">Kits</button>
+        <button class="btn btn-secondary" style="margin:0;" onclick="openFieldClock()">Clock In</button>
+        <button class="btn btn-secondary" style="margin:0;" onclick="openSchedule()">Schedule</button>
+        <button class="btn btn-secondary" style="margin:0;" onclick="openKits()">Kits</button>
     </div>
 
     <!-- Bid / Finance -->
@@ -61,7 +61,7 @@
                 <div class="list-item-title">Jake Smith</div>
                 <div class="list-item-sub">Lead Technician</div>
             </div>
-            <span class="badge badge-green">Clocked In</span>
+            <span class="badge badge-gray">Clocked In</span>
         </div>
         <div class="list-item" style="padding:8px 0; border-bottom:none;">
             <div class="leaderboard-avatar">AC</div>
@@ -80,23 +80,21 @@
 
     <div class="card" onclick="loadPage('feild-clock')" style="margin-bottom:8px;">
         <div class="card-row">
-            <div class="card-icon-circle icon-blue">&#127891;</div>
             <div class="card-body">
                 <div class="card-title">HVAC Safety Procedures</div>
                 <div class="card-subtitle">Required before starting &bull; 5 min</div>
             </div>
-            <span class="badge badge-green">Done</span>
+            <span class="badge badge-gray">Done</span>
         </div>
     </div>
 
     <div class="card" onclick="loadPage('feild-clock')">
         <div class="card-row">
-            <div class="card-icon-circle icon-orange">&#9888;</div>
             <div class="card-body">
                 <div class="card-title">Refrigerant Handling</div>
                 <div class="card-subtitle">Required &bull; 8 min</div>
             </div>
-            <span class="badge badge-orange">Pending</span>
+            <span class="badge badge-gray">Pending</span>
         </div>
     </div>
 </div>

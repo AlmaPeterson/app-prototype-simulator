@@ -16,7 +16,7 @@
 
     <div style="display:flex; justify-content:space-between; align-items:center; border-top:2px solid #0f172a; border-bottom:1px solid #e2e8f0; padding:8px 0; margin:8px 0 16px 0;">
         <strong>Grand Total</strong>
-        <strong id="prop-total" style="font-size:1.1rem; color:#16a34a;"></strong>
+        <strong id="prop-total" style="font-size:1.1rem; color:#0f172a;"></strong>
     </div>
 
     <div class="section-header mt-2">
@@ -119,7 +119,7 @@
                 '<div><span style="font-size:0.72rem; color:#64748b;">Div ' + num + ' &mdash; </span><strong>' + d.name + '</strong>' +
                 (d.scope ? '<div style="font-size:0.78rem; color:#475569; margin-top:3px;">' + d.scope + '</div>' : '') +
                 '</div>' +
-                '<strong style="white-space:nowrap; color:#16a34a;">' + fmt(total) + '</strong>' +
+                '<strong style="white-space:nowrap; color:#0f172a;">' + fmt(total) + '</strong>' +
                 '</div></div>';
         });
         document.getElementById('prop-divisions').innerHTML = rows.join('');
@@ -153,7 +153,7 @@
     function payRow(label, amount, note, last) {
         return '<div style="display:flex; justify-content:space-between; align-items:flex-start; padding:8px 0;' + (last ? '' : ' border-bottom:1px solid #f1f5f9;') + '">' +
             '<div><strong>' + label + '</strong><div style="font-size:0.72rem; color:#64748b; margin-top:2px;">' + note + '</div></div>' +
-            '<strong style="color:#16a34a; white-space:nowrap; padding-left:12px;">' + amount + '</strong>' +
+            '<strong style="color:#0f172a; white-space:nowrap; padding-left:12px;">' + amount + '</strong>' +
             '</div>';
     }
 
