@@ -1,0 +1,172 @@
+[
+  {
+    "id": "d355cae4-165a-4172-9433-2bce0c28ca72",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "kit_id": "e461a5c7-091f-4987-a65d-d25636f98467",
+    "material_id": "56b927da-fc7e-4842-b167-09da6e9482c1",
+    "name": "200A Panel",
+    "quantity": 1,
+    "image_url": null,
+    "sort_order": 0
+  },
+  {
+    "id": "6dab7770-25f7-4492-830a-357da9e6f479",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "kit_id": "e461a5c7-091f-4987-a65d-d25636f98467",
+    "material_id": "955ad3ee-170b-4764-ae9f-74892f444bd4",
+    "name": "Romex 12/2 Wire",
+    "quantity": 50,
+    "image_url": null,
+    "sort_order": 1
+  },
+  {
+    "id": "914df748-8d42-4b34-82aa-446f80d31c98",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "kit_id": "e461a5c7-091f-4987-a65d-d25636f98467",
+    "material_id": "0784b947-e1db-4256-8ea0-c703625a72ab",
+    "name": "Duplex Receptacle",
+    "quantity": 10,
+    "image_url": null,
+    "sort_order": 2
+  },
+  {
+    "id": "c0e522a3-81c5-467f-8ed7-bd3bb8d21900",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "kit_id": "e461a5c7-091f-4987-a65d-d25636f98467",
+    "material_id": "a44bfaaf-cb5c-4775-ab33-2eabfd708e2e",
+    "name": "Wire Nuts Assorted",
+    "quantity": 2,
+    "image_url": null,
+    "sort_order": 3
+  },
+  {
+    "id": "8c12d704-8363-408e-b04e-8e36a816688d",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "kit_id": "2623935c-c752-4d9d-95d2-02c72a049e40",
+    "material_id": "f75f90b0-ccd6-4e9e-90ba-8ed0daba4501",
+    "name": "Copper Pipe 3/4in",
+    "quantity": 25,
+    "image_url": null,
+    "sort_order": 0
+  },
+  {
+    "id": "96b24970-f420-430b-9926-3fcecca6f3a7",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "kit_id": "2623935c-c752-4d9d-95d2-02c72a049e40",
+    "material_id": "f9609428-75cd-4d9a-94c3-c450c80a2dd6",
+    "name": "PVC DWV Pipe 3in",
+    "quantity": 15,
+    "image_url": null,
+    "sort_order": 1
+  },
+  {
+    "id": "25ae856f-f795-4b65-9bdd-79b502ba1104",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "kit_id": "2623935c-c752-4d9d-95d2-02c72a049e40",
+    "material_id": "a37d7ca5-d97c-4273-aa4b-53b1ab8d7e53",
+    "name": "Kitchen Faucet - Pull Down",
+    "quantity": 1,
+    "image_url": null,
+    "sort_order": 2
+  },
+  {
+    "id": "38fe5020-e576-470b-946c-cc550d8dde8d",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "kit_id": "1cd01261-e7ff-4b53-b20e-11318262b050",
+    "material_id": "76f8866a-e21f-4418-8795-716016956a11",
+    "name": "3-Ton Air Handler Unit",
+    "quantity": 1,
+    "image_url": null,
+    "sort_order": 0
+  },
+  {
+    "id": "c2e79269-0b16-4e88-abc1-f7d89fe3d0b2",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "kit_id": "1cd01261-e7ff-4b53-b20e-11318262b050",
+    "material_id": "95f99cc7-3485-4c03-911e-5fd23983ca71",
+    "name": "Flex Duct 8in",
+    "quantity": 40,
+    "image_url": null,
+    "sort_order": 1
+  },
+  {
+    "id": "e0d9bfa7-9163-41bf-8099-9fff3ef4901b",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "kit_id": "3b3df85e-7372-401d-9419-da59dfa1624a",
+    "material_id": "94e16330-12a0-4fe8-85de-0e7daf15c0c8",
+    "name": "Drywall 1/2in 4x8",
+    "quantity": 4,
+    "image_url": null,
+    "sort_order": 0
+  },
+  {
+    "id": "1f3efea9-ab83-43c3-ae6c-252f08000671",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "kit_id": "3b3df85e-7372-401d-9419-da59dfa1624a",
+    "material_id": "f2f6bc54-9f61-4514-81d3-e57dccbe77be",
+    "name": "Joint Compound 5gal",
+    "quantity": 2,
+    "image_url": null,
+    "sort_order": 1
+  },
+  {
+    "id": "58b2136d-957e-4073-b45b-8685d290c36d",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "kit_id": "af9cbabe-d7a2-4f02-8545-25af5c84d87c",
+    "material_id": "9bcc27a1-3e80-48be-a1e6-d866b4ac75f1",
+    "name": "Interior Pre-Hung Door 32in",
+    "quantity": 2,
+    "image_url": null,
+    "sort_order": 0
+  },
+  {
+    "id": "52fa1e06-1dd7-40f6-a6da-10c792e16519",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "kit_id": "af9cbabe-d7a2-4f02-8545-25af5c84d87c",
+    "material_id": "808997c8-6e46-483d-9576-ad7d0ef99017",
+    "name": "Baseboard Trim MDF 3.25in",
+    "quantity": 40,
+    "image_url": null,
+    "sort_order": 1
+  },
+  {
+    "id": "4cabda0f-c5dd-477f-a485-ae1721231f07",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "kit_id": "af9cbabe-d7a2-4f02-8545-25af5c84d87c",
+    "material_id": "82ff6f82-d774-47ea-b295-1c9a14f39755",
+    "name": "Deck Screws 2.5in",
+    "quantity": 1,
+    "image_url": null,
+    "sort_order": 2
+  },
+  {
+    "id": "b9e60f18-1634-497b-9173-687466b0f536",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "kit_id": "4835accd-ace4-4f96-ba0b-9a672e2a7130",
+    "material_id": "426fba30-acf6-43a1-bef3-01a37d139763",
+    "name": "Interior Paint - Eggshell 5gal",
+    "quantity": 2,
+    "image_url": null,
+    "sort_order": 0
+  },
+  {
+    "id": "087f01cb-859b-407c-8a2d-09ce2b551b75",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "kit_id": "4835accd-ace4-4f96-ba0b-9a672e2a7130",
+    "material_id": "0cc5855f-b8c2-4c5b-81d5-e8b14ff12d19",
+    "name": "Painters Tape 1.5in",
+    "quantity": 6,
+    "image_url": null,
+    "sort_order": 1
+  },
+  {
+    "id": "c1730d02-4a56-4d44-a03b-88b92572186d",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "kit_id": "c662d90a-8e69-4b87-9a65-08296de71e59",
+    "material_id": "cf29d6fc-3f98-453a-8c73-af668c9c1e37",
+    "name": "Safety Glasses",
+    "quantity": 4,
+    "image_url": null,
+    "sort_order": 0
+  }
+]

@@ -49,6 +49,41 @@
         </div>
     </div>
 
+    <!-- Company Configuration -->
+    <div class="section-header">
+        <span class="section-title">Company Configuration</span>
+    </div>
+
+    <div class="card" style="margin-bottom:8px;" onclick="openCompanyDivisions()">
+        <div class="list-item" style="padding:0; border-bottom:none;">
+            <div class="list-item-body">
+                <div class="list-item-title">Bid Divisions</div>
+                <div class="list-item-sub" id="division-count-sub"></div>
+            </div>
+            <span class="card-arrow">&#8250;</span>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom:8px;" onclick="openCompanyLevels()">
+        <div class="list-item" style="padding:0; border-bottom:none;">
+            <div class="list-item-body">
+                <div class="list-item-title">Guild Levels</div>
+                <div class="list-item-sub" id="level-count-sub"></div>
+            </div>
+            <span class="card-arrow">&#8250;</span>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;" onclick="openCompanyCompetencyLevels()">
+        <div class="list-item" style="padding:0; border-bottom:none;">
+            <div class="list-item-body">
+                <div class="list-item-title">Competency Levels</div>
+                <div class="list-item-sub" id="competency-count-sub"></div>
+            </div>
+            <span class="card-arrow">&#8250;</span>
+        </div>
+    </div>
+
     <!-- Permissions -->
     <div class="section-header">
         <span class="section-title">Permissions</span>
@@ -88,3 +123,12 @@
     <button class="btn btn-primary" onclick="continueFromSetup()">Continue to Jobs &rarr;</button>
     <button class="btn btn-secondary" onclick="continueFromSetup()">Skip for Now</button>
 </div>
+
+<script>
+(function () {
+    var activeDivisions = window.DIVISIONS.filter(function (d) { return d.isActive; }).length;
+    document.getElementById('division-count-sub').textContent = activeDivisions + ' of ' + window.DIVISIONS.length + ' active';
+    document.getElementById('level-count-sub').textContent = window.LEVELS.length + ' configured';
+    document.getElementById('competency-count-sub').textContent = window.COMPETENCY_LEVELS.length + ' configured';
+})();
+</script>

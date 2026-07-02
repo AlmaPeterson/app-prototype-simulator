@@ -1,0 +1,17 @@
+[
+  {
+    "id": "f2871aa2-1d10-47b1-86b9-ee9b93b5cd6d",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "time_entry_id": "3bfb773a-9f87-4d6a-a900-c274d1536b56",
+    "requested_by": "fb6a3bc4-26c1-4c2b-929c-792f3cf3acf9",
+    "reviewed_by": null,
+    "original_clock_in": "2026-06-30T06:00:00Z",
+    "original_clock_out": "2026-06-30T15:00:00Z",
+    "requested_clock_in": "2026-06-30T05:45:00Z",
+    "requested_clock_out": "2026-06-30T15:00:00Z",
+    "reason": "Forgot to clock in on time, started work 15 min earlier",
+    "status": "pending",
+    "reviewed_at": null,
+    "created_at": "2026-06-30T16:00:00Z"
+  }
+]

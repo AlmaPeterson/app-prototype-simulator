@@ -147,48 +147,12 @@
 <script>
 (function initBidCreation() {
 
-    var NAMES = [
-        'Planning / Design',
-        'Site Prep',
-        'Temporary Utilities',
-        'Demolition',
-        'Excavation and Trenching',
-        'Underground Utilities',
-        'Concrete',
-        'Framing',
-        'Exterior Doors and Windows',
-        'Rough HVAC',
-        'Rough Plumbing',
-        'Rough Electrical',
-        'Low Voltage / Data Rough-In',
-        'Thermal and Moisture Protection',
-        'Pre-Drywall Sign-Off',
-        'Drywall',
-        'Drywall Dry-Out & Dehumidification',
-        'HVAC Commissioning',
-        'Cultured Marble',
-        'Finish Carpentry, Millwork — Phase 1',
-        'Floor Coverings — Phase 1',
-        'Finish Carpentry — Phase 2',
-        'Painting',
-        'Epoxy Floor Coatings',
-        'Countertops',
-        'Finish Electrical',
-        'Finish HVAC',
-        'Finish Low Voltage / Data',
-        'Finish Plumbing',
-        'Appliances, Hardware & Wall Specialties',
-        'Shower Glass and Mirrors',
-        'Floor Coverings — Phase 2',
-        'Final Clean',
-        'Final Building Inspections',
-        'Exterior Hardscape & Irrigation Sleeves',
-        'Exterior Flatwork',
-        'Irrigation and Landscaping',
-        'Exterior Electrical',
-        'Exterior Structures',
-        'Furnishings'
-    ];
+    // Sourced from the company's configurable division list (see
+    // company-divisions.html / app.js DIVISIONS) rather than a hardcoded
+    // array, so admins can add/remove/reorder/deactivate divisions and every
+    // new bid picks up the change.
+    var NAMES = window.DIVISIONS.filter(function (d) { return d.isActive; })
+                                 .map(function (d) { return d.name; });
 
     if (!window.bidData) {
         var today = new Date();
@@ -200,8 +164,18 @@
         }
         var divs = NAMES.map(function(_, i) { return blankDiv(i); });
 
-        // Division 22 — Finish Carpentry Phase 2 (index 21)
-        Object.assign(divs[21], {
+        // Looks up by name rather than a fixed index so the sample data below
+        // still lands on the right division if a company reorders/removes
+        // divisions via company-divisions.html.
+        function findDiv(name) {
+            for (var i = 0; i < divs.length; i++) { if (divs[i].name === name) return i; }
+            return -1;
+        }
+        var fcp2Idx = findDiv('Finish Carpentry — Phase 2');
+        var paintIdx = findDiv('Painting');
+        var floorIdx = findDiv('Floor Coverings — Phase 2');
+
+        if (fcp2Idx >= 0) Object.assign(divs[fcp2Idx], {
             included: true,
             scope: 'Install hollow core doors, door casing FJP, and baseboard FJP throughout.',
             tasks: [
@@ -236,8 +210,7 @@
             ]
         });
 
-        // Division 23 — Painting (index 22)
-        Object.assign(divs[22], {
+        if (paintIdx >= 0) Object.assign(divs[paintIdx], {
             included: false,
             scope: 'Full interior paint: spackle, caulk, prime, and paint walls, trim, and doors.',
             tasks: [
@@ -274,8 +247,7 @@
             ]
         });
 
-        // Division 32 — Floor Coverings Phase 2 (index 31)
-        Object.assign(divs[31], {
+        if (floorIdx >= 0) Object.assign(divs[floorIdx], {
             included: true,
             scope: 'Install tack strip, stretch, cut, and lay carpet in place.',
             tasks: [

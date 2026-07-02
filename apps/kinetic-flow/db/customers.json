@@ -1,0 +1,58 @@
+[
+  {
+    "id": "1ba8fd70-8dfb-4a56-9a52-b031633537c5",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "branch_id": "c87dbcb4-d67c-4d92-9400-266914530de3",
+    "full_name": "P. Nguyen",
+    "email": "p.nguyen@example.com",
+    "phone": "+14035551201",
+    "address_id": "b663996f-6531-47ac-898f-8dff84426ec8",
+    "notes": "Prefers text over calls",
+    "created_at": "2026-05-11T12:00:00Z",
+    "updated_at": "2026-06-09T12:00:00Z",
+    "deleted_at": null,
+    "sync_status": "synced"
+  },
+  {
+    "id": "711400df-1da4-4151-8ec8-c42c978e5a87",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "branch_id": "c87dbcb4-d67c-4d92-9400-266914530de3",
+    "full_name": "Westgate Commercial",
+    "email": "ops@westgatecommercial.com",
+    "phone": "+14035551202",
+    "address_id": "d5cec112-3f1e-4af2-b102-b6c3aa3481c9",
+    "notes": "Access via side entrance \u2014 call ahead",
+    "created_at": "2025-10-10T12:00:00Z",
+    "updated_at": "2026-06-15T12:00:00Z",
+    "deleted_at": null,
+    "sync_status": "synced"
+  },
+  {
+    "id": "e5403ef6-05e9-4e96-9c8d-5d6090d503e0",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "branch_id": "a107a2c1-aea5-476f-a5c4-2cb12519763c",
+    "full_name": "S. Delgado",
+    "email": "s.delgado@example.com",
+    "phone": "+14035551203",
+    "address_id": "6de70fcb-2d51-4eb5-8f38-824630d4cec6",
+    "notes": null,
+    "created_at": "2026-03-31T12:00:00Z",
+    "updated_at": "2026-06-20T12:00:00Z",
+    "deleted_at": null,
+    "sync_status": "synced"
+  },
+  {
+    "id": "efe55687-15dc-4655-8194-51fb20262861",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "branch_id": "c87dbcb4-d67c-4d92-9400-266914530de3",
+    "full_name": "Summit Retail Group",
+    "email": "facilities@summitretail.com",
+    "phone": "+14035551204",
+    "address_id": "fc1f0333-83c5-4585-8b40-bc3f58325cd0",
+    "notes": "Net-30 invoicing required",
+    "created_at": "2026-04-23T12:00:00Z",
+    "updated_at": "2026-06-15T12:00:00Z",
+    "deleted_at": null,
+    "sync_status": "synced"
+  }
+]

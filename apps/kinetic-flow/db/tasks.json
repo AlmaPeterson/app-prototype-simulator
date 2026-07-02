@@ -1,0 +1,62 @@
+[
+  {
+    "id": "bc000258-cfe6-45c3-a37b-6c98cfbf1af0",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "time_entry_id": "407bbf4d-f475-4189-9998-de3491b83920",
+    "task_module_id": "4c837749-e737-45b8-9bfc-880049f09b71",
+    "name": "Air Handler Install",
+    "started_at": "2026-07-01T06:00:00Z",
+    "ended_at": "2026-07-01T14:00:00Z",
+    "lat": 51.0428,
+    "lng": -114.068861,
+    "notes": "Unit set and secured, refrigerant lines connected",
+    "created_at": "2026-07-01T06:00:00Z",
+    "updated_at": "2026-07-01T14:00:00Z",
+    "sync_status": "synced"
+  },
+  {
+    "id": "805ed980-6dd0-46ff-a9d4-3fc79646b1c6",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "time_entry_id": "e9e0c242-ef24-436c-8b8e-f4576b8e9a8d",
+    "task_module_id": "2a884123-b4f4-4cd3-a0a6-6a7c5eb0fd0e",
+    "name": "Ductwork Run & Seal",
+    "started_at": "2026-07-01T06:00:00Z",
+    "ended_at": "2026-07-01T14:00:00Z",
+    "lat": 51.043692,
+    "lng": -114.063143,
+    "notes": "Ran flex duct to 3 registers, mastic sealed all joints",
+    "created_at": "2026-07-01T06:00:00Z",
+    "updated_at": "2026-07-01T14:00:00Z",
+    "sync_status": "synced"
+  },
+  {
+    "id": "96a1bc98-9632-4453-b3fc-7413c248235c",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "time_entry_id": "06269f3d-7101-4400-9e93-4eabb032f800",
+    "task_module_id": "242a61ae-84d0-4725-a46f-8b88630f18f7",
+    "name": "Rough-In Supply & Drain Lines",
+    "started_at": "2026-06-30T06:00:00Z",
+    "ended_at": "2026-06-30T14:00:00Z",
+    "lat": 51.04552,
+    "lng": -114.075419,
+    "notes": null,
+    "created_at": "2026-06-30T06:00:00Z",
+    "updated_at": "2026-06-30T14:00:00Z",
+    "sync_status": "synced"
+  },
+  {
+    "id": "24122296-336f-4de2-8e99-cc4c825b8c73",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "time_entry_id": "1dd3ff9e-b121-4c8f-bed5-fd3d09fe8fde",
+    "task_module_id": "734b3c28-f789-472f-a55b-8edb454025ee",
+    "name": "Switch & Receptacle Trim-Out",
+    "started_at": "2026-07-02T04:00:00Z",
+    "ended_at": null,
+    "lat": 51.030642,
+    "lng": -114.073691,
+    "notes": "In progress",
+    "created_at": "2026-07-02T04:00:00Z",
+    "updated_at": "2026-07-02T04:00:00Z",
+    "sync_status": "synced"
+  }
+]

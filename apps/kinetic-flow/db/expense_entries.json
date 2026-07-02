@@ -1,0 +1,80 @@
+[
+  {
+    "id": "86de52c9-656a-4f6c-9505-c347553fe354",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "branch_id": "c87dbcb4-d67c-4d92-9400-266914530de3",
+    "job_id": "c229964f-71e9-4d66-af48-fdb1db4c7404",
+    "category": "material",
+    "description": "Air handler unit + ductwork",
+    "amount": 4200.0,
+    "expense_date": "2026-06-24",
+    "logged_by": "31c3942e-fc82-440b-990c-9b51c97a0d3a",
+    "created_at": "2026-06-24T12:00:00Z",
+    "updated_at": "2026-06-24T12:00:00Z"
+  },
+  {
+    "id": "12c9a09a-a2dc-4de7-a92f-4b606205e5ee",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "branch_id": "c87dbcb4-d67c-4d92-9400-266914530de3",
+    "job_id": "c229964f-71e9-4d66-af48-fdb1db4c7404",
+    "category": "employee",
+    "description": "Crew payroll - week of retrofit start",
+    "amount": 5100.0,
+    "expense_date": "2026-06-26",
+    "logged_by": "31c3942e-fc82-440b-990c-9b51c97a0d3a",
+    "created_at": "2026-06-26T12:00:00Z",
+    "updated_at": "2026-06-26T12:00:00Z"
+  },
+  {
+    "id": "9076a6f3-1b4e-4453-b85e-74e3f027f5b3",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "branch_id": "c87dbcb4-d67c-4d92-9400-266914530de3",
+    "job_id": null,
+    "category": "overhead",
+    "description": "Shop rent - July",
+    "amount": 3200.0,
+    "expense_date": "2026-07-01",
+    "logged_by": "292d4893-242f-48b7-9e52-73a717a1f128",
+    "created_at": "2026-07-01T12:00:00Z",
+    "updated_at": "2026-07-01T12:00:00Z"
+  },
+  {
+    "id": "1dbcdcf8-fad8-41a9-b595-103b8cf48917",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "branch_id": "a107a2c1-aea5-476f-a5c4-2cb12519763c",
+    "job_id": "d7150afc-b7a4-4419-9a84-45542b4c173b",
+    "category": "material",
+    "description": "Copper pipe + fittings",
+    "amount": 1650.0,
+    "expense_date": "2026-06-30",
+    "logged_by": "caa1abbf-fee3-4885-addc-7dd4b97028aa",
+    "created_at": "2026-06-30T12:00:00Z",
+    "updated_at": "2026-06-30T12:00:00Z"
+  },
+  {
+    "id": "b9384de8-a483-4d45-940f-5d1d6dfff6d0",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "branch_id": "c87dbcb4-d67c-4d92-9400-266914530de3",
+    "job_id": null,
+    "category": "overhead",
+    "description": "Kinetic Flow software subscription",
+    "amount": 480.0,
+    "expense_date": "2026-07-01",
+    "logged_by": "31c3942e-fc82-440b-990c-9b51c97a0d3a",
+    "created_at": "2026-07-01T12:00:00Z",
+    "updated_at": "2026-07-01T12:00:00Z"
+  },
+  {
+    "id": "6af57b6d-84cb-4d9e-871b-68b3901ef8c9",
+    "company_id": "d50e13c3-8cba-46c3-9f44-1a705f2195cf",
+    "branch_id": "20e8fc01-9842-435f-924c-435be5f1255e",
+    "job_id": null,
+    "category": "overhead",
+    "description": "Denver shop insurance",
+    "amount": 1100.0,
+    "expense_date": "2026-06-27",
+    "logged_by": "ceca224d-14c1-411a-ab9a-599207b8b4b2",
+    "created_at": "2026-06-27T12:00:00Z",
+    "updated_at": "2026-06-27T12:00:00Z"
+  }
+]

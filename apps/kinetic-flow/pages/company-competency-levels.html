@@ -1,0 +1,98 @@
+<div class="page" style="padding-bottom:80px;">
+    <button class="btn btn-secondary btn-sm mb-4" onclick="manageCompany(state.currentCompany)">&larr; Company Setup</button>
+
+    <div class="page-header">
+        <div class="page-title">Competency Levels</div>
+        <div class="page-subtitle">Per-task skill gate used at clock-in (Student &rarr; Exposure &rarr; Competent &rarr; Mastery). Competent tasks require a co-sign; Mastery clocks in unsupervised.</div>
+    </div>
+
+    <div id="competency-list"></div>
+
+    <div class="form-group" style="margin-top:12px;">
+        <label>New Competency Level Name</label>
+        <input type="text" id="new-competency-name" placeholder="e.g. Certified">
+    </div>
+    <button class="btn btn-secondary" onclick="window.addCompanyCompetencyLevel()">+ Add Level</button>
+</div>
+
+<script>
+(function () {
+    var COMPETENCY_LEVELS = window.COMPETENCY_LEVELS;
+
+    function escapeAttr(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    }
+
+    function slugify(name) {
+        var base = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'level';
+        var slug = base, n = 2;
+        while (COMPETENCY_LEVELS.some(function (l) { return l.slug === slug; })) { slug = base + '_' + n++; }
+        return slug;
+    }
+
+    function render() {
+        var html = '';
+        COMPETENCY_LEVELS.forEach(function (lvl, i) {
+            html += '<div class="card" style="cursor:default; padding:10px 12px; margin-bottom:8px;">';
+
+            html += '<div style="display:flex; align-items:center; gap:10px;">';
+            html += '<div style="display:flex; flex-direction:column; gap:1px;">';
+            html += '<button class="text-link" style="font-size:0.65rem; line-height:1; padding:0;"' + (i === 0 ? ' disabled' : '') + ' onclick="window.moveCompanyCompetencyLevel(' + i + ', -1)">&#9650;</button>';
+            html += '<button class="text-link" style="font-size:0.65rem; line-height:1; padding:0;"' + (i === COMPETENCY_LEVELS.length - 1 ? ' disabled' : '') + ' onclick="window.moveCompanyCompetencyLevel(' + i + ', 1)">&#9660;</button>';
+            html += '</div>';
+            html += '<span style="color:#94a3b8; font-size:0.75rem; min-width:18px;">' + (i + 1) + '</span>';
+            html += '<div style="flex:1;">';
+            html += '<input type="text" value="' + escapeAttr(lvl.name) + '" style="width:100%; border:none; background:transparent; font-weight:600; font-size:0.85rem; padding:2px 0;" onchange="window.renameCompanyCompetencyLevel(' + i + ', this.value)">';
+            html += '<div class="card-subtitle" style="margin:0;">slug: ' + lvl.slug + '</div>';
+            html += '</div>';
+            html += '<button class="text-link" style="color:#dc2626; font-size:0.75rem; white-space:nowrap;" onclick="window.removeCompanyCompetencyLevel(' + i + ')">Remove</button>';
+            html += '</div>';
+
+            html += '<div class="list-item" style="padding:8px 0 0 26px; border-bottom:none;">';
+            html += '<div class="list-item-body"><div class="list-item-title" style="font-size:0.8rem;">Requires co-sign</div></div>';
+            html += '<div class="toggle-switch' + (lvl.requiresCosign ? ' on' : '') + '" onclick="window.toggleCompanyCompetencyCosign(' + i + ')"><div class="toggle-switch-knob"></div></div>';
+            html += '</div>';
+
+            html += '<div class="form-group" style="margin:8px 0 0 26px;"><label>Auto-Promote After (days, blank = never)</label>';
+            html += '<input type="number" min="0" value="' + (lvl.autoPromoteDays != null ? lvl.autoPromoteDays : '') + '" onchange="window.updateCompanyCompetencyAutoPromote(' + i + ', this.value)"></div>';
+
+            html += '</div>';
+        });
+        document.getElementById('competency-list').innerHTML = html;
+    }
+
+    window.addCompanyCompetencyLevel = function () {
+        var input = document.getElementById('new-competency-name');
+        var name = input.value.trim();
+        if (!name) return;
+        COMPETENCY_LEVELS.push({ slug: slugify(name), name: name, requiresCosign: false, autoPromoteDays: null });
+        input.value = '';
+        render();
+    };
+    window.removeCompanyCompetencyLevel = function (i) {
+        COMPETENCY_LEVELS.splice(i, 1);
+        render();
+    };
+    window.moveCompanyCompetencyLevel = function (i, dir) {
+        var j = i + dir;
+        if (j < 0 || j >= COMPETENCY_LEVELS.length) return;
+        var tmp = COMPETENCY_LEVELS[i]; COMPETENCY_LEVELS[i] = COMPETENCY_LEVELS[j]; COMPETENCY_LEVELS[j] = tmp;
+        render();
+    };
+    window.renameCompanyCompetencyLevel = function (i, val) {
+        val = val.trim();
+        if (val) COMPETENCY_LEVELS[i].name = val;
+        render();
+    };
+    window.toggleCompanyCompetencyCosign = function (i) {
+        COMPETENCY_LEVELS[i].requiresCosign = !COMPETENCY_LEVELS[i].requiresCosign;
+        render();
+    };
+    window.updateCompanyCompetencyAutoPromote = function (i, val) {
+        COMPETENCY_LEVELS[i].autoPromoteDays = val === '' ? null : Number(val);
+        render();
+    };
+
+    render();
+})();
+</script>

@@ -1,0 +1,58 @@
+[
+  {
+    "id": "f85c63df-efc9-44b3-9f57-6675550589b5",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "branch_id": null,
+    "snapshot_month": "2026-07-01",
+    "projected_revenue": 148000,
+    "actual_revenue": 132500,
+    "total_expenses": 103500,
+    "overhead_cost": 18000,
+    "employee_cost": 61000,
+    "material_cost": 24500,
+    "net": 29000,
+    "created_at": "2026-07-01T12:00:00Z"
+  },
+  {
+    "id": "6cbcd932-c834-46fa-98e7-81f851a55616",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "branch_id": null,
+    "snapshot_month": "2026-06-01",
+    "projected_revenue": 139000,
+    "actual_revenue": 141200,
+    "total_expenses": 100100,
+    "overhead_cost": 17500,
+    "employee_cost": 59500,
+    "material_cost": 23100,
+    "net": 41100,
+    "created_at": "2026-06-01T12:00:00Z"
+  },
+  {
+    "id": "ce1439a8-493c-44c1-b266-fcbc129bcc22",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "branch_id": "c87dbcb4-d67c-4d92-9400-266914530de3",
+    "snapshot_month": "2026-07-01",
+    "projected_revenue": 92000,
+    "actual_revenue": 84300,
+    "total_expenses": 59000,
+    "overhead_cost": 9800,
+    "employee_cost": 34000,
+    "material_cost": 15200,
+    "net": 25300,
+    "created_at": "2026-07-01T12:00:00Z"
+  },
+  {
+    "id": "da5953fc-0462-4c0c-a68b-f316e734e593",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "branch_id": "a107a2c1-aea5-476f-a5c4-2cb12519763c",
+    "snapshot_month": "2026-07-01",
+    "projected_revenue": 56000,
+    "actual_revenue": 48200,
+    "total_expenses": 44500,
+    "overhead_cost": 8200,
+    "employee_cost": 27000,
+    "material_cost": 9300,
+    "net": 3700,
+    "created_at": "2026-07-01T12:00:00Z"
+  }
+]

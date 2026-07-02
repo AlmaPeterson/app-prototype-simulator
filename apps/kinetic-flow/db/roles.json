@@ -1,0 +1,62 @@
+[
+  {
+    "id": "4789b81e-61b1-4c14-9f3c-476a78eaa372",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "name": "admin",
+    "permissions": {
+      "finance": "nationwide",
+      "manage_users": true,
+      "manage_bids": true
+    }
+  },
+  {
+    "id": "a865397b-f4bc-4218-8f54-56c27e59d8be",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "name": "manager",
+    "permissions": {
+      "finance": "branch",
+      "manage_users": true,
+      "manage_bids": true
+    }
+  },
+  {
+    "id": "3e6f677a-980b-40e8-9532-b3ec2a5a4bca",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "name": "employee",
+    "permissions": {
+      "finance": "job",
+      "manage_users": false,
+      "manage_bids": false
+    }
+  },
+  {
+    "id": "bc071500-c3bc-41ea-b9ce-b50e81da0ace",
+    "company_id": "d50e13c3-8cba-46c3-9f44-1a705f2195cf",
+    "name": "admin",
+    "permissions": {
+      "finance": "nationwide",
+      "manage_users": true,
+      "manage_bids": true
+    }
+  },
+  {
+    "id": "173e2701-b14d-40e8-8462-edf87d3ced11",
+    "company_id": "d50e13c3-8cba-46c3-9f44-1a705f2195cf",
+    "name": "manager",
+    "permissions": {
+      "finance": "branch",
+      "manage_users": true,
+      "manage_bids": true
+    }
+  },
+  {
+    "id": "f136eb29-f12f-4101-992f-e7a7dafc6cea",
+    "company_id": "d50e13c3-8cba-46c3-9f44-1a705f2195cf",
+    "name": "employee",
+    "permissions": {
+      "finance": "job",
+      "manage_users": false,
+      "manage_bids": false
+    }
+  }
+]

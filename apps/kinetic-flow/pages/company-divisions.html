@@ -1,0 +1,77 @@
+<div class="page" style="padding-bottom:80px;">
+    <button class="btn btn-secondary btn-sm mb-4" onclick="manageCompany(state.currentCompany)">&larr; Company Setup</button>
+
+    <div class="page-header">
+        <div class="page-title">Bid Divisions</div>
+        <div class="page-subtitle">Divisions appear on every new bid in this order. Turn one off to hide it without losing history.</div>
+    </div>
+
+    <div id="division-list"></div>
+
+    <div class="form-row" style="margin-top:12px;">
+        <div class="form-group" style="margin:0; flex:1;">
+            <input type="text" id="new-division-name" placeholder="New division name...">
+        </div>
+        <button class="btn btn-secondary" style="width:auto; margin:0;" onclick="window.addCompanyDivision()">+ Add</button>
+    </div>
+</div>
+
+<script>
+(function () {
+    var DIVISIONS = window.DIVISIONS;
+
+    function escapeAttr(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    }
+
+    function render() {
+        var html = '';
+        DIVISIONS.forEach(function (d, i) {
+            html += '<div class="card" style="cursor:default; padding:8px 12px; margin-bottom:6px; display:flex; align-items:center; gap:10px;">';
+
+            html += '<div style="display:flex; flex-direction:column; gap:1px;">';
+            html += '<button class="text-link" style="font-size:0.65rem; line-height:1; padding:0;"' + (i === 0 ? ' disabled' : '') + ' onclick="window.moveCompanyDivision(' + i + ', -1)">&#9650;</button>';
+            html += '<button class="text-link" style="font-size:0.65rem; line-height:1; padding:0;"' + (i === DIVISIONS.length - 1 ? ' disabled' : '') + ' onclick="window.moveCompanyDivision(' + i + ', 1)">&#9660;</button>';
+            html += '</div>';
+
+            html += '<span style="color:#94a3b8; font-size:0.75rem; min-width:18px;">' + (i + 1) + '</span>';
+            html += '<input type="text" value="' + escapeAttr(d.name) + '" style="flex:1; border:none; background:transparent; font-weight:600; font-size:0.85rem; padding:4px 0;" onchange="window.renameCompanyDivision(' + i + ', this.value)">';
+            html += '<div class="toggle-switch' + (d.isActive ? ' on' : '') + '" onclick="window.toggleCompanyDivisionActive(' + i + ')"><div class="toggle-switch-knob"></div></div>';
+            html += '<button class="text-link" style="color:#dc2626; font-size:0.75rem; white-space:nowrap;" onclick="window.removeCompanyDivision(' + i + ')">Remove</button>';
+
+            html += '</div>';
+        });
+        document.getElementById('division-list').innerHTML = html;
+    }
+
+    window.addCompanyDivision = function () {
+        var input = document.getElementById('new-division-name');
+        var name = input.value.trim();
+        if (!name) return;
+        DIVISIONS.push({ name: name, isActive: true });
+        input.value = '';
+        render();
+    };
+    window.removeCompanyDivision = function (i) {
+        DIVISIONS.splice(i, 1);
+        render();
+    };
+    window.toggleCompanyDivisionActive = function (i) {
+        DIVISIONS[i].isActive = !DIVISIONS[i].isActive;
+        render();
+    };
+    window.moveCompanyDivision = function (i, dir) {
+        var j = i + dir;
+        if (j < 0 || j >= DIVISIONS.length) return;
+        var tmp = DIVISIONS[i]; DIVISIONS[i] = DIVISIONS[j]; DIVISIONS[j] = tmp;
+        render();
+    };
+    window.renameCompanyDivision = function (i, val) {
+        val = val.trim();
+        if (val) DIVISIONS[i].name = val;
+        render();
+    };
+
+    render();
+})();
+</script>

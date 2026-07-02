@@ -1,0 +1,46 @@
+[
+  {
+    "id": "7b71147f-3568-4807-91da-29a428918470",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "task_module_id": "bcf333b0-2a1c-4fee-8a54-b0591dd649a5",
+    "division_number": 26,
+    "task_name": "200A Panel Replacement",
+    "avg_hours": 9.2,
+    "avg_cost": 3850,
+    "sample_count": 14,
+    "last_updated": "2026-06-30T12:00:00Z"
+  },
+  {
+    "id": "891df374-e3b2-4e33-8ee2-18d5cc1fea87",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "task_module_id": "4c837749-e737-45b8-9bfc-880049f09b71",
+    "division_number": 23,
+    "task_name": "Air Handler Install",
+    "avg_hours": 10.5,
+    "avg_cost": 4100,
+    "sample_count": 9,
+    "last_updated": "2026-06-10T12:00:00Z"
+  },
+  {
+    "id": "4f8553bd-a78f-48a8-8af1-476d36edc750",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "task_module_id": "242a61ae-84d0-4725-a46f-8b88630f18f7",
+    "division_number": 22,
+    "task_name": "Rough-In Supply & Drain Lines",
+    "avg_hours": 8.4,
+    "avg_cost": 2900,
+    "sample_count": 11,
+    "last_updated": "2026-06-24T12:00:00Z"
+  },
+  {
+    "id": "ae045a41-5a35-405b-9332-112e7358bcad",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "task_module_id": "2ed93f1c-7b58-4182-9791-9ad7421f74ad",
+    "division_number": 6,
+    "task_name": "Hanging Interior Pre-Hung Doors",
+    "avg_hours": 3.8,
+    "avg_cost": 640,
+    "sample_count": 22,
+    "last_updated": "2026-06-07T12:00:00Z"
+  }
+]

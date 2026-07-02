@@ -12,18 +12,100 @@
 // those globals, regardless of load order.
 (function () {
 const PAGES_DIR = 'apps/kinetic-flow/pages/';
+const DB_DIR = 'apps/kinetic-flow/db/';
+const STORAGE_KEY = 'kineticFlow.state';
 
 // ── App State ──────────────────────────────────────────────────────────────
 const state = {
     accountType: 'existing',  // 'existing' | 'new'
     role: 'worker',           // 'worker' | 'customer' | 'supplier'
+    signedIn: false,
     currentPage: '',
     currentJob: null,
+    currentCompany: null,
     currentDivision: null,    // 0-based index into bidData.divisions
     currentBranch: null,
     clockInTask: null,        // { name, level, isHighHazard } — level: student|exposure|competent|mastery
     scorecardWorker: null,
+    // Real-identity fields populated by afterSignIn() once auth is backed by
+    // the mock DB (see DB module below) — kept alongside the legacy
+    // name-string fields above until each consuming page is migrated to ids.
+    currentUserId: null,
+    currentUser: null,        // { id, name, email, globalLevel }
+    currentCompanyId: null,
+    currentBranchId: null,
 };
+
+// ── Mock DB ──────────────────────────────────────────────────────────────
+// Loads every db/*.json "table" into memory once per app lifetime, then
+// serves all reads/writes against that in-memory copy for the rest of the
+// session. The on-disk JSON files are seed data only — nothing here ever
+// writes back to them (there's no server); saveState()/restoreState()
+// snapshot the mutated tables into localStorage instead, the same way
+// state/bidData already are, so a reload resumes without re-fetching or
+// losing any inserts/updates made during the session.
+const TABLES = [
+    'companies', 'branches', 'users', 'roles', 'user_roles', 'customers',
+    'addresses', 'jobs', 'bids', 'bid_divisions', 'bid_line_items', 'divisions',
+    'materials', 'inventory_kits', 'kit_items', 'kit_tools', 'kit_checkouts',
+    'job_assignments', 'task_modules', 'tasks', 'task_materials', 'task_photos',
+    'time_entries', 'time_entry_edits', 'schedule_events', 'messages',
+    'message_templates', 'scorecard_entries', 'worker_task_competency',
+    'competency_levels', 'levels', 'user_level_history', 'training_modules',
+    'training_assignments', 'job_history_library', 'finance_snapshots',
+    'expense_entries', 'finance_dashboard_permissions', 'property_records',
+    'phase_logs', 'system_state',
+];
+
+let _tables = {};
+let _dbLoaded = false;
+let _nextIdSeq = 1;
+
+function genId() {
+    // Not a real uuid — just unique and visibly distinct from seeded uuids.
+    return 'local-' + Date.now().toString(36) + '-' + (_nextIdSeq++).toString(36);
+}
+
+const DB = {
+    isLoaded: function () { return _dbLoaded; },
+    load: function () {
+        if (_dbLoaded) return Promise.resolve();
+        return Promise.all(TABLES.map(function (t) {
+            return fetch(DB_DIR + t + '.json').then(function (r) { return r.json(); }).then(function (rows) { _tables[t] = rows; });
+        })).then(function () { _dbLoaded = true; });
+    },
+    get: function (table) { return _tables[table] || []; },
+    getById: function (table, id) { return this.get(table).find(function (r) { return r.id === id; }) || null; },
+    find: function (table, pred) { return this.get(table).filter(pred); },
+    findOne: function (table, pred) { return this.get(table).find(pred) || null; },
+    insert: function (table, partial) {
+        const now = new Date().toISOString();
+        const row = Object.assign({ id: genId(), created_at: now, updated_at: now, deleted_at: null, sync_status: 'local' }, partial);
+        this.get(table).push(row);
+        saveState();
+        return row;
+    },
+    update: function (table, id, patch) {
+        const row = this.getById(table, id);
+        if (!row) return null;
+        Object.assign(row, patch, { updated_at: new Date().toISOString(), sync_status: 'local' });
+        saveState();
+        return row;
+    },
+    softDelete: function (table, id) { return this.update(table, id, { deleted_at: new Date().toISOString() }); },
+    // Escape hatch for "Reset Demo Data" (more.html) — drops all in-memory
+    // mutations and the localStorage snapshot, then re-fetches pristine seed data.
+    reset: function () {
+        _tables = {};
+        _dbLoaded = false;
+        localStorage.removeItem(STORAGE_KEY);
+        return this.load();
+    },
+};
+
+function resetDemoData() {
+    DB.reset().then(function () { location.reload(); });
+}
 
 // ── Bottom Nav Definitions ──────────────────────────────────────────────────
 const workerNav = [
@@ -36,9 +118,9 @@ const workerNav = [
 
 const customerNav = [
     { icon: '',   label: 'Home',     page: 'customer-home' },
+    { icon: '',   label: 'Bid',      page: 'customer-bid' },
+    { icon: '',   label: 'Invoice',  page: 'customer-invoice' },
     { icon: '',   label: 'Schedule', page: 'schedule' },
-    { icon: '',   label: 'Messages', page: 'messages' },
-    { icon: '',   label: 'Stats',    page: 'stats' },
 ];
 
 const supplierNav = [
@@ -51,7 +133,7 @@ const supplierNav = [
 // Pages that show the bottom nav
 const mainAppPages = [
     'schedule', 'feild-clock', 'kits', 'label-generator', 'more', 'messages',
-    'inventory', 'stats', 'finance', 'customer-home', 'scoreboard',
+    'inventory', 'stats', 'finance', 'customer-home', 'customer-bid', 'customer-invoice', 'scoreboard',
     'job-home', 'job-detail', 'job-detail-nobid', 'create-job',
 ];
 
@@ -59,6 +141,7 @@ const mainAppPages = [
 function loadPage(name, data) {
     if (data) state.currentPage = name;
     state.currentPage = name;
+    saveState();
 
     fetch(PAGES_DIR + name + '.html')
         .then(r => {
@@ -77,6 +160,7 @@ function loadPage(name, data) {
                 document.body.removeChild(newScript);
             });
             updateBottomNav();
+            if (name === 'feild-clock') syncClockUI();
         })
         .catch(err => {
             document.getElementById('main').innerHTML =
@@ -133,19 +217,40 @@ function setRole(role) {
     document.getElementById('btn-worker').classList.toggle('active', role === 'worker');
     document.getElementById('btn-customer').classList.toggle('active', role === 'customer');
     document.getElementById('btn-supplier').classList.toggle('active', role === 'supplier');
+    saveState();
     bootPhone();
 }
 
 // ── Auth Flow ───────────────────────────────────────────────────────────────
+// Passwordless by design: the password field on sign-in.html is decorative
+// only and is never read, checked, or stored anywhere in this file. Signing
+// in looks up a real `users` row by email (case-insensitive) so the app
+// carries the signed-in user's real identity/company/branch from here on;
+// an email that doesn't match any seeded user falls back to a fixed demo
+// identity rather than dead-ending the flow.
+const DEFAULT_DEMO_EMAIL = 'j.smith@kineticsolutions.com';
+
 function signIn() {
     if (state.accountType === 'new') {
         showSignUp();
         return;
     }
-    afterSignIn();
+    const emailInput = document.getElementById('signin-email');
+    const typed = ((emailInput && emailInput.value) || '').trim().toLowerCase();
+    const user = (typed && DB.findOne('users', function (u) { return !u.deleted_at && u.email.toLowerCase() === typed; }))
+        || DB.findOne('users', function (u) { return u.email === DEFAULT_DEMO_EMAIL; });
+    afterSignIn(user);
 }
 
-function afterSignIn() {
+function afterSignIn(user) {
+    state.signedIn = true;
+    if (user) {
+        state.currentUserId = user.id;
+        state.currentCompanyId = user.company_id;
+        state.currentBranchId = user.branch_id;
+        state.currentUser = { id: user.id, name: user.full_name, email: user.email, globalLevel: user.global_level };
+    }
+    saveState();
     if (state.role === 'worker') {
         loadPage('companies');
     } else if (state.role === 'customer') {
@@ -153,6 +258,11 @@ function afterSignIn() {
     } else {
         loadPage('inventory');
     }
+}
+
+function signOut() {
+    state.signedIn = false;
+    loadPage('sign-in');
 }
 
 function showSignUp() {
@@ -175,9 +285,33 @@ function closeSignUp() {
     if (modal) modal.remove();
 }
 
+function val(id) {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : '';
+}
+
+const KINETIC_SOLUTIONS_ID = '22e15616-ddab-463d-8c8e-cd89d0fbcf33';
+
 function submitAccount() {
+    const company = DB.findOne('companies', function (c) {
+        return c.name.toLowerCase() === val('signup-company').toLowerCase();
+    }) || DB.getById('companies', KINETIC_SOLUTIONS_ID);
+    const fullName = [val('signup-first'), val('signup-last')].filter(Boolean).join(' ') || 'New User';
+    const newUser = DB.insert('users', {
+        company_id: company.id,
+        branch_id: null,
+        email: val('signup-email') || ('pending-' + Date.now() + '@example.com'),
+        // Absolute requirement: never a real hash, never checked against anything.
+        password_hash: '',
+        phone: val('signup-phone') || null,
+        full_name: fullName,
+        avatar_url: null,
+        push_token: null,
+        global_level: 'apprentice',
+        is_active: true,
+    });
     closeSignUp();
-    afterSignIn();
+    afterSignIn(newUser);
 }
 
 function goToSignIn() { loadPage('sign-in'); }
@@ -214,6 +348,55 @@ function openBranch(name) {
     state.currentBranch = name;
     loadPage('branch-detail');
 }
+
+function selectCompany(name) {
+    state.currentCompany = name;
+    loadPage('jobs');
+}
+
+function manageCompany(name) {
+    state.currentCompany = name;
+    loadPage('company-setup');
+}
+
+// ── Company Configuration: Divisions / Levels / Competency Levels ───────────
+// Mirrors db/divisions.json, db/levels.json, db/competency_levels.json.
+// Lives here (not in the page) for the same reason as KIT_CATEGORIES — app.js
+// persists across navigations, but a page fragment's inline <script> re-runs
+// every time loadPage() navigates to it, so per-visit-local state would
+// forget edits. Managed by company-divisions.html / company-levels.html /
+// company-competency-levels.html; read by bid.html to build a new bid's
+// division checklist.
+const DIVISIONS = [
+    'Planning / Design', 'Site Prep', 'Temporary Utilities', 'Demolition',
+    'Excavation and Trenching', 'Underground Utilities', 'Concrete', 'Framing',
+    'Exterior Doors and Windows', 'Rough HVAC', 'Rough Plumbing', 'Rough Electrical',
+    'Low Voltage / Data Rough-In', 'Thermal and Moisture Protection', 'Pre-Drywall Sign-Off',
+    'Drywall', 'Drywall Dry-Out & Dehumidification', 'HVAC Commissioning', 'Cultured Marble',
+    'Finish Carpentry, Millwork — Phase 1', 'Floor Coverings — Phase 1', 'Finish Carpentry — Phase 2',
+    'Painting', 'Epoxy Floor Coatings', 'Countertops', 'Finish Electrical', 'Finish HVAC',
+    'Finish Low Voltage / Data', 'Finish Plumbing', 'Appliances, Hardware & Wall Specialties',
+    'Shower Glass and Mirrors', 'Floor Coverings — Phase 2', 'Final Clean', 'Final Building Inspections',
+    'Exterior Hardscape & Irrigation Sleeves', 'Exterior Flatwork', 'Irrigation and Landscaping',
+    'Exterior Electrical', 'Exterior Structures', 'Furnishings',
+].map(function (name) { return { name: name, isActive: true }; });
+
+const LEVELS = [
+    { slug: 'apprentice', name: 'Entered Apprentice', promotionType: 'manual', criteria: null },
+    { slug: 'fellow_craft', name: 'Fellow Craft', promotionType: 'auto', criteria: { trailingDays: 30, scorecardPct: 100 } },
+    { slug: 'master', name: 'Master', promotionType: 'manual', criteria: null },
+];
+
+const COMPETENCY_LEVELS = [
+    { slug: 'student', name: 'Student', requiresCosign: false, autoPromoteDays: null },
+    { slug: 'exposure', name: 'Exposure', requiresCosign: false, autoPromoteDays: null },
+    { slug: 'competent', name: 'Competent', requiresCosign: true, autoPromoteDays: null },
+    { slug: 'mastery', name: 'Mastery', requiresCosign: false, autoPromoteDays: null },
+];
+
+function openCompanyDivisions() { loadPage('company-divisions'); }
+function openCompanyLevels() { loadPage('company-levels'); }
+function openCompanyCompetencyLevels() { loadPage('company-competency-levels'); }
 
 // ── Jobs Flow ───────────────────────────────────────────────────────────────
 const NO_BID_JOBS = ['Westgate Electrical Panel'];
@@ -347,6 +530,7 @@ function ppeVideoComplete() {
 let clockedIn = false;
 let timerInterval = null;
 let elapsedSeconds = 0;
+let clockStartedAt = null; // epoch ms — lets a reload recompute elapsed time from a real timestamp instead of resuming a stale counter
 
 function toggleClock() {
     const btn = document.getElementById('clock-btn');
@@ -371,6 +555,7 @@ function toggleClock() {
         btn.className = 'btn btn-primary';
         if (status) status.textContent = 'Clocked In';
         elapsedSeconds = 0;
+        clockStartedAt = Date.now();
         timerInterval = setInterval(tickTimer, 1000);
         ['gate-materials', 'gate-kit-photo', 'gate-cleanliness'].forEach(function (id) {
             const el = document.getElementById(id);
@@ -381,11 +566,17 @@ function toggleClock() {
         btn.className = 'btn btn-primary';
         if (status) status.textContent = 'Clocked Out';
         clearInterval(timerInterval);
+        clockStartedAt = null;
     }
+    saveState();
 }
 
 function tickTimer() {
     elapsedSeconds++;
+    updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
     const h = Math.floor(elapsedSeconds / 3600);
     const m = Math.floor((elapsedSeconds % 3600) / 60);
     const s = elapsedSeconds % 60;
@@ -395,6 +586,26 @@ function tickTimer() {
             String(h).padStart(2, '0') + ':' +
             String(m).padStart(2, '0') + ':' +
             String(s).padStart(2, '0');
+    }
+}
+
+// feild-clock.html's button/status/timer are static markup driven only by
+// toggleClock()/tickTimer() — so navigating back to this page (bottom-nav
+// "Field" tab, or resuming after a reload) needs this to reflect the current
+// clockedIn/elapsedSeconds instead of showing a stale "Clock In" button while
+// clockedIn is actually true and the interval is still running.
+function syncClockUI() {
+    const btn = document.getElementById('clock-btn');
+    const status = document.getElementById('clock-status');
+    if (!btn) return;
+    updateTimerDisplay();
+    if (clockedIn) {
+        btn.textContent = 'Clock Out';
+        if (status) status.textContent = 'Clocked In';
+        if (!timerInterval) timerInterval = setInterval(tickTimer, 1000);
+    } else {
+        btn.textContent = 'Clock In';
+        if (status) status.textContent = 'Clocked Out';
     }
 }
 
@@ -411,6 +622,93 @@ function addActivity(type) {
         </div>
         <span class="badge badge-gray">Active</span>`;
     log.prepend(entry);
+}
+
+// ── Material Log Modal ───────────────────────────────────────────────────────
+// Unlike Driving/Lunch/Task, using a material isn't an event with a duration —
+// it's a record of what was consumed. So it opens a picker scoped to kits
+// already checked out for this job instead of starting an ongoing activity.
+// Kit/material text is looked up from KIT_CATEGORIES (not duplicated here) so
+// it stays in sync with the shared catalog.
+const CHECKED_OUT_KIT_REFS = [
+    { category: 'Fixtures & HVAC', kit: 'HVAC Kit' },
+    { category: 'Plumbing', kit: 'Copper Kit' },
+    { category: 'Electrical', kit: 'Miscellaneous Electrical' },
+];
+
+function getCheckedOutKits() {
+    return CHECKED_OUT_KIT_REFS.map(function (ref) {
+        const cat = KIT_CATEGORIES.find(function (c) { return c.name === ref.category; });
+        const kit = cat && cat.kits.find(function (k) { return k.name === ref.kit; });
+        return kit ? { name: kit.name, materials: kit.materials } : null;
+    }).filter(Boolean);
+}
+
+function openMaterialLog() {
+    const existing = document.getElementById('material-modal');
+    if (existing) existing.remove();
+    const kits = getCheckedOutKits();
+    const modal = document.createElement('div');
+    modal.id = 'material-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML =
+        '<div class="modal-sheet">' +
+            '<div class="modal-handle"></div>' +
+            '<div class="page-title-sm mb-2">Log Material Used</div>' +
+            '<div class="page-subtitle mb-4">Select from kits checked out for this job and enter how much was used.</div>' +
+            kits.map(function (kit, ki) {
+                return '<div class="section-header" style="margin-top:10px;"><span class="section-title">' + kit.name + '</span></div>' +
+                    '<div class="card" style="cursor:default;">' +
+                    kit.materials.map(function (mat, mi) {
+                        return '<div class="list-item" style="padding:8px 0;">' +
+                            '<div class="list-item-body"><div class="list-item-title">' + mat + '</div></div>' +
+                            '<input type="number" min="0" step="1" placeholder="0" class="material-qty-input" data-kit="' + ki + '" data-item="' + mi + '" style="width:56px; padding:8px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:0.85rem; text-align:center;">' +
+                            '</div>';
+                    }).join('') +
+                    '</div>';
+            }).join('') +
+            '<button class="btn btn-primary mt-4" onclick="saveMaterialLog()">Log Materials</button>' +
+            '<button class="btn btn-secondary" onclick="closeMaterialModal()">Cancel</button>' +
+        '</div>';
+    modal.addEventListener('click', function (e) { if (e.target === modal) closeMaterialModal(); });
+    document.getElementById('phone').appendChild(modal);
+}
+
+function closeMaterialModal() {
+    const modal = document.getElementById('material-modal');
+    if (modal) modal.remove();
+}
+
+function saveMaterialLog() {
+    const kits = getCheckedOutKits();
+    const inputs = document.querySelectorAll('#material-modal .material-qty-input');
+    const log = document.getElementById('activity-log');
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    let loggedAny = false;
+    inputs.forEach(function (input) {
+        const qty = parseInt(input.value, 10);
+        if (!qty || qty <= 0) return;
+        loggedAny = true;
+        const kit = kits[Number(input.dataset.kit)];
+        const material = kit.materials[Number(input.dataset.item)];
+        if (log) {
+            const entry = document.createElement('div');
+            entry.className = 'list-item';
+            entry.innerHTML =
+                '<div class="list-item-body">' +
+                    '<div class="list-item-title">' + qty + '&times; ' + material + '</div>' +
+                    '<div class="list-item-sub">' + kit.name + ' &bull; Logged at ' + time + '</div>' +
+                '</div>';
+            log.prepend(entry);
+        }
+    });
+    if (!loggedAny) {
+        alert('Enter a quantity for at least one material.');
+        return;
+    }
+    const gate = document.getElementById('gate-materials');
+    if (gate) gate.checked = true;
+    closeMaterialModal();
 }
 
 // ── Time Sheet ──────────────────────────────────────────────────────────────
@@ -610,16 +908,6 @@ const KIT_CATEGORIES = [
     },
 ];
 
-// ── Customer ─────────────────────────────────────────────────────────────────
-function sendMessage() {
-    const msg = document.getElementById('customer-msg');
-    if (msg && msg.value.trim()) {
-        msg.value = '';
-        const sent = document.getElementById('message-sent');
-        if (sent) { sent.style.display = 'block'; setTimeout(() => sent.style.display = 'none', 2500); }
-    }
-}
-
 // ── Dashboard pages ──────────────────────────────────────────────────────────
 function openScoreboard() { loadPage('scoreboard'); }
 function openStats() { loadPage('stats'); }
@@ -643,6 +931,62 @@ function toggleChip(el) {
     el.classList.toggle('selected');
 }
 
+// ── Persistence ──────────────────────────────────────────────────────────────
+// Snapshots state/bidData/clock to localStorage so a browser reload can
+// resume the app instead of dropping back to sign-in. Saved from loadPage()
+// (covers almost every state change, since nearly everything in this app
+// ends by navigating), plus explicit call sites that change state without
+// navigating (setRole, toggleClock), plus beforeunload as a safety net for
+// bid.html/bid-division.html's inline oninput/onchange handlers, which mutate
+// window.bidData directly and never call loadPage().
+function saveState() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            state: state,
+            clock: { clockedIn: clockedIn, startedAt: clockStartedAt },
+            bidData: window.bidData || null,
+            db: _dbLoaded ? _tables : null,
+        }));
+    } catch (e) { /* localStorage unavailable (private mode, quota, etc.) */ }
+}
+
+function restoreState() {
+    let saved;
+    try {
+        saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    } catch (e) {
+        saved = null;
+    }
+    if (!saved) return;
+
+    if (saved.state) Object.assign(state, saved.state);
+    window.bidData = saved.bidData || null;
+    if (saved.db) { _tables = saved.db; _dbLoaded = true; }
+
+    if (saved.clock && saved.clock.clockedIn) {
+        clockedIn = true;
+        clockStartedAt = saved.clock.startedAt;
+        elapsedSeconds = Math.max(0, Math.floor((Date.now() - clockStartedAt) / 1000));
+        timerInterval = setInterval(tickTimer, 1000);
+    }
+
+    // Header toggle buttons are plain DOM (not re-rendered by loadPage), so
+    // sync their active state to the restored accountType/role the same way
+    // setAccountType()/setRole() do when the user clicks them directly.
+    const existingBtn = document.getElementById('btn-existing');
+    const newBtn = document.getElementById('btn-new');
+    if (existingBtn) existingBtn.classList.toggle('active', state.accountType === 'existing');
+    if (newBtn) newBtn.classList.toggle('active', state.accountType === 'new');
+    const workerBtn = document.getElementById('btn-worker');
+    const customerBtn = document.getElementById('btn-customer');
+    const supplierBtn = document.getElementById('btn-supplier');
+    if (workerBtn) workerBtn.classList.toggle('active', state.role === 'worker');
+    if (customerBtn) customerBtn.classList.toggle('active', state.role === 'customer');
+    if (supplierBtn) supplierBtn.classList.toggle('active', state.role === 'supplier');
+}
+
+window.addEventListener('beforeunload', saveState);
+
 // ── App Registration ────────────────────────────────────────────────────────
 // activate() is called by the shell every time this app becomes the visible
 // one — it binds this app's page-facing functions onto window so the
@@ -650,12 +994,15 @@ function toggleChip(el) {
 // *this* app's implementation, not some other installed app's same-named one.
 function activate() {
     Object.assign(window, {
-        state,
+        state, DB, resetDemoData,
         loadPage, navTo, goBack,
         setAccountType, setRole,
-        signIn, afterSignIn, showSignUp, closeSignUp, submitAccount, goToSignIn,
+        signIn, afterSignIn, signOut, showSignUp, closeSignUp, submitAccount, goToSignIn,
         showSabbathLock, hideSabbathLock,
         joinCompany, createCompany, submitJoinRequest, submitNewCompany, continueFromSetup, openBranch,
+        selectCompany, manageCompany,
+        DIVISIONS, LEVELS, COMPETENCY_LEVELS,
+        openCompanyDivisions, openCompanyLevels, openCompanyCompetencyLevels,
         NO_BID_JOBS,
         openJob, createJob, submitJob,
         openBid, submitBid,
@@ -665,7 +1012,8 @@ function activate() {
         selectClockInTask, trainingVideoComplete, showCoSignModal, closeCoSignModal, confirmCoSign,
         recordPpeVideo, ppeVideoComplete,
         toggleClock, addActivity,
-        submitTimeSheet, sendMessage,
+        openMaterialLog, closeMaterialModal, saveMaterialLog,
+        submitTimeSheet,
         KIT_CATEGORIES,
         openScoreboard, openStats, openFinance, openCustomerHome, openMore,
         switchTab, toggleChip,
@@ -679,12 +1027,19 @@ window.Apps['kinetic-flow'] = {
     // the reference doc: access is via a tokenized property-record link, not
     // a login) — so the customer role skips sign-in.html and lands straight
     // on their property record, simulating "already opened the QR link."
+    // Workers/suppliers who were signed in when the page was last unloaded
+    // resume wherever they left off (see restoreState()).
     start: function () {
-        if (state.role === 'customer') {
-            loadPage('customer-home');
-        } else {
-            loadPage('sign-in');
-        }
+        restoreState(); // may already populate the mock DB from localStorage
+        (DB.isLoaded() ? Promise.resolve() : DB.load()).then(function () {
+            if (state.role === 'customer') {
+                loadPage('customer-home');
+            } else if (state.signedIn && state.currentPage) {
+                loadPage(state.currentPage);
+            } else {
+                loadPage('sign-in');
+            }
+        });
     },
     // Closing back to the OS home screen while looking at a job's full detail
     // page downgrades it to the lean job-home page — so reopening the app
