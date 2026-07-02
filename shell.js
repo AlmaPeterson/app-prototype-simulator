@@ -182,6 +182,41 @@ function updateSizeLabel(w, h) {
     }, { passive: false });
 })();
 
+// ── Fullscreen ───────────────────────────────────────────────────────────────
+// Drops the phone's bezel/header chrome so it fills the whole browser
+// viewport (and requests real browser fullscreen where supported) — useful
+// for viewing the prototype on an actual phone screen instead of as a
+// scaled-down mockup on desktop.
+let preFullscreenSize = null;
+
+function toggleFullscreen() {
+    const isFullscreen = document.body.classList.toggle('fullscreen-mode');
+    const phone = document.getElementById('phone');
+
+    if (isFullscreen) {
+        preFullscreenSize = { w: phone.offsetWidth, h: phone.offsetHeight };
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(() => {});
+        }
+    } else {
+        if (document.fullscreenElement && document.exitFullscreen) {
+            document.exitFullscreen().catch(() => {});
+        }
+        if (preFullscreenSize) {
+            setPhoneSize(preFullscreenSize.w, preFullscreenSize.h);
+            preFullscreenSize = null;
+        }
+    }
+}
+
+document.addEventListener('fullscreenchange', () => {
+    // Browser fullscreen can be exited via Esc without going through our
+    // button (e.g. pressing Esc) — keep the CSS state in sync either way.
+    if (!document.fullscreenElement && document.body.classList.contains('fullscreen-mode')) {
+        toggleFullscreen();
+    }
+});
+
 // ── Init ─────────────────────────────────────────────────────────────────────
 // On a wide (desktop) viewport there's room to show the phone at its "Large"
 // preset; on a narrow viewport (an actual phone) that size wouldn't fit

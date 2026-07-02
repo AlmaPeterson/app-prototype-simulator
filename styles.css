@@ -129,6 +129,60 @@ header {
     color: white;
 }
 
+/* ── Exit-fullscreen button (hidden unless in fullscreen mode) ── */
+#btn-exit-fullscreen {
+    display: none;
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    z-index: 200;
+}
+
+#btn-exit-fullscreen:hover {
+    background: rgba(15, 23, 42, 0.85);
+}
+
+/* ── Fullscreen mode: phone fills the whole viewport, no bezel/header ── */
+body.fullscreen-mode {
+    background: #0f172a;
+}
+
+body.fullscreen-mode header {
+    display: none;
+}
+
+body.fullscreen-mode #phone-wrap {
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+}
+
+body.fullscreen-mode #phone {
+    width: 100vw !important;
+    height: 100vh !important;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+}
+
+body.fullscreen-mode #resize-grip {
+    display: none;
+}
+
+body.fullscreen-mode #btn-exit-fullscreen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* ── Size Label ── */
 #size-label {
     font-size: 0.72rem;
@@ -138,6 +192,22 @@ header {
     font-variant-numeric: tabular-nums;
     min-width: 70px;
     text-align: right;
+}
+
+#btn-fullscreen {
+    padding: 6px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 600;
+    background: #f1f5f9;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+#btn-fullscreen:hover {
+    background: #e2e8f0;
 }
 
 #status-bar {
