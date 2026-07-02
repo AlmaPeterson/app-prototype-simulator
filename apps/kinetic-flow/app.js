@@ -21,7 +21,8 @@ const state = {
     currentJob: null,
     currentDivision: null,    // 0-based index into bidData.divisions
     currentBranch: null,
-    clockInTask: null,        // { name, level } — level: student|exposure|competent|mastery
+    clockInTask: null,        // { name, level, isHighHazard } — level: student|exposure|competent|mastery
+    scorecardWorker: null,
 };
 
 // ── Bottom Nav Definitions ──────────────────────────────────────────────────
@@ -219,7 +220,11 @@ const NO_BID_JOBS = ['Westgate Electrical Panel'];
 
 function openJob(jobName) {
     state.currentJob = jobName;
-    if (NO_BID_JOBS.includes(jobName)) {
+    loadPage('job-home');
+}
+
+function openJobDetail() {
+    if (NO_BID_JOBS.includes(state.currentJob)) {
         loadPage('job-detail-nobid');
     } else {
         loadPage('job-detail');
@@ -253,21 +258,39 @@ function openLabelGenerator() { loadPage('label-generator'); }
 function openFieldClock() { loadPage('task-select'); }
 function openInventory() { loadPage('inventory'); }
 
+// ── PM Scorecard ─────────────────────────────────────────────────────────────
+function openScorecard(workerName) {
+    state.scorecardWorker = workerName;
+    loadPage('scorecard');
+}
+function submitScorecard() { loadPage('job-detail'); }
+
 // ── Task Select / Training Gate / Co-Sign ─────────────────────────────────────
 // Simulated version of the reference doc's clock-in workflow gates: pick the
 // task you're working, watch the (unskippable) training video, then either
 // unlock the clock-in (mastery), require a co-sign (competent), or stay
 // blocked (student/exposure). No real video or server verification — this is
 // a static nav prototype.
-function selectClockInTask(name, level) {
-    state.clockInTask = { name: name, level: level };
+function selectClockInTask(name, level, isHighHazard) {
+    state.clockInTask = { name: name, level: level, isHighHazard: !!isHighHazard };
     loadPage('training-video');
+}
+
+// Called once a task is cleared to clock in (mastery-unlocked or co-signed) —
+// routes through the PPE gate first if the task is flagged high-hazard.
+function proceedPastGates() {
+    const task = state.clockInTask || {};
+    if (task.isHighHazard) {
+        loadPage('ppe-video');
+    } else {
+        loadPage('feild-clock');
+    }
 }
 
 function trainingVideoComplete() {
     const task = state.clockInTask || {};
     if (task.level === 'mastery') {
-        loadPage('feild-clock');
+        proceedPastGates();
     } else if (task.level === 'competent') {
         showCoSignModal();
     } else {
@@ -303,6 +326,24 @@ function closeCoSignModal() {
 
 function confirmCoSign() {
     closeCoSignModal();
+    proceedPastGates();
+}
+
+// ── PPE Video Gate ──────────────────────────────────────────────────────────
+function recordPpeVideo() {
+    const status = document.getElementById('ppe-status');
+    const recordBtn = document.getElementById('ppe-record-btn');
+    const continueBtn = document.getElementById('ppe-continue-btn');
+    if (recordBtn) { recordBtn.disabled = true; recordBtn.textContent = 'Recording…'; }
+    if (status) status.textContent = 'Recording PPE video…';
+    setTimeout(function () {
+        if (status) status.textContent = 'PPE video captured and uploaded.';
+        if (recordBtn) { recordBtn.disabled = false; recordBtn.textContent = 'Re-record'; }
+        if (continueBtn) continueBtn.disabled = false;
+    }, 1200);
+}
+
+function ppeVideoComplete() {
     loadPage('feild-clock');
 }
 
@@ -620,11 +661,13 @@ function activate() {
         showSabbathLock, hideSabbathLock,
         joinCompany, createCompany, submitJoinRequest, submitNewCompany, continueFromSetup, openBranch,
         NO_BID_JOBS,
-        openJob, createJob, submitJob,
+        openJob, openJobDetail, createJob, submitJob,
         openBid, submitBid,
         openDivision, saveDivision, previewProposal,
         openSchedule, openTimeSheet, openKits, openLabelGenerator, openFieldClock, openInventory,
+        openScorecard, submitScorecard,
         selectClockInTask, trainingVideoComplete, showCoSignModal, closeCoSignModal, confirmCoSign,
+        recordPpeVideo, ppeVideoComplete,
         toggleClock, addActivity,
         submitTimeSheet, sendMessage,
         KIT_CATEGORIES,
@@ -636,6 +679,16 @@ function activate() {
 window.Apps = window.Apps || {};
 window.Apps['kinetic-flow'] = {
     activate: activate,
-    start: function () { loadPage('sign-in'); },
+    // Workers/suppliers sign in normally. Customers have no accounts (per
+    // the reference doc: access is via a tokenized property-record link, not
+    // a login) — so the customer role skips sign-in.html and lands straight
+    // on their property record, simulating "already opened the QR link."
+    start: function () {
+        if (state.role === 'customer') {
+            loadPage('customer-home');
+        } else {
+            loadPage('sign-in');
+        }
+    },
 };
 })();

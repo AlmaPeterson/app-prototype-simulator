@@ -6,17 +6,17 @@
         <div class="page-subtitle">Choose what you'll be working on for this clock-in.</div>
     </div>
 
-    <div class="card" onclick="selectClockInTask('Air Handler Install', 'mastery')">
+    <div class="card" onclick="selectClockInTask('Air Handler Install', 'mastery', true)">
         <div class="card-row">
             <div class="card-body">
                 <div class="card-title">Air Handler Install</div>
-                <div class="card-subtitle">Runs this task solo</div>
+                <div class="card-subtitle">Runs this task solo &bull; high-hazard, PPE required</div>
             </div>
             <span class="badge badge-gray">mastery</span>
         </div>
     </div>
 
-    <div class="card" onclick="selectClockInTask('Ductwork Sealing', 'competent')">
+    <div class="card" onclick="selectClockInTask('Ductwork Sealing', 'competent', false)">
         <div class="card-row">
             <div class="card-body">
                 <div class="card-title">Ductwork Sealing</div>
@@ -26,7 +26,7 @@
         </div>
     </div>
 
-    <div class="card" onclick="selectClockInTask('Refrigerant Handling', 'exposure')">
+    <div class="card" onclick="selectClockInTask('Refrigerant Handling', 'exposure', false)">
         <div class="card-row">
             <div class="card-body">
                 <div class="card-title">Refrigerant Handling</div>

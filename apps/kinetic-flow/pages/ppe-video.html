@@ -1,0 +1,21 @@
+<div class="page" style="min-height:100%; display:flex; flex-direction:column;">
+    <div class="page-header">
+        <div class="page-title" id="ppe-title">PPE Verification</div>
+        <div class="page-subtitle">This task is high-hazard &mdash; record proof of PPE before clock-in opens.</div>
+    </div>
+
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid #e2e8f0; margin-bottom:16px; padding:40px 20px; text-align:center;">
+        <div style="font-size:0.85rem; color:#64748b; margin-bottom:14px;" id="ppe-status">Record 3 seconds showing respiratory gear donned and dust extraction locked in.</div>
+        <button class="btn btn-secondary" id="ppe-record-btn" style="width:auto; padding:10px 24px;" onclick="recordPpeVideo()">Record PPE Video</button>
+    </div>
+
+    <button class="btn btn-primary" id="ppe-continue-btn" disabled onclick="ppeVideoComplete()">Continue to Clock In</button>
+</div>
+
+<script>
+(function () {
+    var task = (typeof state !== 'undefined' && state.clockInTask) || { name: 'Task' };
+    var titleEl = document.getElementById('ppe-title');
+    if (titleEl) titleEl.textContent = task.name + ' — PPE Verification';
+})();
+</script>

@@ -1192,3 +1192,27 @@ body.fullscreen-mode #btn-exit-fullscreen {
 /* ── Scrollbar ── */
 #main::-webkit-scrollbar { width: 3px; }
 #main::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
+
+/* ── Toggle Switch (binary scorecard/permission items) ── */
+.toggle-switch {
+    width: 36px;
+    height: 20px;
+    background: #e2e8f0;
+    border-radius: 99px;
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s;
+}
+.toggle-switch-knob {
+    width: 16px;
+    height: 16px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: left 0.15s;
+}
+.toggle-switch.on { background: #2563eb; }
+.toggle-switch.on .toggle-switch-knob { left: 18px; }
