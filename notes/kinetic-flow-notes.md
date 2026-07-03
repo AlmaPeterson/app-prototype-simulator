@@ -66,3 +66,14 @@ I can't edit or add job positions
 
 ---
 
+## 2026-07-03T19:46:46.833Z
+
+- Screen: kinetic-flow — company-setup
+- Role: worker
+- Account: New Account
+- Phone size: 374 × 776
+
+There should be an employees section of users in your company were you can cick on them to manage them, like branch, role, specific permissions.
+
+---
+
