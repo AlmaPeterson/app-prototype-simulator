@@ -246,7 +246,7 @@ document.addEventListener('fullscreenchange', () => {
     }
 });
 
-// ── Init ─────────────────────────────────────────────────────────────────────
+// ── Init ────────────────────────────────────────────────────────────────────
 // On a wide (desktop) viewport there's room to show the phone at its "Large"
 // preset; on a narrow viewport (an actual phone) that size wouldn't fit
 // on-screen, so default to the smaller "Phone" preset instead.
