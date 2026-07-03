@@ -143,3 +143,14 @@ Needs address feild
 
 ---
 
+## 2026-07-03T20:00:07.819Z
+
+- Screen: kinetic-flow — inventory
+- Role: worker
+- Account: New Account
+- Phone size: 374 × 776
+
+You need to be able to update the inventory
+
+---
+
