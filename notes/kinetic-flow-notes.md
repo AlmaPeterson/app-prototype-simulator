@@ -99,3 +99,14 @@ This should only show jobs in branch
 
 ---
 
+## 2026-07-03T19:51:51.365Z
+
+- Screen: kinetic-flow — create-job
+- Role: worker
+- Account: New Account
+- Phone size: 374 × 776
+
+Assign team members should show users in same branch
+
+---
+
