@@ -197,7 +197,7 @@
     };
 
     window.removePosition = function (roleId) {
-        var assigned = DB.find('user_roles', function (ur) { return ur.role_id === roleId; }).length;
+        var assigned = DB.find('user_roles', function (ur) { return ur.role_id === roleId && !ur.deleted_at; }).length;
         if (assigned && !confirm(assigned + ' team member' + (assigned === 1 ? ' holds' : 's hold') + ' this position. Remove it anyway?')) return;
         DB.softDelete('roles', roleId);
         closePanel();
