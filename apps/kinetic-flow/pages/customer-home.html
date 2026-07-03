@@ -1,19 +1,23 @@
 <div class="page" style="padding-bottom:80px;">
+    <button class="btn btn-secondary btn-sm mb-4" id="ch-back" style="display:none;" onclick="goBack()">&larr; Back</button>
     <div class="page-title">Home Details</div>
     <div class="page-subtitle mb-4" id="ch-subtitle">&nbsp;</div>
 
     <div class="section-header">
         <span class="section-title">Floor Plan</span>
+        <button class="section-action ch-edit" style="display:none;" onclick="editFloorPlan()">Edit</button>
     </div>
     <div id="ch-floorplan" style="border:1px solid #e2e8f0; padding:24px; margin-bottom:16px; text-align:center; color:#94a3b8; font-size:0.82rem;"></div>
 
     <div class="section-header">
         <span class="section-title">Paint by Room</span>
+        <button class="section-action ch-edit" style="display:none;" onclick="editPropertyEntry('paint_colors', null)">+ Add</button>
     </div>
     <div id="ch-paint" style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;"></div>
 
     <div class="section-header">
         <span class="section-title">Materials Used</span>
+        <button class="section-action ch-edit" style="display:none;" onclick="editPropertyEntry('materials_used', null)">+ Add</button>
     </div>
     <div id="ch-materials" style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;"></div>
 </div>
@@ -24,33 +28,129 @@
         return key.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
     }
 
-    function renderKeyValueList(containerId, obj, emptyMessage) {
-        var keys = Object.keys(obj || {});
+    // Workers arrive here from a job context (More menu / job pages) and see
+    // the *selected* job's customer record, editable. The customer role has
+    // no session, so it stays anchored to the seeded demo job (simulating an
+    // already-opened tokenized property link) and stays read-only.
+    var isWorker = state.role === 'worker';
+    var jobId = (isWorker && state.currentJobId) ? state.currentJobId : CUSTOMER_DEMO_JOB_ID;
+
+    var job = DB.getById('jobs', jobId);
+    var customer = job ? DB.getById('customers', job.customer_id) : null;
+    var address = job && job.address_id ? DB.getById('addresses', job.address_id) : null;
+
+    function property() {
+        return DB.findOne('property_records', function (p) { return p.job_id === jobId; });
+    }
+
+    // Editing a job that has no property record yet lazily creates one.
+    function ensureProperty() {
+        var p = property();
+        if (p) return p;
+        return DB.insert('property_records', {
+            company_id: job ? job.company_id : state.currentCompanyId,
+            job_id: jobId,
+            address_id: job ? job.address_id : null,
+            access_token: 'local-' + Date.now().toString(36),
+            floor_plan_url: null,
+            paint_colors: {},
+            materials_used: {},
+            notes: null,
+        });
+    }
+
+    function renderKeyValueList(containerId, field, emptyMessage) {
+        var p = property();
+        var obj = (p && p[field]) || {};
+        var keys = Object.keys(obj);
         document.getElementById(containerId).innerHTML = keys.map(function (key, i) {
             var isLast = i === keys.length - 1;
-            return '<div class="list-item"' + (isLast ? ' style="border-bottom:none;"' : '') + '>' +
+            var edit = isWorker ? ' style="cursor:pointer;' + (isLast ? ' border-bottom:none;' : '') + '" onclick="editPropertyEntry(\'' + field + '\', \'' + key + '\')"' : (isLast ? ' style="border-bottom:none;"' : '');
+            return '<div class="list-item"' + edit + '>' +
                 '<div class="list-item-body"><div class="list-item-title">' + titleCase(key) + '</div></div>' +
                 '<div class="list-item-right"><div class="list-item-value">' + obj[key] + '</div></div>' +
             '</div>';
         }).join('') || '<div class="list-item" style="border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">' + emptyMessage + '</div></div>';
     }
 
-    // Customers have no session — see CUSTOMER_DEMO_JOB_ID in app.js for why
-    // this and customer-bid.html/customer-invoice.html all anchor to the same
-    // seeded job (simulating an already-opened tokenized property link).
-    var job = DB.getById('jobs', CUSTOMER_DEMO_JOB_ID);
-    var customer = job ? DB.getById('customers', job.customer_id) : null;
-    var address = job && job.address_id ? DB.getById('addresses', job.address_id) : null;
-    var property = DB.findOne('property_records', function (p) { return p.job_id === CUSTOMER_DEMO_JOB_ID; });
+    function render() {
+        document.getElementById('ch-subtitle').textContent =
+            [(job ? job.name : ''), (address ? address.street : ''), (customer ? customer.full_name : '')].filter(Boolean).join(' • ')
+            || 'No job selected.';
+        var p = property();
+        document.getElementById('ch-floorplan').textContent = p && p.floor_plan_url
+            ? 'Floor plan on file — ' + p.floor_plan_url
+            : 'No floor plan on file yet.';
+        renderKeyValueList('ch-paint', 'paint_colors', 'No paint selections recorded yet.');
+        renderKeyValueList('ch-materials', 'materials_used', 'No materials recorded yet.');
+    }
 
-    document.getElementById('ch-subtitle').textContent =
-        (address ? address.street : '') + (customer ? ' • ' + customer.full_name : '');
+    if (isWorker) {
+        document.getElementById('ch-back').style.display = 'inline-block';
+        document.querySelectorAll('.ch-edit').forEach(function (b) { b.style.display = 'inline-block'; });
+    }
+    render();
 
-    document.getElementById('ch-floorplan').textContent = property && property.floor_plan_url
-        ? 'Floor plan on file — ' + property.floor_plan_url
-        : 'No floor plan on file yet.';
+    window.editFloorPlan = function () {
+        var p = property();
+        var current = (p && p.floor_plan_url) || '';
+        var url = prompt('Floor plan file / link:', current);
+        if (url === null) return;
+        DB.update('property_records', ensureProperty().id, { floor_plan_url: url.trim() || null });
+        render();
+    };
 
-    renderKeyValueList('ch-paint', property ? property.paint_colors : {}, 'No paint selections recorded yet.');
-    renderKeyValueList('ch-materials', property ? property.materials_used : {}, 'No materials recorded yet.');
+    // Shared add/edit sheet for the two key-value sections; existingKey null
+    // means "add new entry".
+    window.editPropertyEntry = function (field, existingKey) {
+        var labels = field === 'paint_colors'
+            ? { title: existingKey ? 'Edit Paint Selection' : 'Add Paint Selection', key: 'Room', value: 'Paint Color', keyPh: 'e.g. Living Room', valuePh: 'e.g. SW 7015 Repose Gray' }
+            : { title: existingKey ? 'Edit Material' : 'Add Material', key: 'Where / What', value: 'Material', keyPh: 'e.g. Trim', valuePh: 'e.g. MDF colonial 3.25in' };
+        var p = property();
+        var currentValue = existingKey && p ? (p[field] || {})[existingKey] : '';
+        var existing = document.getElementById('ch-entry-panel');
+        if (existing) existing.remove();
+        var modal = document.createElement('div');
+        modal.id = 'ch-entry-panel';
+        modal.className = 'modal-overlay';
+        modal.innerHTML =
+            '<div class="modal-sheet">' +
+                '<div class="modal-handle"></div>' +
+                '<div class="page-title-sm mb-2">' + labels.title + '</div>' +
+                '<div class="form-group"><label>' + labels.key + '</label><input type="text" id="che-key" value="' + (existingKey ? titleCase(existingKey) : '') + '" placeholder="' + labels.keyPh + '"' + (existingKey ? ' disabled' : '') + '></div>' +
+                '<div class="form-group"><label>' + labels.value + '</label><input type="text" id="che-value" value="' + currentValue + '" placeholder="' + labels.valuePh + '"></div>' +
+                '<button class="btn btn-primary mt-2" onclick="savePropertyEntry(\'' + field + '\', ' + (existingKey ? '\'' + existingKey + '\'' : 'null') + ')">Save</button>' +
+                (existingKey ? '<button class="btn btn-secondary" style="color:#dc2626;" onclick="removePropertyEntry(\'' + field + '\', \'' + existingKey + '\')">Remove</button>' : '') +
+                '<button class="btn btn-secondary" onclick="document.getElementById(\'ch-entry-panel\').remove()">Cancel</button>' +
+            '</div>';
+        modal.addEventListener('click', function (e) { if (e.target === modal) modal.remove(); });
+        document.getElementById('phone').appendChild(modal);
+    };
+
+    window.savePropertyEntry = function (field, existingKey) {
+        var key = existingKey || (document.getElementById('che-key').value || '').trim().toLowerCase().replace(/\s+/g, '_');
+        var value = (document.getElementById('che-value').value || '').trim();
+        if (!key || !value) { alert('Fill in both fields.'); return; }
+        var p = ensureProperty();
+        var obj = Object.assign({}, p[field] || {});
+        obj[key] = value;
+        var patch = {};
+        patch[field] = obj;
+        DB.update('property_records', p.id, patch);
+        document.getElementById('ch-entry-panel').remove();
+        render();
+    };
+
+    window.removePropertyEntry = function (field, key) {
+        var p = property();
+        if (!p) return;
+        var obj = Object.assign({}, p[field] || {});
+        delete obj[key];
+        var patch = {};
+        patch[field] = obj;
+        DB.update('property_records', p.id, patch);
+        document.getElementById('ch-entry-panel').remove();
+        render();
+    };
 })();
 </script>
