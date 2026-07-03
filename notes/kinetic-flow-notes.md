@@ -121,3 +121,14 @@ Creating job should not have start and end date, that is part of the bid
 
 ---
 
+## 2026-07-03T19:54:13.499Z
+
+- Screen: kinetic-flow — create-job
+- Role: worker
+- Account: New Account
+- Phone size: 374 × 776
+
+I am unable to create a new customer
+
+---
+
