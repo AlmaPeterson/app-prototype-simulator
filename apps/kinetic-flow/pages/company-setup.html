@@ -17,7 +17,7 @@
     <!-- Branches -->
     <div class="section-header">
         <span class="section-title">Branches / Divisions</span>
-        <button class="section-action">+ Add</button>
+        <button class="section-action" onclick="addBranch()">+ Add</button>
     </div>
 
     <div id="branch-list" style="margin-bottom:16px;"></div>
@@ -200,21 +200,82 @@
         renderPositions();
     };
 
-    var branches = DB.find('branches', function (b) { return b.company_id === state.currentCompanyId && !b.deleted_at; });
-    document.getElementById('branch-list').innerHTML = branches.map(function (b) {
-        var addr = b.address_id ? DB.getById('addresses', b.address_id) : null;
-        var badge = b.is_primary
-            ? '<span class="badge badge-gray">Primary</span>'
-            : '<button class="text-link" style="font-size:0.75rem;" onclick="event.stopPropagation()">Remove</button>';
-        return '<div class="card" style="margin-bottom:8px;" onclick="openBranch(\'' + b.id + '\')">' +
-            '<div class="flex-between">' +
-                '<div>' +
-                    '<div class="card-title">' + b.name + '</div>' +
-                    '<div class="card-subtitle">' + (addr ? addr.street + ', ' + addr.city + ', ' + addr.state : '') + '</div>' +
+    function renderBranches() {
+        var branches = DB.find('branches', function (b) { return b.company_id === state.currentCompanyId && !b.deleted_at; });
+        document.getElementById('branch-list').innerHTML = branches.map(function (b) {
+            var addr = b.address_id ? DB.getById('addresses', b.address_id) : null;
+            var badge = b.is_primary
+                ? '<span class="badge badge-gray">Primary</span>'
+                : '<button class="text-link" style="font-size:0.75rem;" onclick="event.stopPropagation(); removeBranch(\'' + b.id + '\')">Remove</button>';
+            return '<div class="card" style="margin-bottom:8px;" onclick="openBranch(\'' + b.id + '\')">' +
+                '<div class="flex-between">' +
+                    '<div>' +
+                        '<div class="card-title">' + b.name + '</div>' +
+                        '<div class="card-subtitle">' + (addr ? addr.street + ', ' + addr.city + ', ' + addr.state : '') + '</div>' +
+                    '</div>' +
+                    badge +
                 '</div>' +
-                badge +
-            '</div>' +
-        '</div>';
-    }).join('');
+            '</div>';
+        }).join('') || '<div class="page-subtitle" style="font-size:0.78rem;">No branches yet — tap + Add.</div>';
+    }
+    renderBranches();
+
+    window.addBranch = function () {
+        var existing = document.getElementById('branch-panel');
+        if (existing) existing.remove();
+        var modal = document.createElement('div');
+        modal.id = 'branch-panel';
+        modal.className = 'modal-overlay';
+        modal.innerHTML =
+            '<div class="modal-sheet">' +
+                '<div class="modal-handle"></div>' +
+                '<div class="page-title-sm mb-2">New Branch</div>' +
+                '<div class="form-group"><label>Branch Name</label><input type="text" id="nb-name" placeholder="e.g. Edmonton Branch"></div>' +
+                '<div class="form-group"><label>Street Address</label><input type="text" id="nb-street" placeholder="123 Main St"></div>' +
+                '<div class="form-row">' +
+                    '<div class="form-group"><label>City</label><input type="text" id="nb-city" placeholder="Calgary"></div>' +
+                    '<div class="form-group"><label>Province / State</label><input type="text" id="nb-state" placeholder="AB"></div>' +
+                '</div>' +
+                '<button class="btn btn-primary mt-2" onclick="saveNewBranch()">Add Branch</button>' +
+                '<button class="btn btn-secondary" onclick="document.getElementById(\'branch-panel\').remove()">Cancel</button>' +
+            '</div>';
+        modal.addEventListener('click', function (e) { if (e.target === modal) modal.remove(); });
+        document.getElementById('phone').appendChild(modal);
+    };
+
+    window.saveNewBranch = function () {
+        var name = (document.getElementById('nb-name').value || '').trim();
+        if (!name) { alert('Enter a branch name.'); return; }
+        var address = DB.insert('addresses', {
+            company_id: state.currentCompanyId,
+            street: (document.getElementById('nb-street').value || '').trim(),
+            city: (document.getElementById('nb-city').value || '').trim(),
+            state: (document.getElementById('nb-state').value || '').trim(),
+            zip: '', lat: null, lng: null,
+        });
+        var isFirst = DB.find('branches', function (b) { return b.company_id === state.currentCompanyId && !b.deleted_at; }).length === 0;
+        DB.insert('branches', {
+            company_id: state.currentCompanyId,
+            name: name,
+            address_id: address.id,
+            manager_id: state.currentUserId,
+            is_primary: isFirst,
+        });
+        document.getElementById('branch-panel').remove();
+        renderBranches();
+    };
+
+    window.removeBranch = function (branchId) {
+        var branch = DB.getById('branches', branchId);
+        if (!branch || branch.is_primary) return;
+        var memberCount = DB.find('users', function (u) { return u.branch_id === branchId && !u.deleted_at; }).length;
+        var msg = 'Remove ' + branch.name + '?' + (memberCount ? ' ' + memberCount + ' team member' + (memberCount === 1 ? '' : 's') + ' will be unassigned.' : '');
+        if (!confirm(msg)) return;
+        DB.softDelete('branches', branchId);
+        DB.find('users', function (u) { return u.branch_id === branchId; }).forEach(function (u) {
+            DB.update('users', u.id, { branch_id: null });
+        });
+        renderBranches();
+    };
 })();
 </script>
