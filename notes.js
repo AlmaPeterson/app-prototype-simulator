@@ -218,10 +218,11 @@ function putFile(cfg, content, sha, message) {
 
 function githubErrorMessage(status, body) {
     const detail = body && body.message ? body.message : ('HTTP ' + status);
+    const docs = body && body.documentation_url ? ' (' + body.documentation_url + ')' : '';
     if (status === 401) return 'GitHub rejected the token (401). Check it in settings (⚙).';
-    if (status === 403) return 'GitHub token lacks permission (403): ' + detail;
+    if (status === 403) return 'GitHub token lacks permission (403): ' + detail + docs + ' — check the token\'s repository access and Contents permission in settings (⚙).';
     if (status === 404) return 'Repo or path not found (404): ' + detail;
-    return 'GitHub error: ' + detail;
+    return 'GitHub error: ' + detail + docs;
 }
 
 // Appends one note's Markdown to the configured file and commits it. Retries
