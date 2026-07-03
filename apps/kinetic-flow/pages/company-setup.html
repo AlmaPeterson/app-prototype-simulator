@@ -9,19 +9,10 @@
     <!-- Positions -->
     <div class="section-header">
         <span class="section-title">Employee Positions</span>
-        <button class="section-action">+ Add</button>
+        <button class="section-action" onclick="addPosition()">+ Add</button>
     </div>
 
-    <div style="display:flex; flex-wrap:wrap; margin-bottom:16px;">
-        <span class="chip selected" onclick="toggleChip(this)">Admin</span>
-        <span class="chip selected" onclick="toggleChip(this)">Manager</span>
-        <span class="chip selected" onclick="toggleChip(this)">Supervisor</span>
-        <span class="chip selected" onclick="toggleChip(this)">Senior Tech</span>
-        <span class="chip selected" onclick="toggleChip(this)">Technician</span>
-        <span class="chip" onclick="toggleChip(this)">Apprentice</span>
-        <span class="chip" onclick="toggleChip(this)">Dispatcher</span>
-        <span class="chip" onclick="toggleChip(this)">Estimator</span>
-    </div>
+    <div id="position-chips" style="display:flex; flex-wrap:wrap; margin-bottom:16px;"></div>
 
     <!-- Branches -->
     <div class="section-header">
@@ -70,27 +61,9 @@
     <div class="section-header">
         <span class="section-title">Permissions</span>
     </div>
+    <div class="page-subtitle mb-2" style="font-size:0.78rem;">Tap a position to set what it can do.</div>
 
-    <div class="card" style="cursor:default; margin-bottom:16px;">
-        <div class="list-item" style="padding:8px 0;">
-            <div class="list-item-body"><div class="list-item-title">Technicians can create bids</div></div>
-            <div style="width:36px; height:20px; background:#2563eb; border-radius:99px; position:relative; cursor:pointer;">
-                <div style="width:16px; height:16px; background:white; border-radius:50%; position:absolute; right:2px; top:2px;"></div>
-            </div>
-        </div>
-        <div class="list-item" style="padding:8px 0;">
-            <div class="list-item-body"><div class="list-item-title">Managers approve timesheets</div></div>
-            <div style="width:36px; height:20px; background:#2563eb; border-radius:99px; position:relative; cursor:pointer;">
-                <div style="width:16px; height:16px; background:white; border-radius:50%; position:absolute; right:2px; top:2px;"></div>
-            </div>
-        </div>
-        <div class="list-item" style="padding:8px 0; border-bottom:none;">
-            <div class="list-item-body"><div class="list-item-title">Workers view finance data</div></div>
-            <div style="width:36px; height:20px; background:#e2e8f0; border-radius:99px; position:relative; cursor:pointer;">
-                <div style="width:16px; height:16px; background:white; border-radius:50%; position:absolute; left:2px; top:2px;"></div>
-            </div>
-        </div>
-    </div>
+    <div class="card" id="permission-list" style="cursor:default; margin-bottom:16px;"></div>
 
     <!-- Invite -->
     <div class="section-header">
@@ -112,6 +85,120 @@
     document.getElementById('division-count-sub').textContent = activeDivisions + ' of ' + window.DIVISIONS.length + ' active';
     document.getElementById('level-count-sub').textContent = window.LEVELS.length + ' configured';
     document.getElementById('competency-count-sub').textContent = window.COMPETENCY_LEVELS.length + ' configured';
+
+    // ── Positions & Permissions (both views over the same roles rows) ──
+    function companyRoles() {
+        return DB.find('roles', function (r) { return r.company_id === state.currentCompanyId && !r.deleted_at; });
+    }
+    function displayName(role) {
+        return role.name.replace(/\b[a-z]/g, function (ch) { return ch.toUpperCase(); });
+    }
+    function financeLabel(perms) {
+        var f = (perms && perms.finance) || 'none';
+        return f === 'none' ? 'No finance access' : 'Finance: ' + f;
+    }
+    function renderPositions() {
+        var roles = companyRoles();
+        document.getElementById('position-chips').innerHTML = roles.map(function (r) {
+            return '<span class="chip selected" onclick="openPositionPanel(\'' + r.id + '\')">' + displayName(r) + '</span>';
+        }).join('') || '<div class="page-subtitle" style="font-size:0.78rem;">No positions yet — tap + Add.</div>';
+        document.getElementById('permission-list').innerHTML = roles.map(function (r, i) {
+            var perms = r.permissions || {};
+            var summary = [financeLabel(perms),
+                perms.manage_users ? 'manage users' : null,
+                perms.manage_bids ? 'manage bids' : null].filter(Boolean).join(' • ');
+            return '<div class="list-item" style="padding:8px 0;' + (i === roles.length - 1 ? ' border-bottom:none;' : '') + '" onclick="openPositionPanel(\'' + r.id + '\')">' +
+                '<div class="list-item-body">' +
+                    '<div class="list-item-title">' + displayName(r) + '</div>' +
+                    '<div class="list-item-sub">' + summary + '</div>' +
+                '</div>' +
+                '<span class="card-arrow">&#8250;</span>' +
+            '</div>';
+        }).join('') || '<div class="page-subtitle" style="font-size:0.78rem; padding:8px 0;">No positions yet.</div>';
+    }
+    renderPositions();
+
+    function closePanel() {
+        var m = document.getElementById('position-panel');
+        if (m) m.remove();
+    }
+
+    window.addPosition = function () {
+        openPanelFor(null);
+    };
+
+    window.openPositionPanel = function (roleId) {
+        openPanelFor(DB.getById('roles', roleId));
+    };
+
+    function openPanelFor(role) {
+        closePanel();
+        var perms = (role && role.permissions) || { finance: 'none', manage_users: false, manage_bids: false };
+        var modal = document.createElement('div');
+        modal.id = 'position-panel';
+        modal.className = 'modal-overlay';
+        modal.innerHTML =
+            '<div class="modal-sheet">' +
+                '<div class="modal-handle"></div>' +
+                '<div class="page-title-sm mb-2">' + (role ? 'Edit Position' : 'New Position') + '</div>' +
+                '<div class="form-group">' +
+                    '<label>Position Name</label>' +
+                    '<input type="text" id="pp-name" value="' + (role ? displayName(role) : '') + '" placeholder="e.g. Estimator">' +
+                '</div>' +
+                '<div class="form-group">' +
+                    '<label>Finance Access</label>' +
+                    '<select id="pp-finance">' +
+                        ['none', 'job', 'branch', 'nationwide'].map(function (f) {
+                            var sel = ((perms.finance || 'none') === f) ? ' selected' : '';
+                            return '<option value="' + f + '"' + sel + '>' + f.charAt(0).toUpperCase() + f.slice(1) + '</option>';
+                        }).join('') +
+                    '</select>' +
+                '</div>' +
+                '<div class="list-item" style="padding:8px 0;">' +
+                    '<div class="list-item-body"><div class="list-item-title">Manage users</div></div>' +
+                    '<div class="toggle-switch' + (perms.manage_users ? ' on' : '') + '" id="pp-users" onclick="this.classList.toggle(\'on\')"><div class="toggle-switch-knob"></div></div>' +
+                '</div>' +
+                '<div class="list-item" style="padding:8px 0; border-bottom:none;">' +
+                    '<div class="list-item-body"><div class="list-item-title">Manage bids</div></div>' +
+                    '<div class="toggle-switch' + (perms.manage_bids ? ' on' : '') + '" id="pp-bids" onclick="this.classList.toggle(\'on\')"><div class="toggle-switch-knob"></div></div>' +
+                '</div>' +
+                '<button class="btn btn-primary mt-4" onclick="savePosition(' + (role ? '\'' + role.id + '\'' : 'null') + ')">' + (role ? 'Save Position' : 'Add Position') + '</button>' +
+                (role && role.name !== 'admin'
+                    ? '<button class="btn btn-secondary" style="color:#dc2626;" onclick="removePosition(\'' + role.id + '\')">Remove Position</button>'
+                    : '') +
+                '<button class="btn btn-secondary" onclick="closePositionPanel()">Cancel</button>' +
+            '</div>';
+        modal.addEventListener('click', function (e) { if (e.target === modal) closePanel(); });
+        document.getElementById('phone').appendChild(modal);
+    }
+
+    window.closePositionPanel = closePanel;
+
+    window.savePosition = function (roleId) {
+        var nameEl = document.getElementById('pp-name');
+        var name = (nameEl.value || '').trim().toLowerCase();
+        if (!name) { alert('Enter a position name.'); return; }
+        var perms = {
+            finance: document.getElementById('pp-finance').value,
+            manage_users: document.getElementById('pp-users').classList.contains('on'),
+            manage_bids: document.getElementById('pp-bids').classList.contains('on'),
+        };
+        if (roleId) {
+            DB.update('roles', roleId, { name: name, permissions: perms });
+        } else {
+            DB.insert('roles', { company_id: state.currentCompanyId, name: name, permissions: perms });
+        }
+        closePanel();
+        renderPositions();
+    };
+
+    window.removePosition = function (roleId) {
+        var assigned = DB.find('user_roles', function (ur) { return ur.role_id === roleId; }).length;
+        if (assigned && !confirm(assigned + ' team member' + (assigned === 1 ? ' holds' : 's hold') + ' this position. Remove it anyway?')) return;
+        DB.softDelete('roles', roleId);
+        closePanel();
+        renderPositions();
+    };
 
     var branches = DB.find('branches', function (b) { return b.company_id === state.currentCompanyId && !b.deleted_at; });
     document.getElementById('branch-list').innerHTML = branches.map(function (b) {
