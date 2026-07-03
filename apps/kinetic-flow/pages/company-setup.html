@@ -65,15 +65,19 @@
 
     <div class="card" id="permission-list" style="cursor:default; margin-bottom:16px;"></div>
 
-    <!-- Invite -->
+    <!-- Team Members -->
     <div class="section-header">
-        <span class="section-title">Invite Team Members</span>
+        <span class="section-title">Team Members</span>
+        <span class="section-action" id="cs-member-count" style="cursor:default;"></span>
     </div>
+    <div class="page-subtitle mb-2" style="font-size:0.78rem;">Search to add members. Tap a member to manage their branch, position, and permissions.</div>
 
-    <div class="form-group">
-        <label>Email Addresses</label>
-        <textarea placeholder="jane@example.com&#10;bob@example.com&#10;...one per line"></textarea>
+    <div class="form-group" style="margin-bottom:8px;">
+        <input type="text" id="cs-member-search" placeholder="Search users by name or email..." oninput="filterCompanyUsers()">
     </div>
+    <div id="cs-search-results" style="margin-bottom:8px;"></div>
+
+    <div class="card" id="cs-member-list" style="cursor:default; margin-bottom:16px;"></div>
 
     <button class="btn btn-primary" onclick="continueFromSetup()">Continue to Jobs &rarr;</button>
     <button class="btn btn-secondary" onclick="continueFromSetup()">Skip for Now</button>
@@ -263,6 +267,184 @@
         });
         document.getElementById('branch-panel').remove();
         renderBranches();
+    };
+
+    // ── Team Members / Employees ──
+    // Membership = a user_roles row pointing at one of this company's roles,
+    // or a users row homed here via company_id (covers the seeded users).
+    function membershipRows(userId) {
+        return DB.find('user_roles', function (ur) {
+            if (ur.user_id !== userId || ur.deleted_at) return false;
+            var role = DB.getById('roles', ur.role_id);
+            return role && role.company_id === state.currentCompanyId;
+        });
+    }
+    function companyMembers() {
+        var seen = {};
+        var rows = [];
+        DB.find('users', function (u) { return u.company_id === state.currentCompanyId && !u.deleted_at; })
+            .forEach(function (u) { seen[u.id] = true; rows.push(u); });
+        DB.get('user_roles').forEach(function (ur) {
+            if (ur.deleted_at) return;
+            var role = DB.getById('roles', ur.role_id);
+            if (!role || role.company_id !== state.currentCompanyId || seen[ur.user_id]) return;
+            var u = DB.getById('users', ur.user_id);
+            if (u && !u.deleted_at) { seen[u.id] = true; rows.push(u); }
+        });
+        return rows;
+    }
+
+    function renderMembers() {
+        var rows = companyMembers();
+        document.getElementById('cs-member-count').textContent = rows.length + ' member' + (rows.length === 1 ? '' : 's');
+        document.getElementById('cs-member-list').innerHTML = rows.map(function (u, i) {
+            var membership = membershipRows(u.id)[0];
+            var role = membership ? DB.getById('roles', membership.role_id) : null;
+            var branch = u.branch_id ? DB.getById('branches', u.branch_id) : null;
+            var sub = [role ? role.name.replace(/\b[a-z]/g, function (c) { return c.toUpperCase(); }) : 'No position',
+                       branch ? branch.name : 'No branch'].join(' • ');
+            return '<div class="list-item" style="padding:8px 0;' + (i === rows.length - 1 ? ' border-bottom:none;' : '') + '" onclick="manageEmployee(\'' + u.id + '\')">' +
+                '<div class="list-item-body">' +
+                    '<div class="list-item-title">' + u.full_name + '</div>' +
+                    '<div class="list-item-sub">' + sub + '</div>' +
+                '</div>' +
+                '<button class="text-link" style="font-size:0.75rem; margin-right:8px;" onclick="event.stopPropagation(); removeMember(\'' + u.id + '\')">Remove</button>' +
+                '<span class="card-arrow">&#8250;</span>' +
+            '</div>';
+        }).join('') || '<div class="page-subtitle" style="font-size:0.78rem; padding:8px 0;">No team members yet — search above to add.</div>';
+    }
+    renderMembers();
+
+    window.filterCompanyUsers = function () {
+        var q = (document.getElementById('cs-member-search').value || '').trim().toLowerCase();
+        var box = document.getElementById('cs-search-results');
+        if (!q) { box.innerHTML = ''; return; }
+        var memberIds = {};
+        companyMembers().forEach(function (u) { memberIds[u.id] = true; });
+        var candidates = DB.find('users', function (u) {
+            return !u.deleted_at && !memberIds[u.id]
+                && (u.full_name.toLowerCase().indexOf(q) !== -1 || (u.email || '').toLowerCase().indexOf(q) !== -1);
+        });
+        box.innerHTML = candidates.map(function (u) {
+            return '<div class="card" style="margin-bottom:6px; padding:10px 14px;" onclick="addMember(\'' + u.id + '\')">' +
+                '<div class="flex-between">' +
+                    '<div>' +
+                        '<div class="card-title" style="margin:0; font-size:0.85rem;">' + u.full_name + '</div>' +
+                        '<div class="card-subtitle">' + (u.email || '') + '</div>' +
+                    '</div>' +
+                    '<span style="font-size:0.78rem; color:#2563eb;">+ Add</span>' +
+                '</div>' +
+            '</div>';
+        }).join('') || '<div class="page-subtitle" style="font-size:0.78rem;">No matching users.</div>';
+    };
+
+    window.addMember = function (userId) {
+        var employeeRole = DB.findOne('roles', function (r) {
+            return r.company_id === state.currentCompanyId && !r.deleted_at && r.name === 'employee';
+        }) || companyRoles()[0];
+        if (employeeRole) {
+            DB.insert('user_roles', {
+                user_id: userId,
+                role_id: employeeRole.id,
+                assigned_at: new Date().toISOString(),
+                status: 'active',
+            });
+        }
+        document.getElementById('cs-member-search').value = '';
+        document.getElementById('cs-search-results').innerHTML = '';
+        renderMembers();
+    };
+
+    window.removeMember = function (userId) {
+        var u = DB.getById('users', userId);
+        if (!confirm('Remove ' + (u ? u.full_name : 'this member') + ' from the company?')) return;
+        membershipRows(userId).forEach(function (ur) { DB.softDelete('user_roles', ur.id); });
+        if (u && u.company_id === state.currentCompanyId) {
+            DB.update('users', userId, { company_id: null, branch_id: null });
+        }
+        renderMembers();
+    };
+
+    window.manageEmployee = function (userId) {
+        var u = DB.getById('users', userId);
+        if (!u) return;
+        var existing = document.getElementById('employee-panel');
+        if (existing) existing.remove();
+        var membership = membershipRows(userId)[0];
+        var role = membership ? DB.getById('roles', membership.role_id) : null;
+        var perms = (membership && membership.overrides) || (role && role.permissions) || { finance: 'none', manage_users: false, manage_bids: false };
+        var branches = DB.find('branches', function (b) { return b.company_id === state.currentCompanyId && !b.deleted_at; });
+        var roles = companyRoles();
+        var modal = document.createElement('div');
+        modal.id = 'employee-panel';
+        modal.className = 'modal-overlay';
+        modal.innerHTML =
+            '<div class="modal-sheet">' +
+                '<div class="modal-handle"></div>' +
+                '<div class="page-title-sm mb-1">' + u.full_name + '</div>' +
+                '<div class="page-subtitle mb-4">' + (u.email || '') + '</div>' +
+                '<div class="form-group">' +
+                    '<label>Branch</label>' +
+                    '<select id="emp-branch">' +
+                        '<option value="">No branch</option>' +
+                        branches.map(function (b) {
+                            return '<option value="' + b.id + '"' + (b.id === u.branch_id ? ' selected' : '') + '>' + b.name + '</option>';
+                        }).join('') +
+                    '</select>' +
+                '</div>' +
+                '<div class="form-group">' +
+                    '<label>Position</label>' +
+                    '<select id="emp-role">' +
+                        roles.map(function (r) {
+                            return '<option value="' + r.id + '"' + (role && r.id === role.id ? ' selected' : '') + '>' + r.name.replace(/\b[a-z]/g, function (c) { return c.toUpperCase(); }) + '</option>';
+                        }).join('') +
+                    '</select>' +
+                '</div>' +
+                '<div class="form-group">' +
+                    '<label>Finance Access (this member)</label>' +
+                    '<select id="emp-finance">' +
+                        ['none', 'job', 'branch', 'nationwide'].map(function (f) {
+                            return '<option value="' + f + '"' + ((perms.finance || 'none') === f ? ' selected' : '') + '>' + f.charAt(0).toUpperCase() + f.slice(1) + '</option>';
+                        }).join('') +
+                    '</select>' +
+                '</div>' +
+                '<div class="list-item" style="padding:8px 0;">' +
+                    '<div class="list-item-body"><div class="list-item-title">Manage users</div></div>' +
+                    '<div class="toggle-switch' + (perms.manage_users ? ' on' : '') + '" id="emp-users" onclick="this.classList.toggle(\'on\')"><div class="toggle-switch-knob"></div></div>' +
+                '</div>' +
+                '<div class="list-item" style="padding:8px 0; border-bottom:none;">' +
+                    '<div class="list-item-body"><div class="list-item-title">Manage bids</div></div>' +
+                    '<div class="toggle-switch' + (perms.manage_bids ? ' on' : '') + '" id="emp-bids" onclick="this.classList.toggle(\'on\')"><div class="toggle-switch-knob"></div></div>' +
+                '</div>' +
+                '<button class="btn btn-primary mt-4" onclick="saveEmployee(\'' + u.id + '\')">Save Member</button>' +
+                '<button class="btn btn-secondary" onclick="document.getElementById(\'employee-panel\').remove()">Cancel</button>' +
+            '</div>';
+        modal.addEventListener('click', function (e) { if (e.target === modal) modal.remove(); });
+        document.getElementById('phone').appendChild(modal);
+    };
+
+    window.saveEmployee = function (userId) {
+        DB.update('users', userId, { branch_id: document.getElementById('emp-branch').value || null });
+        var roleId = document.getElementById('emp-role').value;
+        var overrides = {
+            finance: document.getElementById('emp-finance').value,
+            manage_users: document.getElementById('emp-users').classList.contains('on'),
+            manage_bids: document.getElementById('emp-bids').classList.contains('on'),
+        };
+        var membership = membershipRows(userId)[0];
+        if (membership) {
+            DB.update('user_roles', membership.id, { role_id: roleId, overrides: overrides });
+        } else if (roleId) {
+            DB.insert('user_roles', {
+                user_id: userId,
+                role_id: roleId,
+                assigned_at: new Date().toISOString(),
+                status: 'active',
+                overrides: overrides,
+            });
+        }
+        document.getElementById('employee-panel').remove();
+        renderMembers();
     };
 
     window.removeBranch = function (branchId) {

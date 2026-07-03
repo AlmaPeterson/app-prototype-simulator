@@ -42,7 +42,7 @@
         // role -> role.company_id) — not a real access-control check; a
         // company the user has no role row for just shows no badge.
         return DB.findOne('user_roles', function (ur) {
-            if (ur.user_id !== state.currentUserId) return false;
+            if (ur.user_id !== state.currentUserId || ur.deleted_at) return false;
             var role = DB.getById('roles', ur.role_id);
             return role && role.company_id === companyId;
         });
@@ -62,6 +62,7 @@
         DB.find('users', function (u) { return u.company_id === c.id && !u.deleted_at; })
             .forEach(function (u) { memberIds[u.id] = true; });
         DB.find('user_roles', function (ur) {
+            if (ur.deleted_at) return false;
             var role = DB.getById('roles', ur.role_id);
             return role && role.company_id === c.id;
         }).forEach(function (ur) { memberIds[ur.user_id] = true; });

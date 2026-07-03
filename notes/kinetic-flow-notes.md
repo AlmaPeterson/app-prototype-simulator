@@ -1,16 +1,5 @@
 # Kinetic Flow — Screen Notes
 
-## 2026-07-03T19:30:47.922Z
-
-- Screen: kinetic-flow — company-setup
-- Role: worker
-- Account: New Account
-- Phone size: 374 × 776
-
-Adding team member should be a search, and you select then and members show with a remove button and their branch if any.
-
----
-
 ## 2026-07-03T19:40:37.581Z
 
 - Screen: kinetic-flow — kits
@@ -19,17 +8,6 @@ Adding team member should be a search, and you select then and members show with
 - Phone size: 374 × 776
 
 Managers needs to be able to add tools, materials, and fake videos to kits
-
----
-
-## 2026-07-03T19:46:46.833Z
-
-- Screen: kinetic-flow — company-setup
-- Role: worker
-- Account: New Account
-- Phone size: 374 × 776
-
-There should be an employees section of users in your company were you can cick on them to manage them, like branch, role, specific permissions.
 
 ---
 
