@@ -25,8 +25,31 @@
 <script>
 (function () {
 
-    var KIT_CATEGORIES = window.KIT_CATEGORIES;
-    var state = { expandedCats: new Set(), expandedKits: new Set(), searchQuery: '' };
+    // Group real inventory_kits rows by category, and resolve each kit's
+    // tools/materials from kit_tools/kit_items — same data source as
+    // kits.html, adapted here to add per-tool/per-material checkboxes.
+    function loadCategories() {
+        var kits = DB.find('inventory_kits', function (k) {
+            return k.company_id === state.currentCompanyId && !k.deleted_at;
+        });
+        var byCat = {};
+        var order = [];
+        kits.forEach(function (k) {
+            var cat = k.category || 'Uncategorized';
+            if (!byCat[cat]) { byCat[cat] = []; order.push(cat); }
+            var tools = DB.find('kit_tools', function (t) { return t.kit_id === k.id; })
+                .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); })
+                .map(function (t) { return t.name; });
+            var materials = DB.find('kit_items', function (i) { return i.kit_id === k.id; })
+                .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); })
+                .map(function (i) { return i.quantity && i.quantity !== 1 ? (i.name + ' (' + i.quantity + ')') : i.name; });
+            byCat[cat].push({ id: k.id, name: k.name, tools: tools, materials: materials });
+        });
+        return order.map(function (name) { return { name: name, kits: byCat[name] }; });
+    }
+
+    var CATEGORIES = loadCategories();
+    var appState = { expandedCats: new Set(), expandedKits: new Set(), searchQuery: '' };
     var selected = new Map(); // id -> label text
 
     function clearSearchInput() {
@@ -58,7 +81,7 @@
 
     function kitHtml(ci, kit, ki) {
         var key = ci + '|' + ki;
-        var expanded = state.expandedKits.has(key);
+        var expanded = appState.expandedKits.has(key);
         var checked = selected.has('K|' + ci + '|' + ki);
         var html = '<div class="label-kit" id="kit-' + ci + '-' + ki + '">';
         html += '<div class="label-row label-row-kit">' +
@@ -78,7 +101,7 @@
     }
 
     function categoryHtml(cat, ci) {
-        var expanded = state.expandedCats.has(ci);
+        var expanded = appState.expandedCats.has(ci);
         var html = '<div class="label-cat">';
         html += '<div class="label-row label-row-cat">' +
             '<button class="label-toggle" onclick="toggleCatExpand(' + ci + ')">' +
@@ -94,13 +117,13 @@
     }
 
     function treeHtml() {
-        return '<div class="label-tree">' + KIT_CATEGORIES.map(categoryHtml).join('') + '</div>';
+        return '<div class="label-tree">' + CATEGORIES.map(categoryHtml).join('') + '</div>';
     }
 
     function searchResultsHtml(query) {
         var q = query.toLowerCase();
         var results = [];
-        KIT_CATEGORIES.forEach(function (cat, ci) {
+        CATEGORIES.forEach(function (cat, ci) {
             cat.kits.forEach(function (k, ki) {
                 if (k.name.toLowerCase().indexOf(q) !== -1) results.push({ cat: cat, ci: ci, k: k, ki: ki });
             });
@@ -124,42 +147,42 @@
 
     function render() {
         var el = document.getElementById('label-list');
-        el.innerHTML = state.searchQuery ? searchResultsHtml(state.searchQuery) : treeHtml();
+        el.innerHTML = appState.searchQuery ? searchResultsHtml(appState.searchQuery) : treeHtml();
         renderFooter();
     }
 
     window.toggleCatExpand = function (ci) {
-        if (state.expandedCats.has(ci)) state.expandedCats.delete(ci);
-        else state.expandedCats.add(ci);
+        if (appState.expandedCats.has(ci)) appState.expandedCats.delete(ci);
+        else appState.expandedCats.add(ci);
         render();
     };
 
     window.toggleKitExpand = function (ci, ki) {
         var key = ci + '|' + ki;
-        if (state.expandedKits.has(key)) state.expandedKits.delete(key);
-        else state.expandedKits.add(key);
+        if (appState.expandedKits.has(key)) appState.expandedKits.delete(key);
+        else appState.expandedKits.add(key);
         render();
     };
 
     window.jumpToKit = function (ci, ki) {
-        state.searchQuery = '';
+        appState.searchQuery = '';
         clearSearchInput();
-        state.expandedCats.add(ci);
-        state.expandedKits.add(ci + '|' + ki);
+        appState.expandedCats.add(ci);
+        appState.expandedKits.add(ci + '|' + ki);
         render();
         var el = document.getElementById('kit-' + ci + '-' + ki);
         if (el) el.scrollIntoView({ block: 'center' });
     };
 
     window.filterLabelKits = function (query) {
-        state.searchQuery = query.trim();
+        appState.searchQuery = query.trim();
         render();
     };
 
     window.toggleLabelKit = function (ci, ki) {
         var id = 'K|' + ci + '|' + ki;
         if (selected.has(id)) selected.delete(id);
-        else selected.set(id, KIT_CATEGORIES[ci].kits[ki].name);
+        else selected.set(id, CATEGORIES[ci].kits[ki].name);
         render();
     };
 
@@ -168,7 +191,7 @@
         if (selected.has(id)) {
             selected.delete(id);
         } else {
-            var kit = KIT_CATEGORIES[ci].kits[ki];
+            var kit = CATEGORIES[ci].kits[ki];
             var text = kind === 'T' ? kit.tools[i] : kit.materials[i];
             selected.set(id, text);
         }

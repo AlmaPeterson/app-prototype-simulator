@@ -4,69 +4,19 @@
             <div class="page-title">Messages</div>
             <div class="page-subtitle">Customer Communications</div>
         </div>
-        <span class="badge badge-gray">3 unread</span>
+        <span class="badge badge-gray" id="msg-unread-badge">0 unread</span>
     </div>
 
     <input class="search-bar" type="text" placeholder="Search messages...">
 
     <!-- Conversation list -->
-    <div class="card" onclick="showConversation('Riverside Properties')">
-        <div class="card-row">
-            <div class="leaderboard-avatar" style="width:44px; height:44px;">RP</div>
-            <div class="card-body" style="margin-left:4px;">
-                <div class="flex-between">
-                    <div class="card-title">Riverside Properties</div>
-                    <span style="font-size:0.7rem; color:#94a3b8;">2 min ago</span>
-                </div>
-                <div class="card-subtitle">What time will you arrive tomorrow?</div>
-            </div>
-        </div>
-        <div style="margin-top:6px; padding-left:52px;">
-            <span class="badge badge-gray">2 new</span>
-        </div>
-    </div>
-
-    <div class="card" onclick="showConversation('Summit Corp')">
-        <div class="card-row">
-            <div class="leaderboard-avatar" style="width:44px; height:44px;">SC</div>
-            <div class="card-body" style="margin-left:4px;">
-                <div class="flex-between">
-                    <div class="card-title">Summit Corp</div>
-                    <span style="font-size:0.7rem; color:#94a3b8;">1 hr ago</span>
-                </div>
-                <div class="card-subtitle" style="color:#94a3b8;">Great work on the panel, thanks!</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card" onclick="showConversation('Northview Dev')">
-        <div class="card-row">
-            <div class="leaderboard-avatar" style="width:44px; height:44px;">ND</div>
-            <div class="card-body" style="margin-left:4px;">
-                <div class="flex-between">
-                    <div class="card-title">Northview Dev.</div>
-                    <span style="font-size:0.7rem; color:#94a3b8;">Yesterday</span>
-                </div>
-                <div class="card-subtitle" style="color:#94a3b8;">Can we reschedule to next week?</div>
-            </div>
-        </div>
-        <div style="margin-top:6px; padding-left:52px;">
-            <span class="badge badge-gray">1 new</span>
-        </div>
-    </div>
+    <div id="msg-conversation-list"></div>
 
     <!-- Inline conversation (shown when tapped) -->
     <div id="convo-panel" style="display:none; border:1px solid #e2e8f0; margin-top:4px; overflow:hidden;">
         <div style="padding:12px 14px; border-bottom:1px solid #f1f5f9; font-size:0.88rem;" id="convo-name"></div>
 
-        <div id="convo-messages" style="padding:12px 14px; min-height:120px;">
-            <div style="border:1px solid #e2e8f0; padding:10px 12px; margin-bottom:8px; max-width:80%; font-size:0.83rem;">
-                What time will you arrive tomorrow?
-            </div>
-            <div style="background:#2563eb; padding:10px 12px; margin-bottom:8px; max-width:80%; margin-left:auto; font-size:0.83rem; color:white;">
-                We'll be there around 7:30 AM!
-            </div>
-        </div>
+        <div id="convo-messages" style="padding:12px 14px; min-height:120px;"></div>
 
         <div style="padding:10px 12px; border-top:1px solid #f1f5f9; display:flex; gap:8px;">
             <input type="text" placeholder="Reply..." id="convo-input"
@@ -78,20 +28,129 @@
 </div>
 
 <script>
-function showConversation(name) {
-    document.getElementById('convo-name').textContent = name;
-    document.getElementById('convo-panel').style.display = 'block';
-    document.getElementById('convo-panel').scrollIntoView({ behavior: 'smooth' });
-}
+(function () {
+    // customer_id is the meaningful thread key across the seeded rows — every
+    // message already carries a customer_id, and each customer here maps 1:1
+    // to a job in this seed, so grouping by customer_id groups the same rows
+    // as grouping by job_id would, but customer_id is the one that stays
+    // stable even for general (non-job) conversations in the future.
+    var msgCurrentCustomerId = null;
 
-function sendConvoMsg() {
-    const input = document.getElementById('convo-input');
-    const text = input.value.trim();
-    if (!text) return;
-    const msg = document.createElement('div');
-    msg.style.cssText = 'background:#2563eb; border-radius:12px 12px 2px 12px; padding:10px 12px; margin-bottom:8px; max-width:80%; margin-left:auto; font-size:0.83rem; color:white;';
-    msg.textContent = text;
-    document.getElementById('convo-messages').appendChild(msg);
-    input.value = '';
-}
+    function initials(name) {
+        return (name || '').split(' ').map(function (p) { return (p.replace(/[^A-Za-z]/g, '')[0] || ''); }).join('').toUpperCase().slice(0, 2) || '?';
+    }
+
+    function relativeTime(iso) {
+        var diffMs = Date.now() - new Date(iso).getTime();
+        var mins = Math.round(diffMs / 60000);
+        if (mins < 1) return 'just now';
+        if (mins < 60) return mins + ' min ago';
+        var hrs = Math.round(mins / 60);
+        if (hrs < 24) return hrs + ' hr' + (hrs === 1 ? '' : 's') + ' ago';
+        var days = Math.round(hrs / 24);
+        return days === 1 ? 'Yesterday' : days + ' days ago';
+    }
+
+    function threads() {
+        var all = DB.find('messages', function (m) { return m.company_id === state.currentCompanyId; });
+        var byCustomer = {};
+        all.forEach(function (m) {
+            if (!byCustomer[m.customer_id]) byCustomer[m.customer_id] = [];
+            byCustomer[m.customer_id].push(m);
+        });
+        return Object.keys(byCustomer).map(function (customerId) {
+            var msgs = byCustomer[customerId].slice().sort(function (a, b) { return new Date(b.sent_at) - new Date(a.sent_at); });
+            var unread = msgs.filter(function (m) { return m.read_at === null; }).length;
+            return { customerId: customerId, msgs: msgs, latest: msgs[0], unread: unread };
+        }).sort(function (a, b) { return new Date(b.latest.sent_at) - new Date(a.latest.sent_at); });
+    }
+
+    function renderList() {
+        var t = threads();
+        var totalUnread = t.reduce(function (sum, th) { return sum + th.unread; }, 0);
+        document.getElementById('msg-unread-badge').textContent = totalUnread + ' unread';
+
+        document.getElementById('msg-conversation-list').innerHTML = t.map(function (th) {
+            var customer = DB.getById('customers', th.customerId);
+            var name = customer ? customer.full_name : 'Unknown';
+            var subtitleColor = th.unread > 0 ? '' : ' style="color:#94a3b8;"';
+            var badge = th.unread > 0
+                ? '<div style="margin-top:6px; padding-left:52px;"><span class="badge badge-gray">' + th.unread + ' new</span></div>'
+                : '';
+            return '<div class="card" onclick="showConversation(\'' + th.customerId + '\')">' +
+                '<div class="card-row">' +
+                    '<div class="leaderboard-avatar" style="width:44px; height:44px;">' + initials(name) + '</div>' +
+                    '<div class="card-body" style="margin-left:4px;">' +
+                        '<div class="flex-between">' +
+                            '<div class="card-title">' + name + '</div>' +
+                            '<span style="font-size:0.7rem; color:#94a3b8;">' + relativeTime(th.latest.sent_at) + '</span>' +
+                        '</div>' +
+                        '<div class="card-subtitle"' + subtitleColor + '>' + th.latest.body + '</div>' +
+                    '</div>' +
+                '</div>' +
+                badge +
+            '</div>';
+        }).join('') || '<div class="alert">No conversations yet.</div>';
+    }
+
+    function renderConvo(customerId) {
+        var msgs = DB.find('messages', function (m) { return m.customer_id === customerId; })
+            .slice()
+            .sort(function (a, b) { return new Date(a.sent_at) - new Date(b.sent_at); });
+
+        document.getElementById('convo-messages').innerHTML = msgs.map(function (m) {
+            return m.direction === 'outbound'
+                ? '<div style="background:#2563eb; border-radius:12px 12px 2px 12px; padding:10px 12px; margin-bottom:8px; max-width:80%; margin-left:auto; font-size:0.83rem; color:white;">' + m.body + '</div>'
+                : '<div style="border:1px solid #e2e8f0; border-radius:12px 12px 12px 2px; padding:10px 12px; margin-bottom:8px; max-width:80%; font-size:0.83rem;">' + m.body + '</div>';
+        }).join('');
+
+        // Mark unread messages in this thread read now that it's been opened.
+        var now = new Date().toISOString();
+        msgs.forEach(function (m) {
+            if (m.read_at === null) DB.update('messages', m.id, { read_at: now });
+        });
+        renderList();
+    }
+
+    window.showConversation = function (customerId) {
+        msgCurrentCustomerId = customerId;
+        var customer = DB.getById('customers', customerId);
+        document.getElementById('convo-name').textContent = customer ? customer.full_name : 'Unknown';
+        document.getElementById('convo-panel').style.display = 'block';
+        renderConvo(customerId);
+        document.getElementById('convo-panel').scrollIntoView({ behavior: 'smooth' });
+    };
+
+    window.sendConvoMsg = function () {
+        if (!msgCurrentCustomerId) return;
+        var input = document.getElementById('convo-input');
+        var text = input.value.trim();
+        if (!text) return;
+
+        var thread = DB.find('messages', function (m) { return m.customer_id === msgCurrentCustomerId; });
+        var jobId = thread.length ? thread[thread.length - 1].job_id : null;
+        var now = new Date().toISOString();
+
+        DB.insert('messages', {
+            company_id: state.currentCompanyId,
+            job_id: jobId,
+            customer_id: msgCurrentCustomerId,
+            template_id: null,
+            sent_by: state.currentUserId,
+            body: text,
+            direction: 'outbound',
+            status: 'sent',
+            scheduled_for: null,
+            sent_at: now,
+            twilio_sid: null,
+            ai_suggested: false,
+            read_at: now,
+        });
+
+        renderConvo(msgCurrentCustomerId);
+        input.value = '';
+    };
+
+    renderList();
+})();
 </script>

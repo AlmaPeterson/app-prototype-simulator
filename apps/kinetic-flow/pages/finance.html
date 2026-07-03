@@ -1,6 +1,6 @@
 <div class="page" style="padding-bottom:80px;">
     <div class="page-title">Finance</div>
-    <div class="page-subtitle mb-4" id="finance-tier-subtitle">June 2024 &bull; Kinetic Solutions LLC</div>
+    <div class="page-subtitle mb-4" id="finance-tier-subtitle">&nbsp;</div>
 
     <!-- View tier: how much of the org this dashboard is scoped to -->
     <div class="tab-bar mb-2">
@@ -18,170 +18,229 @@
     <!-- Revenue Hero -->
     <div class="hero-stat">
         <div style="font-size:0.78rem; opacity:0.7;" id="finance-hero-label">Revenue This Month</div>
-        <div class="hero-stat-value" id="finance-hero-value">$148,320</div>
-        <div style="font-size:0.82rem; opacity:0.8; margin-top:4px;" id="finance-hero-note">+22% vs May &bull; Target: $130,000</div>
+        <div class="hero-stat-value" id="finance-hero-value">$0</div>
+        <div style="font-size:0.82rem; opacity:0.8; margin-top:4px;" id="finance-hero-note"></div>
     </div>
 
     <div class="stats-grid" style="margin-bottom:16px;">
         <div class="stat-card">
-            <div class="stat-value" id="finance-revenue">$148K</div>
+            <div class="stat-value" id="finance-revenue">$0</div>
             <div class="stat-label">Revenue</div>
-            <div class="stat-change" id="finance-revenue-change">+22%</div>
+            <div class="stat-change" id="finance-revenue-change"></div>
         </div>
         <div class="stat-card">
-            <div class="stat-value" id="finance-expenses">$89K</div>
+            <div class="stat-value" id="finance-expenses">$0</div>
             <div class="stat-label">Expenses</div>
-            <div class="stat-change" id="finance-expenses-change">+8%</div>
+            <div class="stat-change" id="finance-expenses-change"></div>
         </div>
         <div class="stat-card">
-            <div class="stat-value" id="finance-profit">$59K</div>
+            <div class="stat-value" id="finance-profit">$0</div>
             <div class="stat-label">Profit</div>
-            <div class="stat-change" id="finance-profit-change">39.8% margin</div>
+            <div class="stat-change" id="finance-profit-change"></div>
         </div>
         <div class="stat-card">
-            <div class="stat-value" id="finance-outstanding">$24K</div>
+            <div class="stat-value" id="finance-outstanding">$0</div>
             <div class="stat-label">Outstanding</div>
-            <div class="stat-change" id="finance-outstanding-change">3 invoices</div>
+            <div class="stat-change" id="finance-outstanding-change"></div>
         </div>
     </div>
 
     <!-- Outstanding Invoices -->
     <div class="section-header">
         <span class="section-title">Outstanding Invoices</span>
-        <span class="badge badge-gray">3 pending</span>
+        <span class="badge badge-gray" id="finance-invoices-badge">0 pending</span>
     </div>
 
-    <div style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;">
-        <div class="list-item">
-            <div class="list-item-body">
-                <div class="list-item-title">Riverside Properties</div>
-                <div class="list-item-sub">INV-0814 &bull; Due Jul 5</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">$12,400</div>
-                <div class="list-item-detail">5 days left</div>
-            </div>
-        </div>
-        <div class="list-item">
-            <div class="list-item-body">
-                <div class="list-item-title">Summit Corp</div>
-                <div class="list-item-sub">INV-0812 &bull; Due Jul 12</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">$8,200</div>
-                <div class="list-item-detail">12 days left</div>
-            </div>
-        </div>
-        <div class="list-item" style="border-bottom:none;">
-            <div class="list-item-body">
-                <div class="list-item-title">Northview Dev.</div>
-                <div class="list-item-sub">INV-0809 &bull; Overdue</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">$3,750</div>
-                <div class="list-item-detail">-8 days</div>
-            </div>
-        </div>
-    </div>
+    <div id="finance-invoices-list" style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;"></div>
 
     <!-- Expense Breakdown -->
     <div class="section-header">
         <span class="section-title">Expense Breakdown</span>
     </div>
 
-    <div style="border:1px solid #e2e8f0; padding:14px; margin-bottom:16px;">
-        <div style="margin-bottom:10px;">
-            <div class="flex-between mb-2">
-                <span style="font-size:0.85rem;">Labour</span>
-                <span style="font-size:0.82rem; color:#64748b;">$52,400 &bull; 59%</span>
-            </div>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width:59%;"></div>
-            </div>
-        </div>
-        <div style="margin-bottom:10px;">
-            <div class="flex-between mb-2">
-                <span style="font-size:0.85rem;">Materials</span>
-                <span style="font-size:0.82rem; color:#64748b;">$24,800 &bull; 28%</span>
-            </div>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width:28%;"></div>
-            </div>
-        </div>
-        <div>
-            <div class="flex-between mb-2">
-                <span style="font-size:0.85rem;">Equipment &amp; Overhead</span>
-                <span style="font-size:0.82rem; color:#64748b;">$11,800 &bull; 13%</span>
-            </div>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width:13%;"></div>
-            </div>
-        </div>
-    </div>
+    <div id="finance-expense-breakdown" style="border:1px solid #e2e8f0; padding:14px; margin-bottom:16px;"></div>
 
     <button class="btn btn-outline">Export Report</button>
 </div>
 
 <script>
 (function () {
-    // Outstanding Invoices / Expense Breakdown below stay at branch-level
-    // detail regardless of tier (per the reference doc, Nationwide/Branch
-    // both "show jobs and lead per job" — modeling separate invoice/expense
-    // line items per tier isn't worth the duplicated static data here).
-    var TIERS = {
-        nationwide: {
-            subtitle: 'June 2024 &bull; All Branches',
-            heroLabel: 'Revenue This Month',
-            heroValue: '$312,900',
-            heroNote: '+18% vs May &bull; Target: $280,000',
-            revenue: '$313K', revenueChange: '+18%',
-            expenses: '$198K', expensesChange: '+11%',
-            profit: '$115K', profitChange: '36.7% margin',
-            outstanding: '$41K', outstandingChange: '7 invoices',
-        },
-        branch: {
-            subtitle: 'June 2024 &bull; Kinetic Solutions LLC &mdash; Calgary HQ',
-            heroLabel: 'Revenue This Month',
-            heroValue: '$148,320',
-            heroNote: '+22% vs May &bull; Target: $130,000',
-            revenue: '$148K', revenueChange: '+22%',
-            expenses: '$89K', expensesChange: '+8%',
-            profit: '$59K', profitChange: '39.8% margin',
-            outstanding: '$24K', outstandingChange: '3 invoices',
-        },
-        job: {
-            subtitle: 'June 2024 &bull; Riverside HVAC Retrofit',
-            heroLabel: 'Contract Value',
-            heroValue: '$12,400',
-            heroNote: '65% complete &bull; Lead: Jake Smith',
-            revenue: '$12.4K', revenueChange: 'Bid total',
-            expenses: '$6.2K', expensesChange: 'Labour + materials',
-            profit: '$6.2K', profitChange: '50% margin',
-            outstanding: '$0', outstandingChange: 'No invoices due',
-        },
-    };
+    // ── Synthetic invoices are computed (not persisted) from bids.total_cost
+    // via the shared computeSyntheticPaymentSchedule() helper — see app.js.
+    // "Paid" vs "Due" is a simple heuristic: a signed bid has collected its
+    // deposit + first draw; a merely-sent bid has collected nothing yet;
+    // drafts never appear on an invoice because no bid has gone out.
+    function dueAmountForBid(bid) {
+        var sched = computeSyntheticPaymentSchedule(bid.total_cost);
+        if (bid.status === 'signed') return sched.draw2 + sched.final;
+        return bid.total_cost; // sent, not yet signed — nothing collected
+    }
+
+    function fmtMoney(n) { return '$' + Math.round(n).toLocaleString(); }
+    function fmtMoneyK(n) { return '$' + (n / 1000).toFixed(0) + 'K'; }
+
+    // ── Role → finance_dashboard_permissions gating ─────────────────────────
+    function getFinancePermission() {
+        var userRole = DB.findOne('user_roles', function (ur) { return ur.user_id === state.currentUserId && ur.status === 'active'; });
+        var fallback = { can_view_nationwide: false, can_view_branch: false, can_view_job: true };
+        if (!userRole) return fallback;
+        var perm = DB.findOne('finance_dashboard_permissions', function (p) {
+            return p.role_id === userRole.role_id && p.company_id === state.currentCompanyId;
+        });
+        return perm || fallback;
+    }
+
+    function latestSnapshot(pred) {
+        var rows = DB.find('finance_snapshots', pred).slice().sort(function (a, b) { return new Date(b.snapshot_month) - new Date(a.snapshot_month); });
+        return rows[0] || null;
+    }
+
+    function targetJobId() {
+        if (state.currentJobId) return state.currentJobId;
+        var companyJobs = DB.find('jobs', function (j) { return j.company_id === state.currentCompanyId && !j.deleted_at; });
+        return companyJobs.length ? companyJobs[0].id : null;
+    }
+
+    function renderExpenseBreakdown(entries) {
+        var sums = { employee: 0, material: 0, overhead: 0 };
+        entries.forEach(function (e) { sums[e.category] = (sums[e.category] || 0) + e.amount; });
+        var total = sums.employee + sums.material + sums.overhead || 1;
+        var rows = [
+            { label: 'Labour', amount: sums.employee },
+            { label: 'Materials', amount: sums.material },
+            { label: 'Equipment & Overhead', amount: sums.overhead },
+        ];
+        document.getElementById('finance-expense-breakdown').innerHTML = rows.map(function (r, i) {
+            var pct = Math.round((r.amount / total) * 100);
+            var isLast = i === rows.length - 1;
+            return '<div style="margin-bottom:' + (isLast ? '0' : '10px') + ';">' +
+                '<div class="flex-between mb-2">' +
+                    '<span style="font-size:0.85rem;">' + r.label + '</span>' +
+                    '<span style="font-size:0.82rem; color:#64748b;">' + fmtMoney(r.amount) + ' &bull; ' + pct + '%</span>' +
+                '</div>' +
+                '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%;"></div></div>' +
+            '</div>';
+        }).join('');
+    }
+
+    function renderInvoices(bids) {
+        var billable = bids.filter(function (b) { return b.status === 'sent' || b.status === 'signed'; });
+        document.getElementById('finance-invoices-badge').textContent = billable.length + ' pending';
+        document.getElementById('finance-invoices-list').innerHTML = billable.map(function (b, i) {
+            var customer = DB.getById('customers', b.customer_id);
+            var due = dueAmountForBid(b);
+            var isLast = i === billable.length - 1;
+            return '<div class="list-item"' + (isLast ? ' style="border-bottom:none;"' : '') + '>' +
+                '<div class="list-item-body">' +
+                    '<div class="list-item-title">' + (customer ? customer.full_name : 'Unknown') + '</div>' +
+                    '<div class="list-item-sub">' + b.title + ' &bull; ' + (b.status === 'signed' ? 'Signed' : 'Sent, awaiting signature') + '</div>' +
+                '</div>' +
+                '<div class="list-item-right">' +
+                    '<div class="list-item-value">' + fmtMoney(due) + '</div>' +
+                    '<div class="list-item-detail">' + (b.status === 'signed' ? 'Balance due' : 'Full amount due') + '</div>' +
+                '</div>' +
+            '</div>';
+        }).join('') || '<div class="list-item" style="border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">No outstanding invoices.</div></div>';
+
+        var outstandingTotal = billable.reduce(function (sum, b) { return sum + dueAmountForBid(b); }, 0);
+        return { total: outstandingTotal, count: billable.length };
+    }
+
+    function renderTier(view) {
+        document.getElementById('finance-tier-subtitle').innerHTML = view.subtitle;
+        document.getElementById('finance-hero-label').textContent = view.heroLabel;
+        document.getElementById('finance-hero-value').textContent = view.heroValue;
+        document.getElementById('finance-hero-note').innerHTML = view.heroNote;
+        document.getElementById('finance-revenue').textContent = view.revenue;
+        document.getElementById('finance-revenue-change').textContent = view.revenueChange;
+        document.getElementById('finance-expenses').textContent = view.expenses;
+        document.getElementById('finance-expenses-change').textContent = view.expensesChange;
+        document.getElementById('finance-profit').textContent = view.profit;
+        document.getElementById('finance-profit-change').textContent = view.profitChange;
+
+        var invoiceSummary = renderInvoices(view.bids);
+        document.getElementById('finance-outstanding').textContent = fmtMoneyK(invoiceSummary.total);
+        document.getElementById('finance-outstanding-change').textContent = invoiceSummary.count + ' invoice' + (invoiceSummary.count === 1 ? '' : 's');
+
+        renderExpenseBreakdown(view.expenseEntries);
+    }
 
     window.selectFinanceTier = function (tier) {
-        var t = TIERS[tier];
-        if (!t) return;
+        var perm = getFinancePermission();
+        if (tier === 'nationwide' && !perm.can_view_nationwide) return;
+        if (tier === 'branch' && !perm.can_view_branch) return;
+        if (tier === 'job' && !perm.can_view_job) return;
 
         ['nationwide', 'branch', 'job'].forEach(function (key) {
             var btn = document.getElementById('tier-btn-' + key);
             if (btn) btn.classList.toggle('active', key === tier);
         });
 
-        document.getElementById('finance-tier-subtitle').innerHTML = t.subtitle;
-        document.getElementById('finance-hero-label').textContent = t.heroLabel;
-        document.getElementById('finance-hero-value').textContent = t.heroValue;
-        document.getElementById('finance-hero-note').innerHTML = t.heroNote;
-        document.getElementById('finance-revenue').textContent = t.revenue;
-        document.getElementById('finance-revenue-change').textContent = t.revenueChange;
-        document.getElementById('finance-expenses').textContent = t.expenses;
-        document.getElementById('finance-expenses-change').textContent = t.expensesChange;
-        document.getElementById('finance-profit').textContent = t.profit;
-        document.getElementById('finance-profit-change').textContent = t.profitChange;
-        document.getElementById('finance-outstanding').textContent = t.outstanding;
-        document.getElementById('finance-outstanding-change').textContent = t.outstandingChange;
+        var company = DB.getById('companies', state.currentCompanyId);
+
+        if (tier === 'nationwide') {
+            var snap = latestSnapshot(function (s) { return s.company_id === state.currentCompanyId && s.branch_id === null; });
+            var bids = DB.find('bids', function (b) { return b.company_id === state.currentCompanyId && !b.deleted_at; });
+            var expenses = DB.find('expense_entries', function (e) { return e.company_id === state.currentCompanyId; });
+            var revenue = snap ? snap.actual_revenue : 0;
+            var expensesTotal = snap ? snap.total_expenses : 0;
+            var net = snap ? snap.net : 0;
+            renderTier({
+                subtitle: (snap ? new Date(snap.snapshot_month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'This Month') + ' &bull; ' + (company ? company.name : 'All Branches') + ' &mdash; All Branches',
+                heroLabel: 'Revenue This Month',
+                heroValue: fmtMoney(revenue),
+                heroNote: snap ? ('Projected: ' + fmtMoney(snap.projected_revenue)) : '',
+                revenue: fmtMoneyK(revenue), revenueChange: 'Actual',
+                expenses: fmtMoneyK(expensesTotal), expensesChange: 'Total',
+                profit: fmtMoneyK(net), profitChange: revenue ? (Math.round((net / revenue) * 100 * 10) / 10 + '% margin') : '—',
+                bids: bids, expenseEntries: expenses,
+            });
+        } else if (tier === 'branch') {
+            var branch = DB.getById('branches', state.currentBranchId);
+            var bsnap = latestSnapshot(function (s) { return s.branch_id === state.currentBranchId; });
+            var bbids = DB.find('bids', function (b) { return b.branch_id === state.currentBranchId && !b.deleted_at; });
+            var bexpenses = DB.find('expense_entries', function (e) { return e.branch_id === state.currentBranchId; });
+            var brevenue = bsnap ? bsnap.actual_revenue : 0;
+            var bexpTotal = bsnap ? bsnap.total_expenses : 0;
+            var bnet = bsnap ? bsnap.net : 0;
+            renderTier({
+                subtitle: (bsnap ? new Date(bsnap.snapshot_month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'This Month') + ' &bull; ' + (company ? company.name : '') + ' &mdash; ' + (branch ? branch.name : 'Branch'),
+                heroLabel: 'Revenue This Month',
+                heroValue: fmtMoney(brevenue),
+                heroNote: bsnap ? ('Projected: ' + fmtMoney(bsnap.projected_revenue)) : '',
+                revenue: fmtMoneyK(brevenue), revenueChange: 'Actual',
+                expenses: fmtMoneyK(bexpTotal), expensesChange: 'Total',
+                profit: fmtMoneyK(bnet), profitChange: brevenue ? (Math.round((bnet / brevenue) * 100 * 10) / 10 + '% margin') : '—',
+                bids: bbids, expenseEntries: bexpenses,
+            });
+        } else {
+            var jobId = targetJobId();
+            var job = jobId ? DB.getById('jobs', jobId) : null;
+            var bid = job && job.bid_id ? DB.getById('bids', job.bid_id) : null;
+            var jexpenses = DB.find('expense_entries', function (e) { return e.job_id === jobId; });
+            var jexpTotal = jexpenses.reduce(function (sum, e) { return sum + e.amount; }, 0);
+            var revenueVal = bid ? bid.total_cost : 0;
+            var profitVal = revenueVal - jexpTotal;
+            renderTier({
+                subtitle: (job ? job.name : 'Job') + (bid ? ' &bull; ' + bid.title : ''),
+                heroLabel: 'Contract Value',
+                heroValue: fmtMoney(revenueVal),
+                heroNote: bid ? (bid.status === 'signed' ? 'Signed' : 'Sent, awaiting signature') : 'No bid yet',
+                revenue: fmtMoney(revenueVal), revenueChange: 'Bid total',
+                expenses: fmtMoney(jexpTotal), expensesChange: 'Logged expenses',
+                profit: fmtMoney(profitVal), profitChange: revenueVal ? (Math.round((profitVal / revenueVal) * 100) + '% margin') : '—',
+                bids: bid ? [bid] : [], expenseEntries: jexpenses,
+            });
+        }
     };
+
+    // ── Gate tier tabs per role permission ──────────────────────────────────
+    var perm = getFinancePermission();
+    if (!perm.can_view_nationwide) document.getElementById('tier-btn-nationwide').style.display = 'none';
+    if (!perm.can_view_branch) document.getElementById('tier-btn-branch').style.display = 'none';
+    if (!perm.can_view_job) document.getElementById('tier-btn-job').style.display = 'none';
+
+    var initialTier = perm.can_view_nationwide ? 'nationwide' : (perm.can_view_branch ? 'branch' : 'job');
+    selectFinanceTier(initialTier);
 })();
 </script>

@@ -7,112 +7,113 @@
         <button class="btn btn-primary btn-sm" onclick="addInventoryItem()">+ Add</button>
     </div>
 
-    <input class="search-bar" type="text" placeholder="Search inventory...">
+    <input class="search-bar" type="text" id="inventory-search" placeholder="Search inventory..." oninput="filterInventory(this.value)">
 
     <div class="stats-grid" style="margin-bottom:16px;">
         <div class="stat-card">
-            <div class="stat-value">248</div>
+            <div class="stat-value" id="inv-total-count">0</div>
             <div class="stat-label">Total Items</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">12</div>
+            <div class="stat-value" id="inv-low-count">0</div>
             <div class="stat-label">Low Stock</div>
         </div>
     </div>
 
-    <div class="tab-bar">
-        <button class="tab-btn active">All</button>
-        <button class="tab-btn">HVAC</button>
-        <button class="tab-btn">Electrical</button>
-        <button class="tab-btn">Plumbing</button>
-    </div>
+    <div class="tab-bar" id="inv-tab-bar"></div>
 
     <div class="section-header">
         <span class="section-title">Low Stock Alerts</span>
-        <span class="badge badge-gray">3 items</span>
+        <span class="badge badge-gray" id="inv-low-badge">0 items</span>
     </div>
 
-    <div class="card" style="cursor:default;">
-        <div class="list-item" style="padding:8px 0;">
-            <div class="list-item-body" style="margin-left:10px;">
-                <div class="list-item-title">Refrigerant R-410A 25lb</div>
-                <div class="list-item-sub">HVAC &bull; SKU-441</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">2 left</div>
-                <div class="list-item-detail">Min: 5</div>
-            </div>
-        </div>
-        <div class="list-item" style="padding:8px 0;">
-            <div class="list-item-body" style="margin-left:10px;">
-                <div class="list-item-title">20A Circuit Breaker</div>
-                <div class="list-item-sub">Electrical &bull; SKU-102</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">4 left</div>
-                <div class="list-item-detail">Min: 10</div>
-            </div>
-        </div>
-        <div class="list-item" style="padding:8px 0; border-bottom:none;">
-            <div class="list-item-body" style="margin-left:10px;">
-                <div class="list-item-title">Copper 1/2&quot; Pipe (10ft)</div>
-                <div class="list-item-sub">Plumbing &bull; SKU-308</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">6 left</div>
-                <div class="list-item-detail">Min: 8</div>
-            </div>
-        </div>
-    </div>
+    <div class="card" style="cursor:default;" id="inv-low-list"></div>
 
     <div class="section-header mt-2">
         <span class="section-title">All Items</span>
     </div>
 
-    <div class="card" style="cursor:default;">
-        <div class="list-item" style="padding:8px 0;">
-            <div class="list-item-body" style="margin-left:10px;">
-                <div class="list-item-title">Carrier 3-Ton AC Unit</div>
-                <div class="list-item-sub">HVAC &bull; SKU-512</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">8</div>
-                <div class="list-item-detail">$3,200 ea</div>
-            </div>
-        </div>
-        <div class="list-item" style="padding:8px 0;">
-            <div class="list-item-body" style="margin-left:10px;">
-                <div class="list-item-title">Wire 12 AWG (100ft roll)</div>
-                <div class="list-item-sub">Electrical &bull; SKU-205</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">34</div>
-                <div class="list-item-detail">$45 ea</div>
-            </div>
-        </div>
-        <div class="list-item" style="padding:8px 0;">
-            <div class="list-item-body" style="margin-left:10px;">
-                <div class="list-item-title">PEX Tubing 1/2&quot; (25ft)</div>
-                <div class="list-item-sub">Plumbing &bull; SKU-317</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">22</div>
-                <div class="list-item-detail">$18 ea</div>
-            </div>
-        </div>
-        <div class="list-item" style="padding:8px 0; border-bottom:none;">
-            <div class="list-item-body" style="margin-left:10px;">
-                <div class="list-item-title">Electrical Panel 200A</div>
-                <div class="list-item-sub">Electrical &bull; SKU-410</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">11</div>
-                <div class="list-item-detail">$520 ea</div>
-            </div>
-        </div>
-    </div>
+    <div class="card" style="cursor:default;" id="inv-all-list"></div>
 </div>
 
 <script>
-function addInventoryItem() { alert('Add inventory item form'); }
+(function () {
+
+    // materials.json doesn't have a `category` column, so it's inferred from
+    // each item's SKU prefix (HVAC-/ELE-/PLB-/...) — good enough to power the
+    // category tabs without adding a new persisted field for this one page.
+    var SKU_CATEGORY = {
+        HVAC: 'HVAC', ELE: 'Electrical', PLB: 'Plumbing', CAR: 'Carpentry',
+        DRY: 'Drywall', PNT: 'Painting', FLR: 'Flooring', FAS: 'Fasteners', SAF: 'Safety',
+    };
+    function categoryFor(material) {
+        var prefix = (material.sku || '').split('-')[0];
+        return SKU_CATEGORY[prefix] || 'Other';
+    }
+
+    var appState = { activeTab: 'All', searchQuery: '' };
+
+    function loadMaterials() {
+        return DB.find('materials', function (m) {
+            return m.company_id === state.currentCompanyId && !m.deleted_at;
+        });
+    }
+
+    var ALL_MATERIALS = loadMaterials();
+    var TABS = ['All'].concat(Array.from(new Set(ALL_MATERIALS.map(categoryFor))).sort());
+
+    function itemRowHtml(m, opts) {
+        opts = opts || {};
+        var right = opts.lowStock
+            ? '<div class="list-item-value">' + m.stock_qty + ' left</div><div class="list-item-detail">Min: ' + m.reorder_qty + '</div>'
+            : '<div class="list-item-value">' + m.stock_qty + '</div><div class="list-item-detail">$' + Number(m.unit_cost).toLocaleString() + ' ea</div>';
+        return '<div class="list-item" style="padding:8px 0;">' +
+            '<div class="list-item-body" style="margin-left:10px;">' +
+            '<div class="list-item-title">' + m.name + '</div>' +
+            '<div class="list-item-sub">' + categoryFor(m) + ' &bull; ' + m.sku + '</div>' +
+            '</div><div class="list-item-right">' + right + '</div></div>';
+    }
+
+    function render() {
+        var q = appState.searchQuery.toLowerCase();
+        var scoped = ALL_MATERIALS.filter(function (m) {
+            if (appState.activeTab !== 'All' && categoryFor(m) !== appState.activeTab) return false;
+            if (q && m.name.toLowerCase().indexOf(q) === -1) return false;
+            return true;
+        });
+        var low = scoped.filter(function (m) { return m.stock_qty < m.reorder_qty; });
+
+        document.getElementById('inv-tab-bar').innerHTML = TABS.map(function (t) {
+            return '<button class="tab-btn' + (t === appState.activeTab ? ' active' : '') + '" onclick="setInventoryTab(\'' + t + '\')">' + t + '</button>';
+        }).join('');
+
+        document.getElementById('inv-total-count').textContent = scoped.length;
+        document.getElementById('inv-low-count').textContent = low.length;
+        document.getElementById('inv-low-badge').textContent = low.length + ' item' + (low.length !== 1 ? 's' : '');
+
+        var lowList = document.getElementById('inv-low-list');
+        lowList.innerHTML = low.length
+            ? low.map(function (m) { return itemRowHtml(m, { lowStock: true }); }).join('')
+            : '<div class="kit-empty">No low-stock items.</div>';
+
+        var allList = document.getElementById('inv-all-list');
+        allList.innerHTML = scoped.length
+            ? scoped.map(function (m) { return itemRowHtml(m); }).join('')
+            : '<div class="kit-empty">No items match.</div>';
+    }
+
+    window.setInventoryTab = function (tab) {
+        appState.activeTab = tab;
+        render();
+    };
+
+    window.filterInventory = function (query) {
+        appState.searchQuery = query.trim();
+        render();
+    };
+
+    window.addInventoryItem = function () { alert('Add inventory item form'); };
+
+    render();
+})();
 </script>

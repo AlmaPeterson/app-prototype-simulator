@@ -1,58 +1,77 @@
 <div class="page" style="padding-bottom:80px;">
     <div class="page-title">Invoices</div>
-    <div class="page-subtitle mb-4">Riverside Properties &bull; Riverside HVAC Retrofit</div>
+    <div class="page-subtitle mb-4" id="ci-subtitle">&nbsp;</div>
 
     <div class="hero-stat" style="margin-bottom:16px;">
         <div style="font-size:0.78rem; opacity:0.7;">Outstanding Balance</div>
-        <div class="hero-stat-value">$2,480.00</div>
-        <div style="font-size:0.82rem; opacity:0.8; margin-top:4px;">Due at rough-in &bull; 1 invoice</div>
+        <div class="hero-stat-value" id="ci-outstanding">$0.00</div>
+        <div style="font-size:0.82rem; opacity:0.8; margin-top:4px;" id="ci-outstanding-note"></div>
     </div>
 
     <div class="section-header">
         <span class="section-title">Payment History</span>
     </div>
-    <div style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;">
-        <div class="list-item">
-            <div class="list-item-body">
-                <div class="list-item-title">Deposit &mdash; INV-1042-A</div>
-                <div class="list-item-sub">Paid Jun 18, 2026</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">$6,200.00</div>
-                <div class="list-item-detail">Paid</div>
-            </div>
-        </div>
-        <div class="list-item">
-            <div class="list-item-body">
-                <div class="list-item-title">Progress Draw 1 &mdash; INV-1042-B</div>
-                <div class="list-item-sub">Paid Jun 30, 2026</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">$2,480.00</div>
-                <div class="list-item-detail">Paid</div>
-            </div>
-        </div>
-        <div class="list-item">
-            <div class="list-item-body">
-                <div class="list-item-title">Progress Draw 2 &mdash; INV-1042-C</div>
-                <div class="list-item-sub">Due Jul 8, 2026</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">$2,480.00</div>
-                <div class="list-item-detail">6 days left</div>
-            </div>
-        </div>
-        <div class="list-item" style="border-bottom:none;">
-            <div class="list-item-body">
-                <div class="list-item-title">Final Balance &mdash; INV-1042-D</div>
-                <div class="list-item-sub">Due at completion</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">$1,240.00</div>
-                <div class="list-item-detail">Not yet issued</div>
-            </div>
-        </div>
-    </div>
+    <div id="ci-history" style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;"></div>
 
-    <button class="btn btn-primary">Pay Progress Draw 2</button>
+    <button class="btn btn-primary" id="ci-pay-btn" style="display:none;">Pay Next Installment</button>
 </div>
+
+<script>
+(function () {
+    // Illustrative only — there's no real `invoices` table (confirmed schema
+    // gap, deferred). This page derives the same synthetic 50/20/20/10
+    // schedule as customer-bid.html (via computeSyntheticPaymentSchedule in
+    // app.js) and applies a simple Paid/Due heuristic off the bid's status.
+    function fmt(n) { return '$' + (n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function fmtDate(iso) { return iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null; }
+
+    var job = DB.getById('jobs', CUSTOMER_DEMO_JOB_ID);
+    var bid = job && job.bid_id ? DB.getById('bids', job.bid_id) : null;
+    var customer = job ? DB.getById('customers', job.customer_id) : null;
+
+    document.getElementById('ci-subtitle').textContent = (customer ? customer.full_name : '') + (job ? ' • ' + job.name : '');
+
+    if (!bid) {
+        document.getElementById('ci-outstanding').textContent = '$0.00';
+        document.getElementById('ci-history').innerHTML = '<div class="list-item" style="border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">No bid on file yet.</div></div>';
+        return;
+    }
+
+    var sched = computeSyntheticPaymentSchedule(bid.total_cost);
+    var invBase = 'INV-' + bid.id.slice(0, 4).toUpperCase();
+    var isSigned = bid.status === 'signed';
+
+    var rows = [
+        { label: 'Deposit', code: invBase + '-A', amount: sched.deposit, paid: isSigned, date: bid.signed_at },
+        { label: 'Progress Draw 1', code: invBase + '-B', amount: sched.draw1, paid: isSigned, date: bid.signed_at },
+        { label: 'Progress Draw 2', code: invBase + '-C', amount: sched.draw2, paid: false, date: null },
+        { label: 'Final Balance', code: invBase + '-D', amount: sched.final, paid: false, date: null },
+    ];
+
+    document.getElementById('ci-history').innerHTML = rows.map(function (r, i) {
+        var isLast = i === rows.length - 1;
+        var sub = r.paid ? 'Paid ' + fmtDate(r.date) : (isSigned ? (r.label === 'Final Balance' ? 'Due at completion' : 'Due at rough-in') : 'Not yet issued');
+        var detail = r.paid ? 'Paid' : (isSigned ? 'Due' : 'Not yet issued');
+        return '<div class="list-item"' + (isLast ? ' style="border-bottom:none;"' : '') + '>' +
+            '<div class="list-item-body">' +
+                '<div class="list-item-title">' + r.label + ' &mdash; ' + r.code + '</div>' +
+                '<div class="list-item-sub">' + sub + '</div>' +
+            '</div>' +
+            '<div class="list-item-right"><div class="list-item-value">' + fmt(r.amount) + '</div><div class="list-item-detail">' + detail + '</div></div>' +
+        '</div>';
+    }).join('');
+
+    var outstanding = rows.reduce(function (sum, r) { return sum + (r.paid ? 0 : r.amount); }, 0);
+    var nextDue = rows.find(function (r) { return !r.paid; });
+    document.getElementById('ci-outstanding').textContent = fmt(outstanding);
+    document.getElementById('ci-outstanding-note').textContent = isSigned && nextDue
+        ? (nextDue.label + ' due &bull; ' + rows.filter(function (r) { return !r.paid; }).length + ' invoice(s)')
+        : (isSigned ? 'Paid in full' : 'Awaiting signature');
+
+    if (nextDue) {
+        var payBtn = document.getElementById('ci-pay-btn');
+        payBtn.style.display = 'block';
+        payBtn.textContent = 'Pay ' + nextDue.label;
+    }
+})();
+</script>

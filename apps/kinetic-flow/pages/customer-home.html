@@ -1,123 +1,56 @@
 <div class="page" style="padding-bottom:80px;">
     <div class="page-title">Home Details</div>
-    <div class="page-subtitle mb-4">123 Riverside Dr &bull; Riverside Properties</div>
+    <div class="page-subtitle mb-4" id="ch-subtitle">&nbsp;</div>
 
-    <!-- Floor Plan -->
     <div class="section-header">
         <span class="section-title">Floor Plan</span>
     </div>
-    <div style="border:1px solid #e2e8f0; padding:24px; margin-bottom:16px; text-align:center; color:#94a3b8; font-size:0.82rem;">
-        Floor plan preview &mdash; 2,150 sq ft &bull; 3 bed / 2 bath
-    </div>
+    <div id="ch-floorplan" style="border:1px solid #e2e8f0; padding:24px; margin-bottom:16px; text-align:center; color:#94a3b8; font-size:0.82rem;"></div>
 
-    <!-- Paint -->
     <div class="section-header">
         <span class="section-title">Paint by Room</span>
     </div>
-    <div style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;">
-        <div class="list-item">
-            <div class="list-item-body">
-                <div class="list-item-title">Living Room</div>
-                <div class="list-item-sub">Sherwin-Williams &bull; Agreeable Gray SW 7029</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">Eggshell</div>
-            </div>
-        </div>
-        <div class="list-item">
-            <div class="list-item-body">
-                <div class="list-item-title">Kitchen</div>
-                <div class="list-item-sub">Sherwin-Williams &bull; Pure White SW 7005</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">Saphier</div>
-            </div>
-        </div>
-        <div class="list-item">
-            <div class="list-item-body">
-                <div class="list-item-title">Primary Bedroom</div>
-                <div class="list-item-sub">Benjamin Moore &bull; Hale Navy HC-154</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">Eggshell</div>
-            </div>
-        </div>
-        <div class="list-item">
-            <div class="list-item-body">
-                <div class="list-item-title">Bathrooms</div>
-                <div class="list-item-sub">Sherwin-Williams &bull; Sea Salt SW 6204</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">Saphier</div>
-            </div>
-        </div>
-        <div class="list-item" style="border-bottom:none;">
-            <div class="list-item-body">
-                <div class="list-item-title">Hallway &amp; Trim (Ceilings)</div>
-                <div class="list-item-sub">Sherwin-Williams &bull; Extra White SW 7006</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">Flat</div>
-            </div>
-        </div>
-    </div>
+    <div id="ch-paint" style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;"></div>
 
-    <!-- Trim -->
     <div class="section-header">
-        <span class="section-title">Trim &amp; Millwork</span>
+        <span class="section-title">Materials Used</span>
     </div>
-    <div style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;">
-        <div class="list-item">
-            <div class="list-item-body">
-                <div class="list-item-title">Baseboards</div>
-                <div class="list-item-sub">3.25&Prime; MDF, colonial profile</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">Extra White</div>
-            </div>
-        </div>
-        <div class="list-item">
-            <div class="list-item-body">
-                <div class="list-item-title">Door &amp; Window Casing</div>
-                <div class="list-item-sub">2.25&Prime; MDF, colonial profile</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">Extra White</div>
-            </div>
-        </div>
-        <div class="list-item" style="border-bottom:none;">
-            <div class="list-item-body">
-                <div class="list-item-title">Interior Doors</div>
-                <div class="list-item-sub">6-panel hollow-core, paint-grade</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">Extra White</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Fixtures -->
-    <div class="section-header">
-        <span class="section-title">Fixtures &amp; Hardware</span>
-    </div>
-    <div style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;">
-        <div class="list-item">
-            <div class="list-item-body">
-                <div class="list-item-title">Door Hardware</div>
-                <div class="list-item-sub">Kwikset Halifax</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">Matte Black</div>
-            </div>
-        </div>
-        <div class="list-item" style="border-bottom:none;">
-            <div class="list-item-body">
-                <div class="list-item-title">HVAC Unit</div>
-                <div class="list-item-sub">Carrier Infinity 24 &bull; Installed Jul 10</div>
-            </div>
-            <div class="list-item-right">
-                <div class="list-item-value">3-Ton</div>
-            </div>
-        </div>
-    </div>
+    <div id="ch-materials" style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;"></div>
 </div>
+
+<script>
+(function () {
+    function titleCase(key) {
+        return key.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+    }
+
+    function renderKeyValueList(containerId, obj, emptyMessage) {
+        var keys = Object.keys(obj || {});
+        document.getElementById(containerId).innerHTML = keys.map(function (key, i) {
+            var isLast = i === keys.length - 1;
+            return '<div class="list-item"' + (isLast ? ' style="border-bottom:none;"' : '') + '>' +
+                '<div class="list-item-body"><div class="list-item-title">' + titleCase(key) + '</div></div>' +
+                '<div class="list-item-right"><div class="list-item-value">' + obj[key] + '</div></div>' +
+            '</div>';
+        }).join('') || '<div class="list-item" style="border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">' + emptyMessage + '</div></div>';
+    }
+
+    // Customers have no session — see CUSTOMER_DEMO_JOB_ID in app.js for why
+    // this and customer-bid.html/customer-invoice.html all anchor to the same
+    // seeded job (simulating an already-opened tokenized property link).
+    var job = DB.getById('jobs', CUSTOMER_DEMO_JOB_ID);
+    var customer = job ? DB.getById('customers', job.customer_id) : null;
+    var address = job && job.address_id ? DB.getById('addresses', job.address_id) : null;
+    var property = DB.findOne('property_records', function (p) { return p.job_id === CUSTOMER_DEMO_JOB_ID; });
+
+    document.getElementById('ch-subtitle').textContent =
+        (address ? address.street : '') + (customer ? ' • ' + customer.full_name : '');
+
+    document.getElementById('ch-floorplan').textContent = property && property.floor_plan_url
+        ? 'Floor plan on file — ' + property.floor_plan_url
+        : 'No floor plan on file yet.';
+
+    renderKeyValueList('ch-paint', property ? property.paint_colors : {}, 'No paint selections recorded yet.');
+    renderKeyValueList('ch-materials', property ? property.materials_used : {}, 'No materials recorded yet.');
+})();
+</script>

@@ -13,6 +13,7 @@
     "sent_at": "2026-06-23T12:00:00Z",
     "twilio_sid": "SMf01b088c4dc84a28900f61a16988b7",
     "ai_suggested": true,
+    "read_at": "2026-06-23T12:00:00Z",
     "created_at": "2026-06-23T12:00:00Z"
   },
   {
@@ -29,6 +30,7 @@
     "sent_at": "2026-06-23T13:00:00Z",
     "twilio_sid": "SMe53ffa471d4447608691555121e60c",
     "ai_suggested": false,
+    "read_at": null,
     "created_at": "2026-06-23T13:00:00Z"
   },
   {
@@ -45,6 +47,7 @@
     "sent_at": "2026-06-30T12:00:00Z",
     "twilio_sid": "SM5cc30c2fadf9474c8fd39782b2d56f",
     "ai_suggested": true,
+    "read_at": "2026-06-30T12:00:00Z",
     "created_at": "2026-06-30T12:00:00Z"
   },
   {
@@ -61,6 +64,7 @@
     "sent_at": "2026-07-01T12:00:00Z",
     "twilio_sid": "SMcffc41a77a48402ba64934264abbf2",
     "ai_suggested": false,
+    "read_at": null,
     "created_at": "2026-07-01T12:00:00Z"
   }
 ]

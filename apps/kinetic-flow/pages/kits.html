@@ -30,9 +30,25 @@
 <script>
 (function () {
 
-    var KIT_CATEGORIES = window.KIT_CATEGORIES;
+    // Group real inventory_kits rows (this company's, not soft-deleted) by
+    // their `category` column.
+    function loadCategories() {
+        var kits = DB.find('inventory_kits', function (k) {
+            return k.company_id === state.currentCompanyId && !k.deleted_at;
+        });
+        var byCat = {};
+        var order = [];
+        kits.forEach(function (k) {
+            var cat = k.category || 'Uncategorized';
+            if (!byCat[cat]) { byCat[cat] = []; order.push(cat); }
+            byCat[cat].push(k);
+        });
+        return order.map(function (name) { return { name: name, kits: byCat[name] }; });
+    }
 
-    var state = { expandedCat: null, selected: null, searchQuery: '' };
+    var CATEGORIES = loadCategories();
+
+    var appState = { expandedCat: null, selected: null, searchQuery: '' };
 
     function clearSearchInput() {
         var search = document.getElementById('kit-search');
@@ -41,8 +57,8 @@
 
     function renderDrawer() {
         var el = document.getElementById('kit-drawer-list');
-        el.innerHTML = KIT_CATEGORIES.map(function (cat, i) {
-            var expanded = state.expandedCat === i;
+        el.innerHTML = CATEGORIES.map(function (cat, i) {
+            var expanded = appState.expandedCat === i;
             var html = '<div class="kit-drawer-cat">' +
                 '<button class="kit-drawer-cat-btn' + (expanded ? ' expanded' : '') + '" onclick="toggleKitDrawerCategory(' + i + ')">' +
                 '<span>' + cat.name + '</span>' +
@@ -50,7 +66,7 @@
                 '</button>';
             if (expanded) {
                 html += '<div class="kit-drawer-kits">' + cat.kits.map(function (k, ki) {
-                    var isSelected = !!(state.selected && state.selected.ci === i && state.selected.ki === ki);
+                    var isSelected = !!(appState.selected && appState.selected.ci === i && appState.selected.ki === ki);
                     return '<button class="kit-drawer-kit' + (isSelected ? ' active' : '') + '" onclick="selectKit(' + i + ',' + ki + ')">' + k.name + '</button>';
                 }).join('') + '</div>';
             }
@@ -72,10 +88,17 @@
     }
 
     function kitDetailHtml(cat, kit) {
+        var tools = DB.find('kit_tools', function (t) { return t.kit_id === kit.id; })
+            .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); })
+            .map(function (t) { return t.name; });
+        var materials = DB.find('kit_items', function (i) { return i.kit_id === kit.id; })
+            .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); })
+            .map(function (i) { return i.quantity && i.quantity !== 1 ? (i.name + ' (' + i.quantity + ')') : i.name; });
+
         var html = '<div class="page-title-sm">' + kit.name + '</div>';
         html += '<div class="page-subtitle mb-4">' + cat.name + '</div>';
-        html += listSection('Tools', kit.tools);
-        html += listSection('Materials', kit.materials);
+        html += listSection('Tools', tools);
+        html += listSection('Materials', materials);
         html += '<div class="section-header mt-4"><span class="section-title">Videos</span></div>';
         html += '<div class="card" onclick="alert(\'Training video placeholder\')">' +
             '<div class="card-row"><div class="card-body">' +
@@ -96,7 +119,7 @@
     function searchResultsHtml(query) {
         var q = query.toLowerCase();
         var results = [];
-        KIT_CATEGORIES.forEach(function (cat, ci) {
+        CATEGORIES.forEach(function (cat, ci) {
             cat.kits.forEach(function (k, ki) {
                 if (k.name.toLowerCase().indexOf(q) !== -1) results.push({ cat: cat, ci: ci, k: k, ki: ki });
             });
@@ -120,10 +143,10 @@
     function render() {
         renderDrawer();
         var content = document.getElementById('kit-content');
-        if (state.searchQuery) {
-            content.innerHTML = searchResultsHtml(state.searchQuery);
-        } else if (state.selected) {
-            content.innerHTML = kitDetailHtml(KIT_CATEGORIES[state.selected.ci], KIT_CATEGORIES[state.selected.ci].kits[state.selected.ki]);
+        if (appState.searchQuery) {
+            content.innerHTML = searchResultsHtml(appState.searchQuery);
+        } else if (appState.selected) {
+            content.innerHTML = kitDetailHtml(CATEGORIES[appState.selected.ci], CATEGORIES[appState.selected.ci].kits[appState.selected.ki]);
         } else {
             content.innerHTML = emptyStateHtml();
         }
@@ -143,23 +166,23 @@
     };
 
     window.toggleKitDrawerCategory = function (i) {
-        state.expandedCat = (state.expandedCat === i) ? null : i;
+        appState.expandedCat = (appState.expandedCat === i) ? null : i;
         renderDrawer();
     };
 
     window.selectKit = function (ci, ki) {
-        state.selected = { ci: ci, ki: ki };
-        state.expandedCat = ci;
-        state.searchQuery = '';
+        appState.selected = { ci: ci, ki: ki };
+        appState.expandedCat = ci;
+        appState.searchQuery = '';
         clearSearchInput();
         closeKitDrawer();
         render();
     };
 
     window.filterKits = function (query) {
-        state.searchQuery = query.trim();
-        if (state.searchQuery) {
-            state.selected = null;
+        appState.searchQuery = query.trim();
+        if (appState.searchQuery) {
+            appState.selected = null;
             closeKitDrawer();
         }
         render();

@@ -388,7 +388,7 @@ function manageCompany(companyId) {
 
 // ── Company Configuration: Divisions / Levels / Competency Levels ───────────
 // Mirrors db/divisions.json, db/levels.json, db/competency_levels.json.
-// Lives here (not in the page) for the same reason as KIT_CATEGORIES — app.js
+// Lives here (not in the page) for the same reason DIVISIONS/LEVELS do — app.js
 // persists across navigations, but a page fragment's inline <script> re-runs
 // every time loadPage() navigates to it, so per-visit-local state would
 // forget edits. Managed by company-divisions.html / company-levels.html /
@@ -1024,203 +1024,35 @@ function submitTimeSheet() {
     loadPage('scoreboard');
 }
 
-// ── Kits ────────────────────────────────────────────────────────────────────
-// Shared catalog data — read by both kits.html (browse) and
-// label-generator.html (select items to print labels for). Lives here
-// (rather than duplicated in each page fragment) since app.js loads once
-// per app lifetime while page fragments re-run their inline <script> every
-// time they're navigated to.
-const KIT_CATEGORIES = [
-    {
-        name: 'Drywall',
-        kits: [
-            { name: 'Drywall Hanging Kit', tools: ['Drywall Screw Gun', 'T-Square', 'Panel Lift', 'Utility Knife'], materials: ['1/2" Drywall Sheets', '1-1/4" Drywall Screws', 'Corner Bead'] },
-            { name: 'Drywall Skimming Kit', tools: ['6" Skim Blade', '12" Skim Blade', 'Mixing Paddle'], materials: ['Joint Compound', 'Skim Coat Mix'] },
-            { name: 'Mud Knives', tools: ['4" Mud Knife', '6" Mud Knife', '10" Mud Knife', '12" Mud Knife'], materials: ['Mud Pan'] },
-            { name: 'Drywall Sanding Kit', tools: ['Pole Sander', 'Hand Sanding Block', 'Dust Mask'], materials: ['120-Grit Sanding Screens', '220-Grit Sandpaper'] },
-            { name: 'Drywall Patch Blocking', tools: ['Drywall Saw', 'Cordless Drill'], materials: ['Wood Blocking', '1-1/4" Drywall Screws'] },
-            { name: 'Drywall Tape Kit', tools: ['6" Taping Knife', 'Banjo Taper'], materials: ['Paper Tape', 'Mesh Tape', 'Joint Compound'] },
-            { name: 'Drywall Old Work Box Kit', tools: ['Rotozip', 'Drywall Saw'], materials: ['Old Work Electrical Boxes', 'Box Ears'] },
-            { name: 'Drywall Screw Clips', tools: ['Cordless Drill'], materials: ['Drywall Screw Clips', '1-1/4" Drywall Screws'] },
-            { name: 'Drywall Texture Kit', tools: ['Hopper Gun', 'Air Compressor', 'Texture Brush'], materials: ['Texture Mix', 'Knockdown Compound'] },
-            { name: 'Drywall Patch Kit', tools: ['Utility Knife', '6" Taping Knife'], materials: ['Drywall Patch Panel', 'Mesh Tape', 'Joint Compound'] },
-            { name: 'Mudding and Taping Kit', tools: ['6" Taping Knife', '10" Taping Knife', 'Mud Pan'], materials: ['Joint Compound', 'Paper Tape'] },
-            { name: 'Dust Barrier Kit', tools: ['Zip Pole', 'Staple Gun'], materials: ['Poly Sheeting', 'Zipper Door', "Painter's Tape"] },
-            { name: '5-Minute Hot Mud', tools: ['Mixing Paddle', '6" Taping Knife'], materials: ['5-Min Setting Compound'] },
-            { name: '20-Minute Hot Mud', tools: ['Mixing Paddle', '6" Taping Knife'], materials: ['20-Min Setting Compound'] },
-            { name: '45-Minute Hot Mud', tools: ['Mixing Paddle', '10" Taping Knife'], materials: ['45-Min Setting Compound'] },
-        ]
-    },
-    {
-        name: 'Doors & Hardware',
-        kits: [
-            { name: 'Door Drilling Kit', tools: ['Door Lock Installation Jig', '2-1/8" Hole Saw', 'Spade Bit'], materials: ['Latch Faceplates', 'Strike Plates'] },
-            { name: 'Door Hanging Kit', tools: ['Door Shims', 'Hinge Chisel', 'Level'], materials: ['Hinges', '3" Screws'] },
-            { name: 'Commercial Door Hardware', tools: ['Drill/Driver', 'Template Kit'], materials: ['Panic Bar Hardware', 'Commercial Hinges', 'Door Closers'] },
-            { name: 'Door Hardware Residential', tools: ['Drill/Driver', 'Chisel'], materials: ['Residential Knobsets', 'Deadbolts', 'Strike Plates'] },
-            { name: 'Stair Railing Hardware', tools: ['Stud Finder', 'Level', 'Drill/Driver'], materials: ['Rail Brackets', 'Newel Post Anchors', 'Lag Bolts'] },
-        ]
-    },
-    {
-        name: 'Framing',
-        kits: [
-            { name: 'Framing Kit', tools: ['Framing Hammer', 'Speed Square', 'Circular Saw', 'Chalk Line'], materials: ['2x4 Studs', '16d Framing Nails'] },
-            { name: 'Framing Plates', tools: ['Cordless Drill', 'Hammer'], materials: ['Framing Plates', 'Structural Screws'] },
-        ]
-    },
-    {
-        name: 'Finish Carpentry',
-        kits: [
-            { name: 'Finish Carpentry Kit', tools: ['Finish Nailer', 'Miter Saw', 'Coping Saw'], materials: ['Trim Boards', 'Finish Nails'] },
-            { name: 'Finish Carpentry Trim Work', tools: ['Miter Saw', 'Finish Nailer', 'Coping Saw'], materials: ['Baseboard', 'Casing', 'Wood Filler'] },
-            { name: 'Finish Carpentry Veneer Work', tools: ['Veneer Roller', 'Contact Cement Brush', 'Utility Knife'], materials: ['Wood Veneer Sheets', 'Contact Cement'] },
-            { name: 'Finish Carpentry Measure and Mark', tools: ['Tape Measure', 'Combination Square', 'Marking Pencil', 'Chalk Line'], materials: [] },
-            { name: 'Finish Carpentry Jigs', tools: ['Pocket Hole Jig', 'Doweling Jig', 'Story Pole'], materials: ['Pocket Hole Screws'] },
-            { name: 'FC Router', tools: ['Router', 'Round-Over Bit', 'Straight Bit'], materials: [] },
-            { name: 'Wood Touch-Up Kit', tools: ['Touch-Up Markers', 'Burn-In Knife'], materials: ['Wood Filler', 'Stain Matching Kit'] },
-            { name: '3rd Hand', tools: ['3rd Hand Tool', 'Bar Clamps'], materials: [] },
-        ]
-    },
-    {
-        name: 'Flooring & Tile',
-        kits: [
-            { name: 'Tile Trowels', tools: ['1/4" V-Notch Trowel', '3/8" Square-Notch Trowel', 'Margin Trowel'], materials: [] },
-            { name: 'A2 Flooring Hard Wood', tools: ['Flooring Nailer', 'Pull Bar', 'Tapping Block'], materials: ['Hardwood Planks', 'Underlayment'] },
-            { name: 'Plank Flooring Kit', tools: ['Flooring Nailer', 'Pull Bar', 'Spacers'], materials: ['Vinyl Plank Flooring', 'Underlayment'] },
-            { name: 'Carpet Kit', tools: ['Knee Kicker', 'Carpet Stretcher', 'Stair Tool'], materials: ['Tack Strip', 'Carpet Padding', 'Seam Tape'] },
-            { name: 'Tile Kit', tools: ['Tile Cutter', 'Notched Trowel', 'Grout Float'], materials: ['Thinset', 'Grout', 'Tile Spacers'] },
-        ]
-    },
-    {
-        name: 'Painting',
-        kits: [
-            { name: 'Paint Brushes', tools: ['2" Angled Sash Brush', '3" Flat Brush'], materials: [] },
-            { name: 'Graco Interfeed Roller', tools: ['Graco Interfeed Roller'], materials: ['9" Roller Sleeves'] },
-            { name: 'Mix and Open', tools: ['Paint Mixer Paddle', 'Can Opener'], materials: [] },
-            { name: 'Paint Pails', tools: ['Paint Pail', 'Pail Screen'], materials: [] },
-            { name: 'Paint Spraying', tools: ['Airless Sprayer', 'Extension Pole'], materials: [] },
-            { name: 'Spray Tips', tools: ['Tip Guard'], materials: ['Assorted Spray Tips'] },
-            { name: 'Hotdog Roller', tools: ['Hotdog Roller Frame'], materials: ['Hotdog Roller Sleeves'] },
-            { name: 'Paint Prep Bondo', tools: ['Putty Knife', 'Sanding Block'], materials: ['Bondo Filler', 'Hardener'] },
-            { name: 'Paint Prep Caulk', tools: ['Caulk Gun', 'Caulk Finishing Tool'], materials: ["Painter's Caulk"] },
-            { name: 'Tape Off Kit', tools: ['Tape Dispenser Tool'], materials: ["Painter's Tape", 'Masking Paper', 'Plastic Sheeting'] },
-            { name: 'Inner Feed Rollers 3/8" Nap', tools: ['Roller Frame'], materials: ['3/8" Nap Roller Covers'] },
-            { name: 'Inner Feed Rollers 1/2" Nap', tools: ['Roller Frame'], materials: ['1/2" Nap Roller Covers'] },
-            { name: '4" Rollers', tools: ['4" Roller Frame'], materials: ['4" Roller Covers'] },
-        ]
-    },
-    {
-        name: 'Plumbing',
-        kits: [
-            { name: 'Copper Kit', tools: ['Tubing Cutter', 'Propane Torch', 'Deburring Tool'], materials: ['Copper Fittings', 'Solder', 'Flux'] },
-            { name: 'Copper 3/4" Kit', tools: ['3/4" Tubing Cutter', 'Propane Torch'], materials: ['3/4" Copper Pipe', '3/4" Fittings', 'Solder'] },
-            { name: 'Pex B Crimp 1/2" Kit', tools: ['1/2" Crimp Tool', 'Go/No-Go Gauge'], materials: ['1/2" PEX Tubing', '1/2" Crimp Rings'] },
-            { name: 'Pex Crimp SS 3/4" Kit', tools: ['3/4" Stainless Clamp Tool'], materials: ['3/4" PEX Tubing', '3/4" Stainless Clamp Rings'] },
-            { name: 'Pex A Expansion Kit', tools: ['Expansion Tool', 'Expander Head Set'], materials: ['PEX-A Tubing', 'Expansion Rings'] },
-            { name: 'Gas Iron Pipe Kit', tools: ['Pipe Threader', 'Pipe Wrench', 'Pipe Vise'], materials: ['Black Iron Pipe', 'Fittings', 'Pipe Dope'] },
-            { name: 'Sprinkler Maintenance Kit', tools: ['Sprinkler Head Puller', 'Pipe Cutter'], materials: ['Sprinkler Heads', 'Risers', 'PVC Fittings'] },
-            { name: 'Shut Off Valves Sink/Toilet Kit', tools: ['Basin Wrench', 'Adjustable Wrench'], materials: ['Quarter-Turn Shut Off Valves', 'Supply Lines'] },
-            { name: 'Plumbing Glue Kit', tools: ['Applicator Brush'], materials: ['PVC Cement', 'CPVC Cement', 'Primer'] },
-            { name: 'Silicone Kit', tools: ['Caulk Gun', 'Silicone Finishing Tool'], materials: ['Silicone Sealant'] },
-            { name: 'CPVC Kit', tools: ['Pipe Cutter', 'Deburring Tool'], materials: ['CPVC Pipe', 'CPVC Fittings', 'CPVC Cement'] },
-            { name: 'PVC Kit', tools: ['Pipe Cutter', 'Deburring Tool'], materials: ['PVC Pipe', 'PVC Fittings', 'PVC Cement'] },
-            { name: 'Large Plumbing Tools', tools: ['Pipe Wrench Set', 'Pipe Vise', 'Threading Machine'], materials: [] },
-            { name: 'Miscellaneous Plumbing', tools: ['Basin Wrench', 'Channel Locks'], materials: ['Assorted Fittings', 'Washers', 'O-Rings'] },
-            { name: 'Toilet Bolts', tools: ['Ratchet Wrench'], materials: ['Closet Bolts', 'Bolt Caps'] },
-            { name: 'Soldering Kit', tools: ['Propane Torch', 'Emery Cloth', 'Flux Brush'], materials: ['Solder', 'Flux'] },
-            { name: 'Plastic Pipe Installation Kit', tools: ['Pipe Cutter', 'Deburring Tool', 'Tape Measure'], materials: ['PVC/CPVC Pipe', 'Fittings', 'Cement'] },
-        ]
-    },
-    {
-        name: 'Electrical',
-        kits: [
-            { name: 'Miscellaneous Electrical', tools: ['Wire Strippers', 'Voltage Tester'], materials: ['Wire Nuts', 'Electrical Tape'] },
-            { name: 'Electrical Boxes', tools: ['Hole Saw', 'Cordless Drill'], materials: ['Single-Gang Boxes', 'Double-Gang Boxes', 'Box Screws'] },
-            { name: 'Electrical Screws', tools: ['Screwdriver'], materials: ['6-32 Machine Screws', 'Grounding Screws'] },
-            { name: 'Electrical Wafer Lights', tools: ['Hole Saw', 'Wire Strippers'], materials: ['LED Wafer Lights', 'Junction Boxes'] },
-            { name: 'EMT Conduit', tools: ['Conduit Bender', 'Hacksaw'], materials: ['EMT Conduit', 'Set Screw Connectors', 'Straps'] },
-            { name: 'Outlets and Switches', tools: ['Wire Strippers', 'Screwdriver', 'Voltage Tester'], materials: ['Duplex Outlets', 'Switches', 'Wire Nuts'] },
-            { name: 'Outlet and Switch Covers', tools: ['Screwdriver'], materials: ['Outlet Covers', 'Switch Plates'] },
-            { name: 'Electrical Breakers', tools: ['Voltage Tester', 'Screwdriver'], materials: ['Single-Pole Breakers', 'Double-Pole Breakers'] },
-            { name: 'Wire Connections Kit', tools: ['Wire Strippers', 'Crimping Tool'], materials: ['Wire Nuts', 'Butt Connectors', 'Electrical Tape'] },
-            { name: 'Finish Electrical Kit', tools: ['Wire Strippers', 'Voltage Tester', 'Screwdriver Set'], materials: ['Devices', 'Cover Plates', 'Wire Nuts'] },
-            { name: 'Glow Rods', tools: ['Fish Tape / Glow Rods', 'Wire Pulling Lube'], materials: [] },
-        ]
-    },
-    {
-        name: 'Fixtures & HVAC',
-        kits: [
-            { name: 'HVAC Kit', tools: ['Manifold Gauges', 'Vacuum Pump', 'Refrigerant Scale'], materials: ['Refrigerant', 'Line Set Insulation'] },
-            { name: 'Toilet Kit', tools: ['Wax Ring Tool', 'Adjustable Wrench'], materials: ['Wax Ring', 'Closet Bolts', 'Toilet Tank Kit'] },
-            { name: 'Sink Kit', tools: ['Basin Wrench', 'Putty Knife'], materials: ['P-Trap', 'Supply Lines', "Plumber's Putty"] },
-            { name: 'Bathtub Kit', tools: ['Tub Drain Wrench', 'Caulk Gun'], materials: ['Tub Drain Kit', 'Overflow Gasket', 'Silicone'] },
-            { name: 'Washer and Dryer Kit', tools: ['Adjustable Wrench', 'Level'], materials: ['Supply Hoses', 'Dryer Vent Kit'] },
-            { name: 'Water Heater Kit', tools: ['Pipe Wrench', 'Element Wrench'], materials: ['T&P Valve', 'Anode Rod', 'Supply Fittings'] },
-        ]
-    },
-    {
-        name: 'Fasteners & Hardware',
-        kits: [
-            { name: 'Toggle Bolts', tools: ['Drill/Driver'], materials: ['Toggle Bolts, Assorted Sizes'] },
-            { name: 'Building Screws', tools: ['Impact Driver'], materials: ['Structural Screws, Assorted Lengths'] },
-            { name: 'Bolt Kit', tools: ['Ratchet Set'], materials: ['Assorted Bolts', 'Nuts', 'Washers'] },
-            { name: 'Brick and Block Anchors', tools: ['Hammer Drill', 'Masonry Bit'], materials: ['Wedge Anchors', 'Sleeve Anchors'] },
-            { name: 'Pan Head Screws', tools: ['Screwdriver'], materials: ['Pan Head Screws, Assorted Sizes'] },
-            { name: 'Small Screws', tools: ['Precision Screwdriver Set'], materials: ['Small Screws, Assorted Sizes'] },
-            { name: 'Screws for Metal', tools: ['Impact Driver'], materials: ['Self-Tapping Metal Screws'] },
-            { name: 'Structural Glue Kit', tools: ['Caulk Gun'], materials: ['Construction Adhesive'] },
-        ]
-    },
-    {
-        name: 'Tools',
-        kits: [
-            { name: 'Oscillating Tool Kit', tools: ['Oscillating Multi-Tool', 'Blade Set'], materials: [] },
-            { name: 'Hammers', tools: ['Claw Hammer'], materials: [] },
-            { name: 'Hammers / Larger', tools: ['Framing Hammer', 'Sledgehammer'], materials: [] },
-            { name: 'Chisels / Smaller', tools: ['1/4" Chisel', '1/2" Chisel'], materials: [] },
-            { name: 'Speed Squares', tools: ['7" Speed Square', '12" Speed Square'], materials: [] },
-            { name: 'Razor Blades', tools: ['Utility Knife'], materials: ['Razor Blades'] },
-            { name: 'Open End Wrench', tools: ['Open End Wrench Set'], materials: [] },
-            { name: 'Allen Wrenches', tools: ['Allen Wrench Set', 'T-Handle Hex Set'], materials: [] },
-            { name: 'Wrench Impact Sockets', tools: ['Impact Socket Set'], materials: [] },
-            { name: 'Hole Saw', tools: ['Hole Saw Kit', 'Arbor'], materials: [] },
-            { name: 'Carbide Hole Saw Bits', tools: ['Carbide-Tipped Hole Saw Set'], materials: [] },
-            { name: 'Rotary Hammer', tools: ['Rotary Hammer', 'SDS Bit Set'], materials: [] },
-            { name: '3/8" Socket Set', tools: ['3/8" Drive Ratchet', 'Socket Set'], materials: [] },
-            { name: 'Demolition Kit', tools: ['Demo Hammer', 'Pry Bar', 'Sledgehammer'], materials: [] },
-            { name: 'Vacuum', tools: ['Shop Vacuum', 'HEPA Filter'], materials: ['Vacuum Bags'] },
-            { name: 'Empty Kit', tools: [], materials: [] },
-        ]
-    },
-    {
-        name: 'Drill Bits & Sanding',
-        kits: [
-            { name: 'Wood Drill Bits', tools: ['Cordless Drill'], materials: ['Wood Drill Bit Set'] },
-            { name: 'Metal Drill Bits', tools: ['Cordless Drill'], materials: ['Cobalt Drill Bit Set'] },
-            { name: 'Screw Bits', tools: ['Impact Driver'], materials: ['Phillips/Square Bit Set'] },
-            { name: 'Festool Sanders', tools: ['Festool ETS Sander', 'Festool Dust Extractor'], materials: ['Sanding Discs'] },
-            { name: '6" Sanding Disc', tools: ['6" Random Orbit Sander'], materials: ['6" Sanding Discs, Assorted Grits'] },
-            { name: '5" Disc Sanding Paper', tools: ['5" Random Orbit Sander'], materials: ['5" Sanding Discs, Assorted Grits'] },
-            { name: 'Delta Sanding Paper', tools: ['Detail/Delta Sander'], materials: ['Delta Sanding Sheets, Assorted Grits'] },
-            { name: '2" x 3" Rectangle Sanding Paper', tools: ['Detail Sander'], materials: ['2"x3" Sanding Sheets'] },
-        ]
-    },
-    {
-        name: 'Safety & Cleanup',
-        kits: [
-            { name: 'Safety Kit', tools: ['Safety Glasses', 'Ear Protection', 'Respirator'], materials: ['Gloves', 'First Aid Kit'] },
-            { name: 'Paint Cleanup Kit', tools: ['5-Gallon Bucket', 'Paint Roller Cleaner'], materials: ['Mineral Spirits', 'Rags'] },
-            { name: 'General Cleanup Kit', tools: ['Broom', 'Dustpan', 'Shop Vacuum'], materials: ['Trash Bags'] },
-            { name: 'Insulation Kit', tools: ['Insulation Knife', 'Staple Gun'], materials: ['Fiberglass Batts', 'Vapor Barrier'] },
-        ]
-    },
-];
-
 // ── Dashboard pages ──────────────────────────────────────────────────────────
 function openScoreboard() { loadPage('scoreboard'); }
 function openStats() { loadPage('stats'); }
 function openFinance() { loadPage('finance'); }
 function openCustomerHome() { loadPage('customer-home'); }
+
+// Customers have no real session — the customer role skips sign-in entirely
+// (see start()'s comment below on simulating a tokenized property-record
+// link), so state.currentJobId is never populated for them. Anchor all three
+// customer-facing pages (customer-home/customer-bid/customer-invoice) to this
+// one seeded job so Home/Bid/Invoice describe one consistent property visit
+// instead of each page guessing independently.
+const CUSTOMER_DEMO_JOB_ID = 'c229964f-71e9-4d66-af48-fdb1db4c7404';
+
+// There's no real `invoices` table (confirmed schema gap — out of scope to
+// build in this phase), so finance.html's "Outstanding Invoices" tile and
+// customer-bid.html/customer-invoice.html's "Schedule of Payments" all derive
+// a synthetic 50/20/20/10 deposit/draw/draw/final split from a bid's
+// total_cost. Kept as one shared helper so the math isn't copy-pasted three
+// times and so all three pages agree on the same numbers for the same bid.
+function round2(n) { return Math.round((n || 0) * 100) / 100; }
+function computeSyntheticPaymentSchedule(totalCost) {
+    const cost = totalCost || 0;
+    const deposit = round2(cost * 0.5);
+    const draw1 = round2(cost * 0.2);
+    const draw2 = round2(cost * 0.2);
+    const final = round2(cost - deposit - draw1 - draw2); // remainder absorbs rounding
+    return { deposit: deposit, draw1: draw1, draw2: draw2, final: final };
+}
 
 // ── More Menu ────────────────────────────────────────────────────────────────
 function openMore(page) { loadPage(page); }
@@ -1328,9 +1160,9 @@ function activate() {
         toggleClock, addActivity,
         openMaterialLog, closeMaterialModal, saveMaterialLog,
         submitTimeSheet,
-        KIT_CATEGORIES,
         openScoreboard, openStats, openFinance, openCustomerHome, openMore,
         switchTab, toggleChip,
+        CUSTOMER_DEMO_JOB_ID, computeSyntheticPaymentSchedule,
     });
 }
 

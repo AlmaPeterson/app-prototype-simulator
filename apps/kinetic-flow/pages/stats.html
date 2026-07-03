@@ -1,6 +1,6 @@
 <div class="page" style="padding-bottom:80px;">
     <div class="page-title">Task Statistics</div>
-    <div class="page-subtitle mb-4">June 2024 &bull; All Jobs</div>
+    <div class="page-subtitle mb-4" id="stats-subtitle">All Jobs</div>
 
     <div class="tab-bar">
         <button class="tab-btn active">This Month</button>
@@ -11,9 +11,9 @@
     <!-- Top Stats -->
     <div class="stats-grid" style="margin-bottom:16px;">
         <div class="stat-card">
-            <div class="stat-value">47</div>
+            <div class="stat-value" id="stats-jobs-completed">0</div>
             <div class="stat-label">Jobs Completed</div>
-            <div class="stat-change">+12% vs May</div>
+            <div class="stat-change">&nbsp;</div>
         </div>
         <div class="stat-card">
             <div class="stat-value">96%</div>
@@ -26,9 +26,9 @@
             <div class="stat-change">+0.2</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">892</div>
+            <div class="stat-value" id="stats-labour-hours">0</div>
             <div class="stat-label">Labour Hours</div>
-            <div class="stat-change">+68 hrs</div>
+            <div class="stat-change">&nbsp;</div>
         </div>
     </div>
 
@@ -37,44 +37,7 @@
         <span class="section-title">By Job Type</span>
     </div>
 
-    <div style="border:1px solid #e2e8f0; padding:14px; margin-bottom:16px;">
-        <div style="margin-bottom:12px;">
-            <div class="flex-between mb-2">
-                <span style="font-size:0.85rem;">HVAC</span>
-                <span style="font-size:0.82rem; color:#64748b;">18 jobs &bull; 38%</span>
-            </div>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width:38%;"></div>
-            </div>
-        </div>
-        <div style="margin-bottom:12px;">
-            <div class="flex-between mb-2">
-                <span style="font-size:0.85rem;">Electrical</span>
-                <span style="font-size:0.82rem; color:#64748b;">14 jobs &bull; 30%</span>
-            </div>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width:30%;"></div>
-            </div>
-        </div>
-        <div style="margin-bottom:12px;">
-            <div class="flex-between mb-2">
-                <span style="font-size:0.85rem;">Plumbing</span>
-                <span style="font-size:0.82rem; color:#64748b;">10 jobs &bull; 21%</span>
-            </div>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width:21%;"></div>
-            </div>
-        </div>
-        <div>
-            <div class="flex-between mb-2">
-                <span style="font-size:0.85rem;">Other</span>
-                <span style="font-size:0.82rem; color:#64748b;">5 jobs &bull; 11%</span>
-            </div>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width:11%;"></div>
-            </div>
-        </div>
-    </div>
+    <div id="stats-job-types" style="border:1px solid #e2e8f0; padding:14px; margin-bottom:16px;"></div>
 
     <!-- Team Performance -->
     <div class="section-header">
@@ -82,41 +45,7 @@
         <button class="section-action" onclick="openScoreboard()">Scoreboard</button>
     </div>
 
-    <div style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;">
-        <div class="list-item">
-            <div class="leaderboard-avatar" style="width:32px;height:32px;font-size:0.72rem;">TW</div>
-            <div class="list-item-body" style="margin-left:10px;">
-                <div class="list-item-title">Tyler Wong</div>
-                <div style="font-size:0.72rem; color:#64748b;">14 jobs &bull; 4.9</div>
-            </div>
-            <div style="text-align:right;">
-                <div style="font-size:0.85rem; color:#64748b;">98%</div>
-                <div style="font-size:0.7rem; color:#64748b;">on-time</div>
-            </div>
-        </div>
-        <div class="list-item">
-            <div class="leaderboard-avatar" style="width:32px;height:32px;font-size:0.72rem;">JS</div>
-            <div class="list-item-body" style="margin-left:10px;">
-                <div class="list-item-title">Jake Smith</div>
-                <div style="font-size:0.72rem; color:#64748b;">12 jobs &bull; 4.8</div>
-            </div>
-            <div style="text-align:right;">
-                <div style="font-size:0.85rem; color:#64748b;">95%</div>
-                <div style="font-size:0.7rem; color:#64748b;">on-time</div>
-            </div>
-        </div>
-        <div class="list-item" style="border-bottom:none;">
-            <div class="leaderboard-avatar" style="width:32px;height:32px;font-size:0.72rem;">AC</div>
-            <div class="list-item-body" style="margin-left:10px;">
-                <div class="list-item-title">Amy Chen</div>
-                <div style="font-size:0.72rem; color:#64748b;">11 jobs &bull; 4.7</div>
-            </div>
-            <div style="text-align:right;">
-                <div style="font-size:0.85rem; color:#64748b;">91%</div>
-                <div style="font-size:0.7rem; color:#64748b;">on-time</div>
-            </div>
-        </div>
-    </div>
+    <div id="stats-team" style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;"></div>
 
     <!-- Customer Satisfaction -->
     <div class="section-header">
@@ -142,3 +71,77 @@
         </div>
     </div>
 </div>
+
+<script>
+(function () {
+    var company = DB.getById('companies', state.currentCompanyId);
+    document.getElementById('stats-subtitle').textContent = (company ? company.name : 'All Jobs') + ' — All Jobs';
+
+    // ── By Job Type — real breakdown from jobs.job_type (Phase 1) ──────────
+    var jobs = DB.find('jobs', function (j) { return j.company_id === state.currentCompanyId && !j.deleted_at; });
+    var byType = {};
+    jobs.forEach(function (j) {
+        var t = j.job_type || 'Other';
+        byType[t] = (byType[t] || 0) + 1;
+    });
+    var total = jobs.length || 1;
+    var typeRows = Object.keys(byType).sort(function (a, b) { return byType[b] - byType[a]; });
+    document.getElementById('stats-job-types').innerHTML = typeRows.map(function (t, i) {
+        var count = byType[t];
+        var pct = Math.round((count / total) * 100);
+        var isLast = i === typeRows.length - 1;
+        return '<div style="margin-bottom:' + (isLast ? '0' : '12px') + ';">' +
+            '<div class="flex-between mb-2">' +
+                '<span style="font-size:0.85rem;">' + t + '</span>' +
+                '<span style="font-size:0.82rem; color:#64748b;">' + count + ' job' + (count === 1 ? '' : 's') + ' &bull; ' + pct + '%</span>' +
+            '</div>' +
+            '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%;"></div></div>' +
+        '</div>';
+    }).join('') || '<div style="color:#94a3b8; font-size:0.85rem;">No jobs recorded yet.</div>';
+
+    // ── Jobs Completed / Labour Hours — same aggregation style as
+    // scoreboard.html/review-time.html: derive from time_entries rather than
+    // a status field that doesn't reliably mean "done" in the seed data.
+    var companyEntries = DB.find('time_entries', function (t) { return t.company_id === state.currentCompanyId; });
+    var doneEntries = companyEntries.filter(function (t) { return t.status !== 'active'; });
+    var distinctJobs = {};
+    doneEntries.forEach(function (t) { distinctJobs[t.job_id] = true; });
+    document.getElementById('stats-jobs-completed').textContent = Object.keys(distinctJobs).length;
+
+    var totalHours = companyEntries.reduce(function (sum, t) {
+        var end = t.clock_out_at ? new Date(t.clock_out_at) : new Date();
+        var hrs = Math.max(0, (end - new Date(t.clock_in_at)) / 3600000 - (t.unpaid_break_minutes || 0) / 60);
+        return sum + hrs;
+    }, 0);
+    document.getElementById('stats-labour-hours').textContent = Math.round(totalHours);
+
+    // ── Team Performance — same ranked-by-scorecard-points approach as
+    // scoreboard.html's leaderboard, condensed to jobs-worked + points.
+    var users = DB.find('users', function (u) { return !u.deleted_at && u.company_id === state.currentCompanyId; });
+    var ranked = users.map(function (u) {
+        var entries = DB.find('scorecard_entries', function (s) { return s.user_id === u.id; });
+        var points = entries.reduce(function (sum, e) { return sum + (e.total_score || 0); }, 0);
+        var jobIds = {};
+        DB.find('time_entries', function (t) { return t.user_id === u.id; }).forEach(function (t) { jobIds[t.job_id] = true; });
+        return { user: u, points: points, jobs: Object.keys(jobIds).length };
+    }).filter(function (r) { return r.points > 0 || r.jobs > 0; })
+      .sort(function (a, b) { return b.points - a.points; })
+      .slice(0, 3);
+
+    document.getElementById('stats-team').innerHTML = ranked.map(function (r, i) {
+        var isLast = i === ranked.length - 1;
+        var initials = r.user.full_name.split(' ').map(function (p) { return (p.replace(/[^A-Za-z]/g, '')[0] || ''); }).join('').toUpperCase().slice(0, 2);
+        return '<div class="list-item"' + (isLast ? ' style="border-bottom:none;"' : '') + '>' +
+            '<div class="leaderboard-avatar" style="width:32px;height:32px;font-size:0.72rem;">' + initials + '</div>' +
+            '<div class="list-item-body" style="margin-left:10px;">' +
+                '<div class="list-item-title">' + r.user.full_name + '</div>' +
+                '<div style="font-size:0.72rem; color:#64748b;">' + r.jobs + ' job' + (r.jobs === 1 ? '' : 's') + '</div>' +
+            '</div>' +
+            '<div style="text-align:right;">' +
+                '<div style="font-size:0.85rem; color:#64748b;">' + r.points + '</div>' +
+                '<div style="font-size:0.7rem; color:#64748b;">points</div>' +
+            '</div>' +
+        '</div>';
+    }).join('') || '<div class="list-item" style="border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">No scorecards recorded yet.</div></div>';
+})();
+</script>
