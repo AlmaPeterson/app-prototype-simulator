@@ -110,3 +110,14 @@ Assign team members should show users in same branch
 
 ---
 
+## 2026-07-03T19:53:07.130Z
+
+- Screen: kinetic-flow — create-job
+- Role: worker
+- Account: New Account
+- Phone size: 374 × 776
+
+Creating job should not have start and end date, that is part of the bid
+
+---
+
