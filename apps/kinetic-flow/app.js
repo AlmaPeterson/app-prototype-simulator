@@ -459,6 +459,13 @@ function openBranch(branchId) {
 
 function selectCompany(companyId) {
     state.currentCompanyId = companyId;
+    // Re-derive branch context for this company (jobs.html filters by it):
+    // the signed-in user's own branch if it belongs here, else no branch
+    // scope. A branch left over from another company would filter every job
+    // out.
+    const user = state.currentUserId ? DB.getById('users', state.currentUserId) : null;
+    const userBranch = user && user.branch_id ? DB.getById('branches', user.branch_id) : null;
+    state.currentBranchId = (userBranch && userBranch.company_id === companyId) ? userBranch.id : null;
     loadPage('jobs');
 }
 
@@ -525,12 +532,24 @@ function submitJob() {
     const customer = customerId ? DB.getById('customers', customerId) : null;
     const jobType = val('cj-type') || 'General';
     const priority = val('cj-priority') || 'normal';
-    const addressId = customer ? customer.address_id : null;
     const notes = val('cj-notes');
-    const startInput = document.getElementById('cj-start');
-    const endInput = document.getElementById('cj-end');
-    const scheduledStart = startInput && startInput.value ? new Date(startInput.value).toISOString() : null;
-    const scheduledEnd = endInput && endInput.value ? new Date(endInput.value).toISOString() : null;
+
+    // Job address: typed fields win (inserting a fresh addresses row);
+    // otherwise fall back to the selected customer's address. Scheduling
+    // dates deliberately don't exist here — they belong to the bid.
+    const street = val('cj-street');
+    const city = val('cj-city');
+    let addressId = customer ? customer.address_id : null;
+    if (street || city) {
+        const customerAddr = addressId ? DB.getById('addresses', addressId) : null;
+        const sameAsCustomer = customerAddr && customerAddr.street === street && customerAddr.city === city;
+        if (!sameAsCustomer) {
+            addressId = DB.insert('addresses', {
+                company_id: state.currentCompanyId,
+                street: street, city: city, state: val('cj-state'), zip: '', lat: null, lng: null,
+            }).id;
+        }
+    }
 
     const job = DB.insert('jobs', {
         company_id: state.currentCompanyId,
@@ -543,8 +562,8 @@ function submitJob() {
         status: 'scheduled',
         job_type: jobType,
         priority: priority,
-        scheduled_start: scheduledStart,
-        scheduled_end: scheduledEnd,
+        scheduled_start: null,
+        scheduled_end: null,
         notes: notes || null,
     });
 

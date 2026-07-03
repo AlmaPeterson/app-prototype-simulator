@@ -3,7 +3,7 @@
     <div class="flex-between mb-4">
         <div>
             <div class="page-title">Jobs</div>
-            <div class="page-subtitle">Kinetic Solutions LLC</div>
+            <div class="page-subtitle" id="jobs-subtitle"></div>
         </div>
         <button class="fab" style="position:static; margin:0;" onclick="createJob()">+</button>
     </div>
@@ -15,7 +15,17 @@
 
 <script>
 (function () {
-    var jobs = DB.find('jobs', function (j) { return j.company_id === state.currentCompanyId && !j.deleted_at; });
+    // Scoped to the current branch when one is set (worker's own branch from
+    // sign-in, or the branch drilled into via branch-detail) — jobs from
+    // other branches shouldn't appear here per the QA note.
+    var jobs = DB.find('jobs', function (j) {
+        if (j.company_id !== state.currentCompanyId || j.deleted_at) return false;
+        return !state.currentBranchId || j.branch_id === state.currentBranchId;
+    });
+    var company = state.currentCompanyId ? DB.getById('companies', state.currentCompanyId) : null;
+    var branch = state.currentBranchId ? DB.getById('branches', state.currentBranchId) : null;
+    document.getElementById('jobs-subtitle').textContent =
+        [(company ? company.name : ''), (branch ? branch.name : '')].filter(Boolean).join(' • ');
     var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     function fmtDate(iso) {
         if (!iso) return '';
@@ -33,7 +43,7 @@
                 '<div class="card-title" style="margin:0;">' + j.name + '</div>' +
                 '<span style="font-size:0.78rem; color:#64748b; text-align:right;">' + costLabel + '</span>' +
             '</div>' +
-            '<div class="card-subtitle">' + (addr ? addr.street : '') + ' &bull; ' + fmtDate(j.scheduled_start) + '</div>' +
+            '<div class="card-subtitle">' + [(addr ? addr.street : ''), fmtDate(j.scheduled_start)].filter(Boolean).join(' &bull; ') + '</div>' +
             '<div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">' +
                 (j.job_type || 'General') + ' &bull; ' + (j.priority || 'normal').replace(/^./, function (c) { return c.toUpperCase(); }) + ' &bull; ' +
                 (leadUser ? leadUser.full_name : 'Unassigned') +

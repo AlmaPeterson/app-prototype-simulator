@@ -33,14 +33,19 @@
         </select>
     </div>
 
+    <div class="form-group">
+        <label>Job Address</label>
+        <input type="text" id="cj-street" placeholder="123 Main St">
+    </div>
+
     <div class="form-row">
         <div class="form-group">
-            <label>Start Date</label>
-            <input type="date" id="cj-start">
+            <label>City</label>
+            <input type="text" id="cj-city" placeholder="Calgary">
         </div>
         <div class="form-group">
-            <label>End Date</label>
-            <input type="date" id="cj-end">
+            <label>Province / State</label>
+            <input type="text" id="cj-state" placeholder="AB">
         </div>
     </div>
 
@@ -78,17 +83,97 @@
 
 <script>
 (function () {
-    var customers = DB.find('customers', function (c) { return c.company_id === state.currentCompanyId && !c.deleted_at; });
-    var customerSelect = document.getElementById('cj-customer');
-    customerSelect.innerHTML = '<option value="">Select customer...</option>' +
-        customers.map(function (c) { return '<option value="' + c.id + '">' + c.full_name + '</option>'; }).join('') +
-        '<option value="">+ Add New Customer</option>';
+    function renderCustomers(selectedId) {
+        var customers = DB.find('customers', function (c) { return c.company_id === state.currentCompanyId && !c.deleted_at; });
+        var customerSelect = document.getElementById('cj-customer');
+        customerSelect.innerHTML = '<option value="">Select customer...</option>' +
+            customers.map(function (c) {
+                return '<option value="' + c.id + '"' + (c.id === selectedId ? ' selected' : '') + '>' + c.full_name + '</option>';
+            }).join('') +
+            '<option value="__new__">+ Add New Customer</option>';
+    }
+    renderCustomers(null);
 
-    var users = DB.find('users', function (u) { return u.company_id === state.currentCompanyId && !u.deleted_at; });
+    // Picking a customer prefills the job address from their record (only
+    // into fields still blank, so typed input is never clobbered); picking
+    // "+ Add New Customer" opens the inline create form instead.
+    document.getElementById('cj-customer').addEventListener('change', function () {
+        if (this.value === '__new__') {
+            this.value = '';
+            window.openNewCustomer();
+            return;
+        }
+        var customer = this.value ? DB.getById('customers', this.value) : null;
+        var addr = customer && customer.address_id ? DB.getById('addresses', customer.address_id) : null;
+        if (!addr) return;
+        ['cj-street', 'cj-city', 'cj-state'].forEach(function (id, i) {
+            var el = document.getElementById(id);
+            if (el && !el.value.trim()) el.value = [addr.street, addr.city, addr.state][i] || '';
+        });
+    });
+
+    window.openNewCustomer = function () {
+        var existing = document.getElementById('customer-panel');
+        if (existing) existing.remove();
+        var modal = document.createElement('div');
+        modal.id = 'customer-panel';
+        modal.className = 'modal-overlay';
+        modal.innerHTML =
+            '<div class="modal-sheet">' +
+                '<div class="modal-handle"></div>' +
+                '<div class="page-title-sm mb-2">New Customer</div>' +
+                '<div class="form-group"><label>Full Name</label><input type="text" id="ncu-name" placeholder="Jordan Blake"></div>' +
+                '<div class="form-group"><label>Phone</label><input type="tel" id="ncu-phone" placeholder="(555) 000-0000"></div>' +
+                '<div class="form-group"><label>Email</label><input type="email" id="ncu-email" placeholder="jordan@example.com"></div>' +
+                '<div class="form-group"><label>Street Address</label><input type="text" id="ncu-street" placeholder="123 Main St"></div>' +
+                '<div class="form-row">' +
+                    '<div class="form-group"><label>City</label><input type="text" id="ncu-city" placeholder="Calgary"></div>' +
+                    '<div class="form-group"><label>Province / State</label><input type="text" id="ncu-state" placeholder="AB"></div>' +
+                '</div>' +
+                '<button class="btn btn-primary mt-2" onclick="saveNewCustomer()">Add Customer</button>' +
+                '<button class="btn btn-secondary" onclick="document.getElementById(\'customer-panel\').remove()">Cancel</button>' +
+            '</div>';
+        modal.addEventListener('click', function (e) { if (e.target === modal) modal.remove(); });
+        document.getElementById('phone').appendChild(modal);
+    };
+
+    window.saveNewCustomer = function () {
+        var name = (document.getElementById('ncu-name').value || '').trim();
+        if (!name) { alert('Enter the customer’s name.'); return; }
+        var street = (document.getElementById('ncu-street').value || '').trim();
+        var city = (document.getElementById('ncu-city').value || '').trim();
+        var st = (document.getElementById('ncu-state').value || '').trim();
+        var address = null;
+        if (street || city) {
+            address = DB.insert('addresses', {
+                company_id: state.currentCompanyId,
+                street: street, city: city, state: st, zip: '', lat: null, lng: null,
+            });
+        }
+        var customer = DB.insert('customers', {
+            company_id: state.currentCompanyId,
+            branch_id: state.currentBranchId,
+            full_name: name,
+            email: (document.getElementById('ncu-email').value || '').trim() || null,
+            phone: (document.getElementById('ncu-phone').value || '').trim() || null,
+            address_id: address ? address.id : null,
+            notes: null,
+        });
+        document.getElementById('customer-panel').remove();
+        renderCustomers(customer.id);
+        document.getElementById('cj-customer').dispatchEvent(new Event('change'));
+    };
+
+    // Team chips are scoped to the current branch (falling back to the whole
+    // company when no branch context is set) per the QA note.
+    var users = DB.find('users', function (u) {
+        if (u.company_id !== state.currentCompanyId || u.deleted_at) return false;
+        return !state.currentBranchId || u.branch_id === state.currentBranchId || u.id === state.currentUserId;
+    });
     document.getElementById('cj-team').innerHTML = users.map(function (u) {
         var isSelf = u.id === state.currentUserId;
         var label = isSelf ? u.full_name + ' (You)' : u.full_name;
         return '<span class="chip' + (isSelf ? ' selected' : '') + '" data-user-id="' + u.id + '" onclick="' + (isSelf ? '' : 'toggleChip(this)') + '">' + label + '</span>';
-    }).join('') + '<span class="chip" onclick="toggleChip(this)">+ Invite</span>';
+    }).join('');
 })();
 </script>
