@@ -132,3 +132,14 @@ I am unable to create a new customer
 
 ---
 
+## 2026-07-03T19:55:21.310Z
+
+- Screen: kinetic-flow — create-job
+- Role: worker
+- Account: New Account
+- Phone size: 374 × 776
+
+Needs address feild
+
+---
+
