@@ -457,6 +457,27 @@ function openBranch(branchId) {
     loadPage('branch-detail');
 }
 
+// All users belonging to a company: homed there via users.company_id (the
+// seeded companies) or holding one of its roles via user_roles (how members
+// are added to locally created companies, whose users keep their original
+// company_id). Shared by create-job's team chips, branch-detail's member
+// search, and company-setup's member list so they never disagree on who is
+// "in" a company.
+function companyMemberUsers(companyId) {
+    const seen = {};
+    const rows = [];
+    DB.find('users', function (u) { return u.company_id === companyId && !u.deleted_at; })
+        .forEach(function (u) { seen[u.id] = true; rows.push(u); });
+    DB.get('user_roles').forEach(function (ur) {
+        if (ur.deleted_at || seen[ur.user_id]) return;
+        const role = DB.getById('roles', ur.role_id);
+        if (!role || role.company_id !== companyId) return;
+        const u = DB.getById('users', ur.user_id);
+        if (u && !u.deleted_at) { seen[u.id] = true; rows.push(u); }
+    });
+    return rows;
+}
+
 function selectCompany(companyId) {
     state.currentCompanyId = companyId;
     // Re-derive branch context for this company (jobs.html filters by it):
@@ -1247,7 +1268,7 @@ function activate() {
         signIn, afterSignIn, signOut, showSignUp, closeSignUp, submitAccount, goToSignIn,
         showSabbathLock, hideSabbathLock,
         joinCompany, createCompany, submitJoinRequest, submitNewCompany, continueFromSetup, openBranch,
-        selectCompany, manageCompany,
+        selectCompany, manageCompany, companyMemberUsers,
         DIVISIONS, LEVELS, COMPETENCY_LEVELS,
         openCompanyDivisions, openCompanyLevels, openCompanyCompetencyLevels,
         openJob, createJob, submitJob,

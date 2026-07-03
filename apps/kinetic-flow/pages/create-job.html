@@ -166,8 +166,7 @@
 
     // Team chips are scoped to the current branch (falling back to the whole
     // company when no branch context is set) per the QA note.
-    var users = DB.find('users', function (u) {
-        if (u.company_id !== state.currentCompanyId || u.deleted_at) return false;
+    var users = companyMemberUsers(state.currentCompanyId).filter(function (u) {
         return !state.currentBranchId || u.branch_id === state.currentBranchId || u.id === state.currentUserId;
     });
     document.getElementById('cj-team').innerHTML = users.map(function (u) {

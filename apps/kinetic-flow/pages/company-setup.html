@@ -280,18 +280,7 @@
         });
     }
     function companyMembers() {
-        var seen = {};
-        var rows = [];
-        DB.find('users', function (u) { return u.company_id === state.currentCompanyId && !u.deleted_at; })
-            .forEach(function (u) { seen[u.id] = true; rows.push(u); });
-        DB.get('user_roles').forEach(function (ur) {
-            if (ur.deleted_at) return;
-            var role = DB.getById('roles', ur.role_id);
-            if (!role || role.company_id !== state.currentCompanyId || seen[ur.user_id]) return;
-            var u = DB.getById('users', ur.user_id);
-            if (u && !u.deleted_at) { seen[u.id] = true; rows.push(u); }
-        });
-        return rows;
+        return companyMemberUsers(state.currentCompanyId);
     }
 
     function renderMembers() {

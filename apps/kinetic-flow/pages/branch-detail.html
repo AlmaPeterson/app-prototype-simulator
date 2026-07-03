@@ -91,9 +91,8 @@
         var q = (document.getElementById('bd-member-search').value || '').trim().toLowerCase();
         var box = document.getElementById('bd-search-results');
         if (!q) { box.innerHTML = ''; return; }
-        var candidates = DB.find('users', function (u) {
-            return u.company_id === branch.company_id && !u.deleted_at && u.branch_id !== branch.id
-                && u.full_name.toLowerCase().indexOf(q) !== -1;
+        var candidates = companyMemberUsers(branch.company_id).filter(function (u) {
+            return u.branch_id !== branch.id && u.full_name.toLowerCase().indexOf(q) !== -1;
         });
         box.innerHTML = candidates.map(function (u) {
             return '<div class="card" style="margin-bottom:6px; padding:10px 14px;" onclick="addBranchMember(\'' + u.id + '\')">' +
@@ -124,7 +123,7 @@
         var existing = document.getElementById('branch-edit-panel');
         if (existing) existing.remove();
         var addr = branch.address_id ? DB.getById('addresses', branch.address_id) : null;
-        var companyUsers = DB.find('users', function (u) { return u.company_id === branch.company_id && !u.deleted_at; });
+        var companyUsers = companyMemberUsers(branch.company_id);
         var modal = document.createElement('div');
         modal.id = 'branch-edit-panel';
         modal.className = 'modal-overlay';
