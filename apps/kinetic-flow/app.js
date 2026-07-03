@@ -165,7 +165,21 @@ const mainAppPages = [
 ];
 
 // ── Core Navigation ─────────────────────────────────────────────────────────
+// Back-stack of page names, so the OS chrome's generic Back button (see
+// ../../shell.js phoneBack()) can retrace whatever path the user actually
+// took through this app, not just jump to a fixed page. isNavigatingBack
+// suppresses the push that loadPage() would otherwise do when goBack()
+// itself calls loadPage(), which would otherwise re-add the page you're
+// leaving right back onto the stack.
+let pageHistory = [];
+let isNavigatingBack = false;
+
 function loadPage(name, data) {
+    if (!isNavigatingBack && state.currentPage && state.currentPage !== name) {
+        pageHistory.push(state.currentPage);
+    }
+    isNavigatingBack = false;
+
     if (data) state.currentPage = name;
     state.currentPage = name;
     saveState();
@@ -228,7 +242,16 @@ function navTo(page) {
     loadPage(page);
 }
 
-function goBack() { loadPage('jobs'); }
+// Returns true if it navigated somewhere, false if the stack was empty (so
+// the shell's phoneBack() knows to close the app back to the OS home screen
+// instead of leaving Back a no-op).
+function goBack() {
+    if (pageHistory.length === 0) return false;
+    const prev = pageHistory.pop();
+    isNavigatingBack = true;
+    loadPage(prev);
+    return true;
+}
 
 // ── Header Controls ─────────────────────────────────────────────────────────
 function setAccountType(type) {
@@ -289,6 +312,7 @@ function afterSignIn(user) {
 
 function signOut() {
     state.signedIn = false;
+    pageHistory = [];
     loadPage('sign-in');
 }
 
@@ -1176,6 +1200,7 @@ window.Apps['kinetic-flow'] = {
     // Workers/suppliers who were signed in when the page was last unloaded
     // resume wherever they left off (see restoreState()).
     start: function () {
+        pageHistory = [];
         restoreState(); // may already populate the mock DB from localStorage
         (DB.isLoaded() ? Promise.resolve() : DB.load()).then(function () {
             if (state.role === 'customer') {

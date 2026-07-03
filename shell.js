@@ -93,6 +93,23 @@ function closeApp() {
     showScreen('home');
 }
 
+// ── Side Controls (Back / Home) ───────────────────────────────────────────
+// Generic OS-chrome equivalents of a phone's hardware/gesture buttons. Back
+// defers to the running app's own goBack() (exposed onto window by its
+// activate()), which returns true if it handled the navigation. If there's
+// no app open, no goBack defined, or the app reports its back-stack is
+// empty (returns false), Back falls through to closing the app — the same
+// place a phone's back button lands you when there's nowhere left to go.
+function phoneBack() {
+    if (!currentAppId) return;
+    if (typeof window.goBack === 'function' && window.goBack()) return;
+    closeApp();
+}
+
+function phoneHome() {
+    closeApp();
+}
+
 // ── Phone Resize ─────────────────────────────────────────────────────────────
 const MIN_W = 280, MAX_W = 900, MIN_H = 420, MAX_H = 1100;
 
@@ -193,11 +210,20 @@ function updateSizeLabel(w, h) {
 let preFullscreenSize = null;
 
 function toggleFullscreen() {
-    const isFullscreen = document.body.classList.toggle('fullscreen-mode');
     const phone = document.getElementById('phone');
+    const enteringFullscreen = !document.body.classList.contains('fullscreen-mode');
 
-    if (isFullscreen) {
+    // Capture the current windowed size before the fullscreen-mode class
+    // goes on — the class forces #phone to 100vw/100vh via CSS, so reading
+    // offsetWidth/Height after toggling would just record the fullscreen
+    // size instead of the size to restore to.
+    if (enteringFullscreen) {
         preFullscreenSize = { w: phone.offsetWidth, h: phone.offsetHeight };
+    }
+
+    document.body.classList.toggle('fullscreen-mode');
+
+    if (enteringFullscreen) {
         if (document.documentElement.requestFullscreen) {
             document.documentElement.requestFullscreen().catch(() => {});
         }

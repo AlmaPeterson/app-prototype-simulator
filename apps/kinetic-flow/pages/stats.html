@@ -3,9 +3,9 @@
     <div class="page-subtitle mb-4" id="stats-subtitle">All Jobs</div>
 
     <div class="tab-bar">
-        <button class="tab-btn active">This Month</button>
-        <button class="tab-btn">Quarter</button>
-        <button class="tab-btn">Year</button>
+        <button class="tab-btn active" id="stats-tab-month" onclick="selectStatsPeriod('month')">This Month</button>
+        <button class="tab-btn" id="stats-tab-quarter" onclick="selectStatsPeriod('quarter')">Quarter</button>
+        <button class="tab-btn" id="stats-tab-year" onclick="selectStatsPeriod('year')">Year</button>
     </div>
 
     <!-- Top Stats -->
@@ -99,49 +99,72 @@
         '</div>';
     }).join('') || '<div style="color:#94a3b8; font-size:0.85rem;">No jobs recorded yet.</div>';
 
+    function cutoffDaysFor(period) {
+        if (period === 'month') return 30;
+        if (period === 'quarter') return 90;
+        return 365; // year
+    }
+
     // ── Jobs Completed / Labour Hours — same aggregation style as
     // scoreboard.html/review-time.html: derive from time_entries rather than
     // a status field that doesn't reliably mean "done" in the seed data.
-    var companyEntries = DB.find('time_entries', function (t) { return t.company_id === state.currentCompanyId; });
-    var doneEntries = companyEntries.filter(function (t) { return t.status !== 'active'; });
-    var distinctJobs = {};
-    doneEntries.forEach(function (t) { distinctJobs[t.job_id] = true; });
-    document.getElementById('stats-jobs-completed').textContent = Object.keys(distinctJobs).length;
+    // clock_in_at sits close to "today" in the seed data, so a real period
+    // cut (unlike the "this week" case those other pages skip) is meaningful.
+    function renderPeriod(period) {
+        var cutoff = new Date(Date.now() - cutoffDaysFor(period) * 86400000);
 
-    var totalHours = companyEntries.reduce(function (sum, t) {
-        var end = t.clock_out_at ? new Date(t.clock_out_at) : new Date();
-        var hrs = Math.max(0, (end - new Date(t.clock_in_at)) / 3600000 - (t.unpaid_break_minutes || 0) / 60);
-        return sum + hrs;
-    }, 0);
-    document.getElementById('stats-labour-hours').textContent = Math.round(totalHours);
+        var companyEntries = DB.find('time_entries', function (t) {
+            return t.company_id === state.currentCompanyId && new Date(t.clock_in_at) >= cutoff;
+        });
+        var doneEntries = companyEntries.filter(function (t) { return t.status !== 'active'; });
+        var distinctJobs = {};
+        doneEntries.forEach(function (t) { distinctJobs[t.job_id] = true; });
+        document.getElementById('stats-jobs-completed').textContent = Object.keys(distinctJobs).length;
 
-    // ── Team Performance — same ranked-by-scorecard-points approach as
-    // scoreboard.html's leaderboard, condensed to jobs-worked + points.
-    var users = DB.find('users', function (u) { return !u.deleted_at && u.company_id === state.currentCompanyId; });
-    var ranked = users.map(function (u) {
-        var entries = DB.find('scorecard_entries', function (s) { return s.user_id === u.id; });
-        var points = entries.reduce(function (sum, e) { return sum + (e.total_score || 0); }, 0);
-        var jobIds = {};
-        DB.find('time_entries', function (t) { return t.user_id === u.id; }).forEach(function (t) { jobIds[t.job_id] = true; });
-        return { user: u, points: points, jobs: Object.keys(jobIds).length };
-    }).filter(function (r) { return r.points > 0 || r.jobs > 0; })
-      .sort(function (a, b) { return b.points - a.points; })
-      .slice(0, 3);
+        var totalHours = companyEntries.reduce(function (sum, t) {
+            var end = t.clock_out_at ? new Date(t.clock_out_at) : new Date();
+            var hrs = Math.max(0, (end - new Date(t.clock_in_at)) / 3600000 - (t.unpaid_break_minutes || 0) / 60);
+            return sum + hrs;
+        }, 0);
+        document.getElementById('stats-labour-hours').textContent = Math.round(totalHours);
 
-    document.getElementById('stats-team').innerHTML = ranked.map(function (r, i) {
-        var isLast = i === ranked.length - 1;
-        var initials = r.user.full_name.split(' ').map(function (p) { return (p.replace(/[^A-Za-z]/g, '')[0] || ''); }).join('').toUpperCase().slice(0, 2);
-        return '<div class="list-item"' + (isLast ? ' style="border-bottom:none;"' : '') + '>' +
-            '<div class="leaderboard-avatar" style="width:32px;height:32px;font-size:0.72rem;">' + initials + '</div>' +
-            '<div class="list-item-body" style="margin-left:10px;">' +
-                '<div class="list-item-title">' + r.user.full_name + '</div>' +
-                '<div style="font-size:0.72rem; color:#64748b;">' + r.jobs + ' job' + (r.jobs === 1 ? '' : 's') + '</div>' +
-            '</div>' +
-            '<div style="text-align:right;">' +
-                '<div style="font-size:0.85rem; color:#64748b;">' + r.points + '</div>' +
-                '<div style="font-size:0.7rem; color:#64748b;">points</div>' +
-            '</div>' +
-        '</div>';
-    }).join('') || '<div class="list-item" style="border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">No scorecards recorded yet.</div></div>';
+        // ── Team Performance — same ranked-by-scorecard-points approach as
+        // scoreboard.html's leaderboard, condensed to jobs-worked + points.
+        var users = DB.find('users', function (u) { return !u.deleted_at && u.company_id === state.currentCompanyId; });
+        var ranked = users.map(function (u) {
+            var entries = DB.find('scorecard_entries', function (s) { return s.user_id === u.id && new Date(s.shift_date) >= cutoff; });
+            var points = entries.reduce(function (sum, e) { return sum + (e.total_score || 0); }, 0);
+            var jobIds = {};
+            DB.find('time_entries', function (t) { return t.user_id === u.id && new Date(t.clock_in_at) >= cutoff; }).forEach(function (t) { jobIds[t.job_id] = true; });
+            return { user: u, points: points, jobs: Object.keys(jobIds).length };
+        }).filter(function (r) { return r.points > 0 || r.jobs > 0; })
+          .sort(function (a, b) { return b.points - a.points; })
+          .slice(0, 3);
+
+        document.getElementById('stats-team').innerHTML = ranked.map(function (r, i) {
+            var isLast = i === ranked.length - 1;
+            var initials = r.user.full_name.split(' ').map(function (p) { return (p.replace(/[^A-Za-z]/g, '')[0] || ''); }).join('').toUpperCase().slice(0, 2);
+            return '<div class="list-item"' + (isLast ? ' style="border-bottom:none;"' : '') + '>' +
+                '<div class="leaderboard-avatar" style="width:32px;height:32px;font-size:0.72rem;">' + initials + '</div>' +
+                '<div class="list-item-body" style="margin-left:10px;">' +
+                    '<div class="list-item-title">' + r.user.full_name + '</div>' +
+                    '<div style="font-size:0.72rem; color:#64748b;">' + r.jobs + ' job' + (r.jobs === 1 ? '' : 's') + '</div>' +
+                '</div>' +
+                '<div style="text-align:right;">' +
+                    '<div style="font-size:0.85rem; color:#64748b;">' + r.points + '</div>' +
+                    '<div style="font-size:0.7rem; color:#64748b;">points</div>' +
+                '</div>' +
+            '</div>';
+        }).join('') || '<div class="list-item" style="border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">No scorecards recorded yet.</div></div>';
+    }
+
+    window.selectStatsPeriod = function (period) {
+        ['month', 'quarter', 'year'].forEach(function (key) {
+            document.getElementById('stats-tab-' + key).classList.toggle('active', key === period);
+        });
+        renderPeriod(period);
+    };
+
+    renderPeriod('month');
 })();
 </script>

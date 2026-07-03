@@ -9,7 +9,7 @@
 
     <!-- Week nav -->
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
-        <button class="btn btn-secondary btn-sm" style="width:auto; padding:6px 12px;">&larr;</button>
+        <button class="btn btn-secondary btn-sm" style="width:auto; padding:6px 12px;" onclick="shiftScheduleWeek(-1)" title="Previous week">&larr;</button>
         <div style="display:flex; gap:6px;">
             <div id="day-sun" class="chip" onclick="selectDay('sun')">Sun</div>
             <div id="day-mon" class="chip" onclick="selectDay('mon')">Mon</div>
@@ -19,7 +19,7 @@
             <div id="day-fri" class="chip" onclick="selectDay('fri')">Fri</div>
             <div id="day-sat" class="chip" onclick="selectDay('sat')">Sat</div>
         </div>
-        <button class="btn btn-secondary btn-sm" style="width:auto; padding:6px 12px;">&rarr;</button>
+        <button class="btn btn-secondary btn-sm" style="width:auto; padding:6px 12px;" onclick="shiftScheduleWeek(1)" title="Next week">&rarr;</button>
     </div>
 
     <div class="schedule-day">
@@ -36,9 +36,16 @@
     var WEEK_START = new Date('2026-06-29T00:00:00');
     var DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
     var DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    var weekOffset = 0;
+    var selectedDay = 'wed';
 
-    function dateForDay(day) {
+    function currentWeekStart() {
         var d = new Date(WEEK_START);
+        d.setDate(d.getDate() + weekOffset * 7);
+        return d;
+    }
+    function dateForDay(day) {
+        var d = currentWeekStart();
         d.setDate(d.getDate() + DAYS.indexOf(day));
         return d;
     }
@@ -54,7 +61,8 @@
         var d = dateForDay(day);
         var iso = isoDateOnly(d);
         document.getElementById('schedule-day-label').textContent = DAY_LABELS[DAYS.indexOf(day)] + ', ' + fmtShort(d);
-        document.getElementById('schedule-week-label').textContent = 'Week of ' + fmtShort(WEEK_START) + ', ' + WEEK_START.getFullYear();
+        var ws = currentWeekStart();
+        document.getElementById('schedule-week-label').textContent = 'Week of ' + fmtShort(ws) + ', ' + ws.getFullYear();
 
         // Worker/supplier roles see crew-facing events; the customer role
         // (which also has a Schedule tab, see customerNav in app.js) sees the
@@ -79,9 +87,15 @@
     }
 
     window.selectDay = function (day) {
+        selectedDay = day;
         document.querySelectorAll('[id^="day-"]').forEach(function (el) { el.classList.remove('selected'); });
         document.getElementById('day-' + day).classList.add('selected');
         renderDay(day);
+    };
+
+    window.shiftScheduleWeek = function (delta) {
+        weekOffset += delta;
+        renderDay(selectedDay);
     };
 
     window.showCreateSchedule = function () {

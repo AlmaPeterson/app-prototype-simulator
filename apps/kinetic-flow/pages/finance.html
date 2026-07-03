@@ -10,57 +10,63 @@
     </div>
 
     <div class="tab-bar">
-        <button class="tab-btn active">Overview</button>
-        <button class="tab-btn">Invoices</button>
-        <button class="tab-btn">Expenses</button>
+        <button class="tab-btn active" id="view-btn-overview" onclick="selectFinanceView('overview')">Overview</button>
+        <button class="tab-btn" id="view-btn-invoices" onclick="selectFinanceView('invoices')">Invoices</button>
+        <button class="tab-btn" id="view-btn-expenses" onclick="selectFinanceView('expenses')">Expenses</button>
     </div>
 
-    <!-- Revenue Hero -->
-    <div class="hero-stat">
-        <div style="font-size:0.78rem; opacity:0.7;" id="finance-hero-label">Revenue This Month</div>
-        <div class="hero-stat-value" id="finance-hero-value">$0</div>
-        <div style="font-size:0.82rem; opacity:0.8; margin-top:4px;" id="finance-hero-note"></div>
-    </div>
+    <div id="finance-view-overview">
+        <!-- Revenue Hero -->
+        <div class="hero-stat">
+            <div style="font-size:0.78rem; opacity:0.7;" id="finance-hero-label">Revenue This Month</div>
+            <div class="hero-stat-value" id="finance-hero-value">$0</div>
+            <div style="font-size:0.82rem; opacity:0.8; margin-top:4px;" id="finance-hero-note"></div>
+        </div>
 
-    <div class="stats-grid" style="margin-bottom:16px;">
-        <div class="stat-card">
-            <div class="stat-value" id="finance-revenue">$0</div>
-            <div class="stat-label">Revenue</div>
-            <div class="stat-change" id="finance-revenue-change"></div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" id="finance-expenses">$0</div>
-            <div class="stat-label">Expenses</div>
-            <div class="stat-change" id="finance-expenses-change"></div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" id="finance-profit">$0</div>
-            <div class="stat-label">Profit</div>
-            <div class="stat-change" id="finance-profit-change"></div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" id="finance-outstanding">$0</div>
-            <div class="stat-label">Outstanding</div>
-            <div class="stat-change" id="finance-outstanding-change"></div>
+        <div class="stats-grid" style="margin-bottom:16px;">
+            <div class="stat-card">
+                <div class="stat-value" id="finance-revenue">$0</div>
+                <div class="stat-label">Revenue</div>
+                <div class="stat-change" id="finance-revenue-change"></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="finance-expenses">$0</div>
+                <div class="stat-label">Expenses</div>
+                <div class="stat-change" id="finance-expenses-change"></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="finance-profit">$0</div>
+                <div class="stat-label">Profit</div>
+                <div class="stat-change" id="finance-profit-change"></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="finance-outstanding">$0</div>
+                <div class="stat-label">Outstanding</div>
+                <div class="stat-change" id="finance-outstanding-change"></div>
+            </div>
         </div>
     </div>
 
     <!-- Outstanding Invoices -->
-    <div class="section-header">
-        <span class="section-title">Outstanding Invoices</span>
-        <span class="badge badge-gray" id="finance-invoices-badge">0 pending</span>
-    </div>
+    <div id="finance-view-invoices">
+        <div class="section-header">
+            <span class="section-title">Outstanding Invoices</span>
+            <span class="badge badge-gray" id="finance-invoices-badge">0 pending</span>
+        </div>
 
-    <div id="finance-invoices-list" style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;"></div>
+        <div id="finance-invoices-list" style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;"></div>
+    </div>
 
     <!-- Expense Breakdown -->
-    <div class="section-header">
-        <span class="section-title">Expense Breakdown</span>
+    <div id="finance-view-expenses">
+        <div class="section-header">
+            <span class="section-title">Expense Breakdown</span>
+        </div>
+
+        <div id="finance-expense-breakdown" style="border:1px solid #e2e8f0; padding:14px; margin-bottom:16px;"></div>
     </div>
 
-    <div id="finance-expense-breakdown" style="border:1px solid #e2e8f0; padding:14px; margin-bottom:16px;"></div>
-
-    <button class="btn btn-outline">Export Report</button>
+    <button class="btn btn-outline" onclick="alert('Report export is coming soon.')" title="Download a PDF of this report">&#8595; Export Report (PDF)</button>
 </div>
 
 <script>
@@ -234,6 +240,17 @@
         }
     };
 
+    // ── Overview / Invoices / Expenses view switch ──────────────────────────
+    // Purely a display filter over the sections rendered by selectFinanceTier
+    // above — it doesn't refetch or recompute anything, just shows/hides the
+    // three blocks that are already on the page.
+    window.selectFinanceView = function (view) {
+        ['overview', 'invoices', 'expenses'].forEach(function (key) {
+            document.getElementById('view-btn-' + key).classList.toggle('active', key === view);
+            document.getElementById('finance-view-' + key).style.display = key === view ? '' : 'none';
+        });
+    };
+
     // ── Gate tier tabs per role permission ──────────────────────────────────
     var perm = getFinancePermission();
     if (!perm.can_view_nationwide) document.getElementById('tier-btn-nationwide').style.display = 'none';
@@ -242,5 +259,6 @@
 
     var initialTier = perm.can_view_nationwide ? 'nationwide' : (perm.can_view_branch ? 'branch' : 'job');
     selectFinanceTier(initialTier);
+    selectFinanceView('overview');
 })();
 </script>

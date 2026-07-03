@@ -3,9 +3,9 @@
     <div class="page-subtitle mb-4" id="sb-subtitle">Leaderboard</div>
 
     <div class="tab-bar">
-        <button class="tab-btn active">Monthly</button>
-        <button class="tab-btn">Weekly</button>
-        <button class="tab-btn">All Time</button>
+        <button class="tab-btn active" id="sb-tab-monthly" onclick="selectScoreboardPeriod('monthly')">Monthly</button>
+        <button class="tab-btn" id="sb-tab-weekly" onclick="selectScoreboardPeriod('weekly')">Weekly</button>
+        <button class="tab-btn" id="sb-tab-alltime" onclick="selectScoreboardPeriod('alltime')">All Time</button>
     </div>
 
     <div class="hero-stat" style="margin-bottom:16px;">
@@ -50,33 +50,59 @@
     document.getElementById('sb-subtitle').textContent = (company ? company.name : 'Kinetic Flow') + ' Leaderboard';
 
     var users = DB.find('users', function (u) { return !u.deleted_at && u.company_id === state.currentCompanyId; });
-    var ranked = users.map(function (u) {
-        var entries = DB.find('scorecard_entries', function (s) { return s.user_id === u.id; });
-        var points = entries.reduce(function (sum, e) { return sum + (e.total_score || 0); }, 0);
-        var level = window.LEVELS.find(function (l) { return l.slug === u.global_level; });
-        return { user: u, points: points, levelName: level ? level.name : u.global_level };
-    }).sort(function (a, b) { return b.points - a.points; });
 
-    var leaderboardHtml = ranked.slice(0, 5).map(function (r, i) {
-        var initials = r.user.full_name.split(' ').map(function (p) { return (p.replace(/[^A-Za-z]/g, '')[0] || ''); }).join('').toUpperCase().slice(0, 2);
-        var isYou = r.user.id === state.currentUserId;
-        return '<div class="leaderboard-item"' + (isYou ? ' style="border:1px solid #e2e8f0;"' : '') + '>' +
-            '<div class="leaderboard-rank">' + (i + 1) + '</div>' +
-            '<div class="leaderboard-avatar">' + initials + '</div>' +
-            '<div style="flex:1;">' +
-                '<div class="leaderboard-name">' + r.user.full_name + (isYou ? ' <span class="badge badge-gray" style="font-size:0.6rem;">You</span>' : '') + '</div>' +
-                '<div class="leaderboard-role">' + r.levelName + '</div>' +
-            '</div>' +
-            '<div class="leaderboard-score">' + r.points + ' pts</div>' +
-        '</div>';
-    }).join('');
-    document.getElementById('sb-leaderboard').innerHTML = leaderboardHtml ||
-        '<div class="alert">No scorecards recorded yet.</div>';
+    function cutoffDaysFor(period) {
+        if (period === 'weekly') return 7;
+        if (period === 'monthly') return 30;
+        return null; // all time — no cutoff
+    }
 
-    var yourRank = ranked.findIndex(function (r) { return r.user.id === state.currentUserId; });
-    var yourPoints = yourRank >= 0 ? ranked[yourRank].points : 0;
-    document.getElementById('sb-your-rank').textContent = yourRank >= 0 ? '#' + (yourRank + 1) : '#-';
-    document.getElementById('sb-your-points').textContent = yourPoints + ' pts';
+    // Leaderboard points are sliced by scorecard_entries.shift_date, which
+    // (unlike time_entries elsewhere) is reliably close to "today" in the
+    // seed data — so a real period cut is meaningful here.
+    function renderLeaderboard(period) {
+        var cutoffDays = cutoffDaysFor(period);
+        var cutoff = cutoffDays ? new Date(Date.now() - cutoffDays * 86400000) : null;
+
+        var ranked = users.map(function (u) {
+            var entries = DB.find('scorecard_entries', function (s) {
+                if (s.user_id !== u.id) return false;
+                if (cutoff && new Date(s.shift_date) < cutoff) return false;
+                return true;
+            });
+            var points = entries.reduce(function (sum, e) { return sum + (e.total_score || 0); }, 0);
+            var level = window.LEVELS.find(function (l) { return l.slug === u.global_level; });
+            return { user: u, points: points, levelName: level ? level.name : u.global_level };
+        }).sort(function (a, b) { return b.points - a.points; });
+
+        var leaderboardHtml = ranked.slice(0, 5).map(function (r, i) {
+            var initials = r.user.full_name.split(' ').map(function (p) { return (p.replace(/[^A-Za-z]/g, '')[0] || ''); }).join('').toUpperCase().slice(0, 2);
+            var isYou = r.user.id === state.currentUserId;
+            return '<div class="leaderboard-item"' + (isYou ? ' style="border:1px solid #e2e8f0;"' : '') + '>' +
+                '<div class="leaderboard-rank">' + (i + 1) + '</div>' +
+                '<div class="leaderboard-avatar">' + initials + '</div>' +
+                '<div style="flex:1;">' +
+                    '<div class="leaderboard-name">' + r.user.full_name + (isYou ? ' <span class="badge badge-gray" style="font-size:0.6rem;">You</span>' : '') + '</div>' +
+                    '<div class="leaderboard-role">' + r.levelName + '</div>' +
+                '</div>' +
+                '<div class="leaderboard-score">' + r.points + ' pts</div>' +
+            '</div>';
+        }).join('');
+        document.getElementById('sb-leaderboard').innerHTML = leaderboardHtml ||
+            '<div class="alert">No scorecards recorded yet.</div>';
+
+        var yourRank = ranked.findIndex(function (r) { return r.user.id === state.currentUserId; });
+        var yourPoints = yourRank >= 0 ? ranked[yourRank].points : 0;
+        document.getElementById('sb-your-rank').textContent = yourRank >= 0 ? '#' + (yourRank + 1) : '#-';
+        document.getElementById('sb-your-points').textContent = yourPoints + ' pts';
+    }
+
+    window.selectScoreboardPeriod = function (period) {
+        ['monthly', 'weekly', 'alltime'].forEach(function (key) {
+            document.getElementById('sb-tab-' + key).classList.toggle('active', key === period);
+        });
+        renderLeaderboard(period);
+    };
 
     var myEntries = DB.find('time_entries', function (t) { return t.user_id === state.currentUserId; });
     var doneEntries = myEntries.filter(function (t) { return t.status !== 'active'; });
@@ -86,12 +112,15 @@
 
     // "This week" is awkward against seed data whose dates sit in the past —
     // simplify to a sum across all of the signed-in user's time_entries,
-    // matching the same judgment call made on review-time.html.
+    // matching the same judgment call made on review-time.html. (Unlike the
+    // leaderboard above, there's no separate per-period figure to switch to.)
     var totalHrs = myEntries.reduce(function (sum, t) {
         var end = t.clock_out_at ? new Date(t.clock_out_at) : new Date();
         var hrs = Math.max(0, (end - new Date(t.clock_in_at)) / 3600000 - (t.unpaid_break_minutes || 0) / 60);
         return sum + hrs;
     }, 0);
     document.getElementById('sb-hrs-week').textContent = totalHrs.toFixed(1);
+
+    renderLeaderboard('monthly');
 })();
 </script>

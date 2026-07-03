@@ -31,7 +31,6 @@
                 <button onclick="setPhoneSize(768, 1024)">Tablet</button>
             </div>
             <div id="size-label">430 &times; 932</div>
-            <button id="btn-fullscreen" onclick="toggleFullscreen()" title="Fill the screen with the phone">&#x26F6; Fullscreen</button>
         </div>
     </header>
 
@@ -58,14 +57,76 @@
                 </div>
 
                 <div id="home-indicator" onclick="closeApp()" title="Close app"></div>
+
+                <div id="notes-modal" class="notes-modal" style="display:none;">
+                    <div class="notes-modal-panel">
+                        <div class="notes-modal-header">
+                            <span>Add Note</span>
+                            <div class="notes-modal-header-actions">
+                                <button class="notes-icon-btn" onclick="toggleGithubSettings()" title="GitHub connection settings" aria-label="Settings">&#9881;</button>
+                                <button class="notes-modal-close" onclick="closeNotesModal()" aria-label="Close">&times;</button>
+                            </div>
+                        </div>
+                        <div class="notes-modal-context" id="notes-context"></div>
+                        <textarea id="notes-textarea" placeholder="What's wrong with this screen? Type a note or bug..."></textarea>
+                        <div class="notes-modal-actions">
+                            <button class="btn btn-secondary" onclick="closeNotesModal()">Cancel</button>
+                            <button class="btn btn-primary" id="notes-save-btn" onclick="saveNote()">Save Note</button>
+                        </div>
+                        <div class="notes-modal-status" id="notes-status"></div>
+
+                        <div id="notes-github-settings" class="notes-github-settings" style="display:none;">
+                            <div class="form-group">
+                                <label>Repo owner</label>
+                                <input type="text" id="gh-owner" placeholder="e.g. your-username">
+                            </div>
+                            <div class="form-group">
+                                <label>Repo name</label>
+                                <input type="text" id="gh-repo" placeholder="e.g. kinetic-flow-html">
+                            </div>
+                            <div class="form-group">
+                                <label>Branch</label>
+                                <input type="text" id="gh-branch" placeholder="main">
+                            </div>
+                            <div class="form-group">
+                                <label>Notes file path</label>
+                                <input type="text" id="gh-path" placeholder="notes/kinetic-flow-notes.md">
+                            </div>
+                            <div class="form-group">
+                                <label>Personal access token</label>
+                                <input type="password" id="gh-token" placeholder="github_pat_...">
+                                <a class="notes-gh-token-link" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Create one on GitHub &#8599;</a>
+                            </div>
+                            <div class="notes-github-settings-hint">
+                                Stored only in this browser's local storage — never committed.
+                                On that page: set <strong>Repository access</strong> to "Only
+                                select repositories" and pick this repo, then under
+                                <strong>Permissions &rarr; Repository permissions</strong> set
+                                <strong>Contents</strong> to "Read and write". Leave everything
+                                else at "No access." Give it a short expiry, generate it, then
+                                paste it above.
+                            </div>
+                            <div class="notes-modal-actions">
+                                <button class="btn btn-secondary" onclick="toggleGithubSettings()">Close</button>
+                                <button class="btn btn-primary" onclick="saveGithubSettings()">Save Settings</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div id="resize-grip" title="Drag to resize">&#8689;</div>
-            <button id="btn-exit-fullscreen" onclick="toggleFullscreen()" title="Exit fullscreen">&#x2715;</button>
+            <div id="phone-side-controls">
+                <button id="btn-notes" onclick="openNotesModal()" title="Add a note or bug report for this screen">&#128027;</button>
+                <button id="btn-back" onclick="phoneBack()" title="Back">&#8592;</button>
+                <button id="btn-home" onclick="phoneHome()" title="Home">&#9673;</button>
+                <button id="btn-fullscreen" onclick="toggleFullscreen()" title="Toggle fullscreen">&#x26F6;</button>
+            </div>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="apps.js"></script>
     <script src="shell.js"></script>
+    <script src="notes.js"></script>
 </body>
 </html>
