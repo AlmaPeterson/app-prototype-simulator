@@ -77,3 +77,14 @@ There should be an employees section of users in your company were you can cick 
 
 ---
 
+## 2026-07-03T19:48:46.840Z
+
+- Screen: kinetic-flow — company-setup
+- Role: worker
+- Account: New Account
+- Phone size: 374 × 776
+
+Permissions section should change to be a list of all selected job positions where you can click them, opens a panel, and you can set permissions for that job position
+
+---
+
