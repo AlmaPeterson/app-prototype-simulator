@@ -392,8 +392,65 @@ function hideSabbathLock() {
 function joinCompany() { loadPage('join-company'); }
 function createCompany() { loadPage('new-company'); }
 function submitJoinRequest() { loadPage('companies'); }
-function submitNewCompany() { loadPage('company-setup'); }
 function continueFromSetup() { loadPage('jobs'); }
+
+// Default position set for a freshly created company — mirrors the seeded
+// companies' roles rows (see db/roles.json), which use the same three-name
+// vocabulary and permissions shape. company-setup.html renders positions and
+// the per-position permission editor straight from these rows.
+const DEFAULT_ROLES = [
+    { name: 'admin', permissions: { finance: 'nationwide', manage_users: true, manage_bids: true } },
+    { name: 'manager', permissions: { finance: 'branch', manage_users: true, manage_bids: true } },
+    { name: 'employee', permissions: { finance: 'job', manage_users: false, manage_bids: false } },
+];
+
+// Real insert path for new-company.html — creates the companies row plus the
+// records every other screen expects a company to have (a primary branch at
+// the entered address, the default roles set, and an active admin membership
+// for the creator), then lands on company-setup scoped to the new company.
+function submitNewCompany() {
+    const name = val('nc-name') || 'New Company';
+    const company = DB.insert('companies', {
+        name: name,
+        slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+        industry: val('nc-industry') || null,
+        size: val('nc-size') || null,
+        phone: val('nc-phone') || null,
+        website: val('nc-website') || null,
+    });
+    const address = DB.insert('addresses', {
+        company_id: company.id,
+        street: val('nc-street') || '',
+        city: val('nc-city') || '',
+        state: val('nc-state') || '',
+        zip: '',
+        lat: null,
+        lng: null,
+    });
+    const branch = DB.insert('branches', {
+        company_id: company.id,
+        name: 'Main Office',
+        address_id: address.id,
+        manager_id: state.currentUserId,
+        is_primary: true,
+    });
+    let adminRoleId = null;
+    DEFAULT_ROLES.forEach(function (r) {
+        const role = DB.insert('roles', { company_id: company.id, name: r.name, permissions: Object.assign({}, r.permissions) });
+        if (r.name === 'admin') adminRoleId = role.id;
+    });
+    if (state.currentUserId && adminRoleId) {
+        DB.insert('user_roles', {
+            user_id: state.currentUserId,
+            role_id: adminRoleId,
+            assigned_at: new Date().toISOString(),
+            status: 'active',
+        });
+    }
+    state.currentCompanyId = company.id;
+    state.currentBranchId = branch.id;
+    loadPage('company-setup');
+}
 
 function openBranch(branchId) {
     state.currentBranchId = branchId;

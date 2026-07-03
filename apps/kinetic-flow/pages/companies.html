@@ -37,17 +37,36 @@
 
 <script>
 (function () {
-    var companies = DB.find('companies', function (c) { return !c.deleted_at; });
-    document.getElementById('company-list').innerHTML = companies.map(function (c) {
-        var memberCount = DB.find('users', function (u) { return u.company_id === c.id && !u.deleted_at; }).length;
-        // Badge reflects the signed-in user's own membership in this company
-        // (joined role -> role.company_id), not a real access-control check —
-        // a company the user has no role row for just shows no badge.
-        var myRole = DB.findOne('user_roles', function (ur) {
+    function membershipIn(companyId) {
+        // The signed-in user's own membership row in this company (joined
+        // role -> role.company_id) — not a real access-control check; a
+        // company the user has no role row for just shows no badge.
+        return DB.findOne('user_roles', function (ur) {
             if (ur.user_id !== state.currentUserId) return false;
             var role = DB.getById('roles', ur.role_id);
-            return role && role.company_id === c.id;
+            return role && role.company_id === companyId;
         });
+    }
+    var companies = DB.find('companies', function (c) { return !c.deleted_at; });
+    // New accounts only see companies they actually belong to — the seeded
+    // demo companies stay hidden (preserving the "No companies yet" empty
+    // state) while one they create locally shows up immediately.
+    if (state.accountType === 'new') {
+        companies = companies.filter(function (c) { return !!membershipIn(c.id); });
+    }
+    document.getElementById('company-list').innerHTML = companies.map(function (c) {
+        // Members = users homed in this company plus anyone holding one of
+        // its roles (covers the creator of a local company, whose users row
+        // still points at their original company).
+        var memberIds = {};
+        DB.find('users', function (u) { return u.company_id === c.id && !u.deleted_at; })
+            .forEach(function (u) { memberIds[u.id] = true; });
+        DB.find('user_roles', function (ur) {
+            var role = DB.getById('roles', ur.role_id);
+            return role && role.company_id === c.id;
+        }).forEach(function (ur) { memberIds[ur.user_id] = true; });
+        var memberCount = Object.keys(memberIds).length;
+        var myRole = membershipIn(c.id);
         var badge = myRole ? '<span style="font-size:0.78rem; color:#64748b;">' + (myRole.status === 'pending' ? 'Pending' : 'Active') + '</span>' : '';
         var manageBtn = myRole
             ? '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); manageCompany(\'' + c.id + '\')">Manage</button>'
@@ -68,8 +87,7 @@
 (function() {
     var list = document.getElementById('company-list');
     var empty = document.getElementById('company-empty');
-    var isNew = typeof state !== 'undefined' && state.accountType === 'new';
-    var hasCompanies = !isNew && list && list.querySelectorAll('.card').length > 0;
+    var hasCompanies = list && list.querySelectorAll('.card').length > 0;
     if (!hasCompanies) { list.style.display = 'none'; empty.style.display = 'block'; }
 })();
 
