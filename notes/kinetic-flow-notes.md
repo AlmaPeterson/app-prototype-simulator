@@ -22,3 +22,14 @@ You can edit branch or add people to branch from users List, with search.
 
 ---
 
+## 2026-07-03T19:30:47.922Z
+
+- Screen: kinetic-flow — company-setup
+- Role: worker
+- Account: New Account
+- Phone size: 374 × 776
+
+Adding team member should be a search, and you select then and members show with a remove button and their branch if any.
+
+---
+
