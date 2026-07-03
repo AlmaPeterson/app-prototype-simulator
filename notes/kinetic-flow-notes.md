@@ -44,3 +44,14 @@ Managers needs to be able to add tools, materials, and fake videos to kits
 
 ---
 
+## 2026-07-03T19:42:31.092Z
+
+- Screen: kinetic-flow — companies
+- Role: worker
+- Account: New Account
+- Phone size: 374 × 776
+
+Created companies don't save
+
+---
+
