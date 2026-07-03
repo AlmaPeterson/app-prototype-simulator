@@ -1,16 +1,5 @@
 # Kinetic Flow — Screen Notes
 
-## 2026-07-03T19:40:37.581Z
-
-- Screen: kinetic-flow — kits
-- Role: worker
-- Account: New Account
-- Phone size: 374 × 776
-
-Managers needs to be able to add tools, materials, and fake videos to kits
-
----
-
 ## 2026-07-03T20:00:07.819Z
 
 - Screen: kinetic-flow — inventory
