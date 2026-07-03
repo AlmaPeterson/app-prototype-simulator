@@ -88,3 +88,14 @@ Permissions section should change to be a list of all selected job positions whe
 
 ---
 
+## 2026-07-03T19:50:46.612Z
+
+- Screen: kinetic-flow — jobs
+- Role: worker
+- Account: New Account
+- Phone size: 374 × 776
+
+This should only show jobs in branch
+
+---
+
