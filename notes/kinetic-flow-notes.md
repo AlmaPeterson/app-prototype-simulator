@@ -33,3 +33,14 @@ Adding team member should be a search, and you select then and members show with
 
 ---
 
+## 2026-07-03T19:40:37.581Z
+
+- Screen: kinetic-flow — kits
+- Role: worker
+- Account: New Account
+- Phone size: 374 × 776
+
+Managers needs to be able to add tools, materials, and fake videos to kits
+
+---
+
