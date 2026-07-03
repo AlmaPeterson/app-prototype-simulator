@@ -44,28 +44,6 @@ Managers needs to be able to add tools, materials, and fake videos to kits
 
 ---
 
-## 2026-07-03T19:42:31.092Z
-
-- Screen: kinetic-flow — companies
-- Role: worker
-- Account: New Account
-- Phone size: 374 × 776
-
-Created companies don't save
-
----
-
-## 2026-07-03T19:44:02.713Z
-
-- Screen: kinetic-flow — company-setup
-- Role: worker
-- Account: New Account
-- Phone size: 374 × 776
-
-I can't edit or add job positions
-
----
-
 ## 2026-07-03T19:46:46.833Z
 
 - Screen: kinetic-flow — company-setup
@@ -74,17 +52,6 @@ I can't edit or add job positions
 - Phone size: 374 × 776
 
 There should be an employees section of users in your company were you can cick on them to manage them, like branch, role, specific permissions.
-
----
-
-## 2026-07-03T19:48:46.840Z
-
-- Screen: kinetic-flow — company-setup
-- Role: worker
-- Account: New Account
-- Phone size: 374 × 776
-
-Permissions section should change to be a list of all selected job positions where you can click them, opens a panel, and you can set permissions for that job position
 
 ---
 
