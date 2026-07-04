@@ -1345,6 +1345,7 @@ body.fullscreen-mode #resize-grip {
     flex-shrink: 0;
     transition: background 0.15s;
 }
+
 .toggle-switch-knob {
     width: 16px;
     height: 16px;
