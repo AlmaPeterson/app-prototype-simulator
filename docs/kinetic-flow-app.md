@@ -559,3 +559,21 @@ the red Sign Out card (`#dc2626`) on `companies.html` and `more.html`. This rule
 which already used gradients/glyphs before this rule was adopted. Real visual design
 is expected to replace this neutral placeholder once the team moves into actual UI
 development.
+
+### Future Color Palette
+
+The planned palette for the real visual design (source:
+https://coolors.co/fdffff-df9d01-960d26-570000-280000):
+
+| Swatch | Hex | Name | Intended Role |
+|---|---|---|---|
+| ⬜ | `#FDFFFF` | White | Backgrounds / light surfaces |
+| 🟨 | `#DF9D01` | Amber Honey (gold) | Accent / highlights / CTAs |
+| 🟥 | `#960D26` | Ruby Red (red) | Primary brand color |
+| 🟫 | `#570000` | Black Cherry (dark) | Deep accents / hover states |
+| ⬛ | `#280000` | Rich Mahogany | Darkest tone / text / dark surfaces |
+
+This is a warm gold-and-deep-red scheme — a deliberate departure from the current
+placeholder blue accent (`#2563eb`). When the team moves into actual UI development,
+the neutral placeholder styling above should be replaced using these colors. Until
+then, the minimal-styling rule stays in effect for all page fragments.

@@ -7,7 +7,7 @@
 - Account: Existing Account
 - Phone size: 430 × 932
 
-Search Company is not searching companies
+Search Company is not clear. I thought it did not work.
 
 ---
 
