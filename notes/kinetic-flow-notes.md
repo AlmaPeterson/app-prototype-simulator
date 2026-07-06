@@ -11,3 +11,14 @@ Search Company is not searching companies
 
 ---
 
+## 2026-07-06T13:30:57.923Z
+
+- Screen: kinetic-flow — scorecard
+- Role: worker
+- Account: Existing Account
+- Phone size: 430 × 932
+
+I can't edit the scorecard.
+
+---
+
