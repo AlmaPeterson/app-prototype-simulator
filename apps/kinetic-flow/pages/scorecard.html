@@ -51,6 +51,7 @@
 
     <div class="section-header">
         <span class="section-title">Heart Side / Character &mdash; 25 pts</span>
+        <span style="font-size:0.72rem; color:#94a3b8;">all five required</span>
     </div>
     <div class="card" style="cursor:default; margin-bottom:16px;">
         <div style="margin-bottom:14px;">
@@ -90,7 +91,7 @@
         </div>
     </div>
 
-    <button class="btn btn-primary" onclick="submitScorecard()">Submit Scorecard</button>
+    <button class="btn btn-primary" onclick="trySubmitScorecard()">Submit Scorecard</button>
 </div>
 
 <script>
@@ -133,11 +134,34 @@
         recalcScorecard();
     };
 
+    // The reference doc requires the PM to set all five Heart Side sliders
+    // before the scorecard is complete. A slider always *has* a value, so
+    // "set" means touched: labels show an em dash until the PM moves each one,
+    // and submit is blocked while any remain untouched.
+    var touched = {};
+    sliderKeys.forEach(function (key) {
+        var val = document.getElementById('val-' + key);
+        if (val) val.textContent = '—';
+    });
+
     window.updateScorecardSlider = function (key) {
+        touched[key] = true;
         var slider = document.getElementById('slider-' + key);
         var val = document.getElementById('val-' + key);
         if (val && slider) val.textContent = slider.value;
         recalcScorecard();
+    };
+
+    var traitNames = { initiative: 'Initiative', safety: 'Habitual Safety', heart: 'The Constructive Heart',
+        learn: 'Disposition to Learn', elite: 'Elite Character' };
+    window.trySubmitScorecard = function () {
+        var unset = sliderKeys.filter(function (key) { return !touched[key]; });
+        if (unset.length) {
+            alert('All five Heart Side sliders must be set before submitting. Still unset: '
+                + unset.map(function (k) { return traitNames[k]; }).join(', ') + '.');
+            return;
+        }
+        submitScorecard();
     };
 
     function recalcScorecard() {
@@ -148,7 +172,7 @@
         total += binaries.cleanliness ? 5 : 0;
         sliderKeys.forEach(function (key) {
             var slider = document.getElementById('slider-' + key);
-            if (slider) total += Number(slider.value);
+            if (slider && touched[key]) total += Number(slider.value);
         });
         var totalEl = document.getElementById('sc-total');
         if (totalEl) totalEl.textContent = total + ' / 100';
