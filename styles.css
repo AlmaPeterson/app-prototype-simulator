@@ -1410,3 +1410,32 @@ body.fullscreen-mode #resize-grip {
 }
 .toggle-switch.on { background: #2563eb; }
 .toggle-switch.on .toggle-switch-knob { left: 18px; }
+
+/* ── Page Navigation Transitions (kinetic-flow loadPage) ─────────────────────
+   Forward navs exit left / enter from the right; Back navs mirror that, so
+   entering vs. leaving a page reads directionally. Classes are applied to
+   #main by loadPage() and removed once the enter animation finishes. */
+#main.page-exit-forward { animation: pageExitForward 0.15s ease-in both; }
+#main.page-exit-back    { animation: pageExitBack 0.15s ease-in both; }
+#main.page-enter-forward { animation: pageEnterForward 0.22s ease-out both; }
+#main.page-enter-back    { animation: pageEnterBack 0.22s ease-out both; }
+
+@keyframes pageExitForward {
+    to { opacity: 0; transform: translateX(-28px); }
+}
+@keyframes pageExitBack {
+    to { opacity: 0; transform: translateX(28px); }
+}
+@keyframes pageEnterForward {
+    from { opacity: 0; transform: translateX(48px); }
+    to   { opacity: 1; transform: none; }
+}
+@keyframes pageEnterBack {
+    from { opacity: 0; transform: translateX(-48px); }
+    to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #main.page-exit-forward, #main.page-exit-back,
+    #main.page-enter-forward, #main.page-enter-back { animation: none; }
+}

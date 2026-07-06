@@ -93,7 +93,7 @@ sense — nothing hits a server.
 ### job-home.html ("Home" tab once a job is selected)
 - **See:** Job name and status subtitle ("Active" / "No Bid Yet").
 - **Edit:** Nothing.
-- **Do:** Clock In / Out (→ task-select gate chain). Quick actions: Schedule, Kits, View Bid or + Create Bid (label switches on whether the job has a bid), Time Sheet. "Full Job Details" → job-detail. ← Jobs.
+- **Do:** Clock In / Out (→ feild-clock). Quick actions: Schedule, Kits, View Bid or + Create Bid (label switches on whether the job has a bid), Time Sheet. "Full Job Details" → job-detail. ← Jobs.
 
 ### job-detail.html (jobs that have a bid)
 - **See:** Job header (name, JOB-XXXX code, status badge, address, date range, static 65% progress bar); Bid & Finance card (estimated value from the bid, labour-to-date and materials-used summed from `expense_entries`); Assigned Team (each member's initials avatar, name, Lead/Team Member, guild-level badge, Clocked In / Off Site status); two static JIT training cards.
@@ -130,27 +130,22 @@ sense — nothing hits a server.
 
 ---
 
-## Clock-In Gate Chain & Time
+## Field Clock, Task Gate Chain & Time
 
-### task-select.html (entry to every clock-in)
-- **See:** The company's task modules, each with your competency badge (Student/Exposure/Competent/Mastery — defaults to Student if never evaluated) and a subtitle explaining what that level allows; high-hazard tasks are flagged "PPE required". Seed data covers every Kinetic Solutions worker × task (levels distributed by guild rank), so demo accounts see a realistic mix rather than all-Student.
-- **Edit:** Nothing.
-- **Do:** Tap a task → training-video, carrying the task + level + hazard flag into `state.clockInTask`. ← Job.
+### feild-clock.html (filename typo is intentional — don't "fix" it)
+- **See:** Clock status badge, running HH:MM:SS timer, Clock In/Out button, a **Simulated GPS** card (stands in for real geolocation: On-site / Off-site toggle), the three-item "Before You Clock Out" checklist (appears directly above the clock button, only while clocked in), two static JIT-training cards, activity buttons, and today's activity log (clock-in, driving, task entries — the active task shows a Mason's Mark hash).
+- **Edit:** The three clock-out gate checkboxes (materials logged / kit photo / cleanliness); the GPS simulation toggle; the Material Log sheet (pick a checked-out kit, item, quantity).
+- **Do:** Clock In (creates a `time_entries` row; clocking in while the simulated GPS is off-site records it as `flagged` for manager review). Record activity: Driving / Lunch / Task / Material (opens the material log). **Task** (requires being clocked in) opens the task picker sheet — the company's task modules, each with your competency badge (Student/Exposure/Competent/Mastery — defaults to Student if never evaluated) and a subtitle explaining what that level allows; high-hazard tasks are flagged "PPE required". Picking one runs the gate chain (training-video → co-sign/PPE below); once cleared, the task starts recording in the activity log and opens a `phase_logs` row against the running time entry — tapping End Task stamps its `ended_at`. Clock Out — blocked until all three checklist items are checked; also ends any ongoing task. Submit Timesheet → review-time.
 
 ### training-video.html
 - **See:** "{Task} — Safety Training", a simulated 3-second video progress bar, a Continue button that stays disabled until the bar finishes.
 - **Edit:** Nothing.
-- **Do:** Continue (after 3s) — records the training completion, then routes by competency: Mastery → PPE gate (if high-hazard) or field clock; Competent → co-sign modal (a master's name confirms, then continues); Student/Exposure → blocked with a message, back to job-home. Cannot be skipped.
+- **Do:** Continue (after 3s) — records the training completion, then routes by competency: Mastery → PPE gate (if high-hazard) or back to the field clock (task starts recording); Competent → co-sign modal (a master's name confirms, then continues); Student/Exposure → blocked with a message, back to the field clock. Cannot be skipped.
 
 ### ppe-video.html (high-hazard tasks only)
 - **See:** "{Task} — PPE Verification", instructions to record a 3-second proof video.
 - **Edit:** Nothing.
-- **Do:** Record PPE Video (simulated) → enables Continue to Clock In → feild-clock.
-
-### feild-clock.html (filename typo is intentional — don't "fix" it)
-- **See:** Clock status badge, running HH:MM:SS timer, Clock In/Out button, a **Simulated GPS** card (stands in for real geolocation: On-site / Off-site toggle), the three-item "Before You Clock Out" checklist, two static JIT-training cards, activity buttons, and today's activity log (clock-in, driving, task entries — the active task shows a Mason's Mark hash).
-- **Edit:** The three clock-out gate checkboxes (materials logged / kit photo / cleanliness); the GPS simulation toggle; the Material Log sheet (pick a checked-out kit, item, quantity).
-- **Do:** Clock In (creates a `time_entries` row; clocking in while the simulated GPS is off-site records it as `flagged` for manager review). Record activity: Driving / Lunch / Task / Material (opens the material log). Clock Out — blocked until all three checklist items are checked. Submit Timesheet → review-time. The bottom-nav "Field" tab comes here directly, bypassing the gates (for checking an active session, not starting one).
+- **Do:** Record PPE Video (simulated) → enables Continue → feild-clock, where the task starts recording.
 
 ### review-time.html — worker timesheet
 - **See:** Your 5 most recent time entries (day, job, hours, in/out times, GPS-flagged warning with distance when applicable, Mason's Mark), total hours hero, activity summary tiles (on-site hrs, shift count, break hrs from `unpaid_break_minutes`, estimated pay at the user's `hourly_rate` — fallback $35/hr), recently recorded materials, a note that a completed scorecard is required to submit.

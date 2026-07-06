@@ -180,25 +180,48 @@ const mainAppPages = [
 let pageHistory = [];
 let isNavigatingBack = false;
 
+const PAGE_ANIM_CLASSES = ['page-exit-forward', 'page-exit-back', 'page-enter-forward', 'page-enter-back'];
+
 function loadPage(name, data) {
+    const wasBack = isNavigatingBack;
     if (!isNavigatingBack && state.currentPage && state.currentPage !== name) {
         pageHistory.push(state.currentPage);
     }
     isNavigatingBack = false;
 
+    // Animate only real page-to-page moves, not the first render — and slide
+    // the opposite way on Back so entering vs. leaving reads differently.
+    const animate = !!(state.currentPage && state.currentPage !== name);
+
     if (data) state.currentPage = name;
     state.currentPage = name;
     saveState();
 
-    fetch(PAGES_DIR + name + '.html')
+    const main = document.getElementById('main');
+    main.classList.remove(...PAGE_ANIM_CLASSES);
+    let exitDone = Promise.resolve();
+    if (animate) {
+        void main.offsetWidth; // restart the animation even on rapid navs
+        main.classList.add(wasBack ? 'page-exit-back' : 'page-exit-forward');
+        exitDone = new Promise(function (resolve) { setTimeout(resolve, 150); });
+    }
+
+    const fetched = fetch(PAGES_DIR + name + '.html')
         .then(r => {
             if (!r.ok) throw new Error('Page not found: ' + name);
             return r.text();
-        })
-        .then(html => {
-            const main = document.getElementById('main');
+        });
+
+    Promise.all([fetched, exitDone])
+        .then(([html]) => {
+            main.classList.remove(...PAGE_ANIM_CLASSES);
             main.innerHTML = html;
             main.scrollTop = 0;
+            if (animate) {
+                void main.offsetWidth;
+                main.classList.add(wasBack ? 'page-enter-back' : 'page-enter-forward');
+                setTimeout(function () { main.classList.remove(...PAGE_ANIM_CLASSES); }, 300);
+            }
             // innerHTML does not execute <script> tags — re-run them manually
             Array.from(main.querySelectorAll('script')).forEach(function(oldScript) {
                 const newScript = document.createElement('script');
@@ -210,7 +233,8 @@ function loadPage(name, data) {
             if (name === 'feild-clock') syncClockUI();
         })
         .catch(err => {
-            document.getElementById('main').innerHTML =
+            main.classList.remove(...PAGE_ANIM_CLASSES);
+            main.innerHTML =
                 `<div class="page"><div class="alert">Page "${name}" not found.</div>` +
                 `<button class="btn btn-secondary" onclick="goBack()">&#8592; Back</button></div>`;
         });
@@ -475,9 +499,8 @@ function continueFromSetup() { loadPage('jobs'); }
 // accepts or declines it from the Join Requests section on company-setup.html
 // (accept flips status to 'active', which is what membership checks key on).
 function submitJoinRequest() {
-    const selected = document.querySelector('#jc-list .card-selected');
-    if (!selected) { alert('Select a company first.'); return; }
-    const companyId = selected.dataset.companyId;
+    const companyId = window.jcSelectedCompanyId && window.jcSelectedCompanyId();
+    if (!companyId) { alert('Select a company first.'); return; }
     const roleId = val('jc-role');
     if (!roleId) { alert('Select a position.'); return; }
     const existing = DB.findOne('user_roles', function (ur) {
@@ -802,7 +825,7 @@ function openSchedule() { loadPage('schedule'); }
 function openTimeSheet() { loadPage('review-time'); }
 function openKits() { loadPage('kits'); }
 function openLabelGenerator() { loadPage('label-generator'); }
-function openFieldClock() { loadPage('task-select'); }
+function openFieldClock() { loadPage('feild-clock'); }
 function openInventory() { loadPage('inventory'); }
 
 // ── Scorecard ────────────────────────────────────────────────────────────────
@@ -1074,12 +1097,71 @@ function submitScorecard() {
 }
 
 // ── Task Select / Training Gate / Co-Sign ─────────────────────────────────────
-// Simulated version of the reference doc's clock-in workflow gates: pick the
-// task you're working, watch the (unskippable) training video, then either
-// unlock the clock-in (mastery), require a co-sign (competent), or stay
-// blocked (student/exposure). No real video or server verification — this is
-// a static nav prototype.
+// Simulated version of the reference doc's task workflow gates: tapping the
+// Task activity button on feild-clock pulls up the picker sheet below, then
+// the training video plays, then either the task starts recording
+// (mastery-unlocked), requires a co-sign (competent), or stays blocked
+// (student/exposure). No real video or server verification — this is a
+// static nav prototype.
+function openTaskSelect() {
+    const existing = document.getElementById('task-select-modal');
+    if (existing) existing.remove();
+
+    const modules = DB.find('task_modules', function (m) {
+        return !m.deleted_at && m.company_id === state.currentCompanyId;
+    });
+
+    const cards = modules.map(function (m) {
+        const wtc = DB.findOne('worker_task_competency', function (w) {
+            return w.user_id === state.currentUserId && w.task_module_id === m.id;
+        });
+        // No worker_task_competency row for this user+task means they've
+        // never been evaluated on it — default to 'student', the safest
+        // level (blocks solo work until a master explicitly promotes them),
+        // matching the gate chain's existing student/exposure dead-end.
+        const level = (wtc && wtc.competency_level) || 'student';
+        const levelInfo = COMPETENCY_LEVELS.find(function (c) { return c.slug === level; });
+        const levelName = levelInfo ? levelInfo.name : level;
+
+        let subtitle = level === 'mastery' ? 'Runs this task solo'
+            : level === 'competent' ? 'Can execute &mdash; co-sign required'
+            : level === 'exposure' ? 'Has assisted &amp; observed &mdash; not solo yet'
+            : 'Not yet cleared for this task';
+        if (m.is_high_hazard) subtitle += ' &bull; high-hazard, PPE required';
+
+        return '<div class="card" onclick="selectClockInTask(\'' + m.id + '\', \'' + level + '\', ' + (m.is_high_hazard ? 'true' : 'false') + ')">' +
+            '<div class="card-row">' +
+                '<div class="card-body">' +
+                    '<div class="card-title">' + m.task_name + '</div>' +
+                    '<div class="card-subtitle">' + subtitle + '</div>' +
+                '</div>' +
+                '<span class="badge badge-gray">' + levelName + '</span>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+
+    const modal = document.createElement('div');
+    modal.id = 'task-select-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML =
+        '<div class="modal-sheet">' +
+            '<div class="modal-handle"></div>' +
+            '<div class="page-title-sm mb-2">Select Task</div>' +
+            '<div class="page-subtitle mb-4">Choose what you\'ll be working on.</div>' +
+            (cards || '<div class="alert">No task modules configured for this company.</div>') +
+            '<button class="btn btn-secondary mt-4" onclick="closeTaskSelectModal()">Cancel</button>' +
+        '</div>';
+    modal.addEventListener('click', function (e) { if (e.target === modal) closeTaskSelectModal(); });
+    document.getElementById('phone').appendChild(modal);
+}
+
+function closeTaskSelectModal() {
+    const modal = document.getElementById('task-select-modal');
+    if (modal) modal.remove();
+}
+
 function selectClockInTask(taskModuleId, level, isHighHazard) {
+    closeTaskSelectModal();
     const taskModule = DB.getById('task_modules', taskModuleId);
     state.clockInTask = {
         taskModuleId: taskModuleId,
@@ -1090,13 +1172,16 @@ function selectClockInTask(taskModuleId, level, isHighHazard) {
     loadPage('training-video');
 }
 
-// Called once a task is cleared to clock in (mastery-unlocked or co-signed) —
-// routes through the PPE gate first if the task is flagged high-hazard.
+// Called once a task is cleared (mastery-unlocked or co-signed) — routes
+// through the PPE gate first if the task is flagged high-hazard, otherwise
+// back to feild-clock, where syncClockUI() sees the cleared task and starts
+// recording it.
 function proceedPastGates() {
     const task = state.clockInTask || {};
     if (task.isHighHazard) {
         loadPage('ppe-video');
     } else {
+        task.cleared = true;
         loadPage('feild-clock');
     }
 }
@@ -1143,7 +1228,7 @@ function trainingVideoComplete() {
         const status = document.getElementById('tv-status');
         const btn = document.getElementById('tv-continue-btn');
         if (status) status.textContent = 'Not cleared to perform this task solo yet.';
-        if (btn) btn.outerHTML = '<button class="btn btn-secondary" onclick="loadPage(\'job-home\')">Back to Job</button>';
+        if (btn) btn.outerHTML = '<button class="btn btn-secondary" onclick="loadPage(\'feild-clock\')">Back to Field Clock</button>';
     }
 }
 
@@ -1177,8 +1262,8 @@ function confirmCoSign() {
         // No real second-user session exists in this prototype to be "the
         // master who co-signed" — stand in with the first master assigned to
         // this job (falling back to any master in the company), and stash
-        // who/when on state.clockInTask so toggleClock()'s clock-in path can
-        // attach it to the phase_logs row it creates.
+        // who/when on state.clockInTask so startClearedTask() can attach it
+        // to the phase_logs row it creates back on feild-clock.
         const assignedUserIds = DB.find('job_assignments', function (a) { return a.job_id === state.currentJobId; })
             .map(function (a) { return a.user_id; });
         const master = DB.findOne('users', function (u) {
@@ -1208,10 +1293,12 @@ function recordPpeVideo() {
 }
 
 function ppeVideoComplete() {
-    // Stash the "PPE was recorded" fact for toggleClock()'s clock-in path to
-    // read when it creates this session's phase_logs row — a phase_logs
-    // insert can't happen yet since no time_entries row exists until clock-in.
-    if (state.clockInTask) state.clockInTask.ppeVerified = true;
+    // Stash the "PPE was recorded" fact for startClearedTask() to read when
+    // it creates this task's phase_logs row back on feild-clock.
+    if (state.clockInTask) {
+        state.clockInTask.ppeVerified = true;
+        state.clockInTask.cleared = true;
+    }
     loadPage('feild-clock');
 }
 
@@ -1333,32 +1420,10 @@ function toggleClock() {
                 + formatDistanceM(gps.distanceM) + ' from the site — this entry is flagged for manager review.'], '#b91c1c');
         }
         currentTimeEntryId = timeEntry.id;
+        // Phase logs are created per-task now: recording a task (Task button
+        // → picker → training/co-sign/PPE gates → startClearedTask()) inserts
+        // one against this time entry; a shift with no task recorded has none.
         currentPhaseLogId = null;
-
-        // Only real gate-chain clock-ins (task-select → training-video →
-        // [co-sign/PPE] → here) set state.clockInTask — the bottom-nav
-        // "Field" tab shortcut clocks in without one, so no phase_logs row
-        // is created for that path.
-        if (state.clockInTask) {
-            const task = state.clockInTask;
-            const fakeHex = Date.now().toString(16).padStart(16, '0') + (_nextIdSeq++).toString(16).padStart(4, '0');
-            const phaseLog = DB.insert('phase_logs', {
-                company_id: state.currentCompanyId,
-                time_entry_id: currentTimeEntryId,
-                user_id: state.currentUserId,
-                task_module_id: task.taskModuleId || null,
-                job_id: state.currentJobId,
-                masons_mark: 'sha256:' + fakeHex,
-                competency_at_time_of_log: task.level || null,
-                cosigned_by: task.cosignedBy || null,
-                cosigned_at: task.cosignedAt || null,
-                video_completion_verified: true,
-                ppe_video_url: task.ppeVerified ? 'https://r2.kineticflow.app/ppe/local-capture.mp4' : null,
-                started_at: clockInAt,
-                ended_at: null,
-            });
-            currentPhaseLogId = phaseLog.id;
-        }
     } else {
         btn.textContent = 'Clock In';
         btn.className = 'btn btn-primary';
@@ -1387,11 +1452,21 @@ function toggleClock() {
         if (currentPhaseLogId) {
             DB.update('phase_logs', currentPhaseLogId, { ended_at: clockOutAt });
         }
+        // A task can't outlive the shift — close out an ongoing recording.
+        if (activeActivities['task']) endActivity('task');
         currentTimeEntryId = null;
         currentPhaseLogId = null;
         state.clockInTask = null;
     }
+    syncClockoutGate();
     saveState();
+}
+
+// The "Before You Clock Out" checklist only applies mid-shift — show it
+// (directly above the clock button) while clocked in, hide it otherwise.
+function syncClockoutGate() {
+    const gate = document.getElementById('clockout-gate');
+    if (gate) gate.style.display = clockedIn ? '' : 'none';
 }
 
 function tickTimer() {
@@ -1430,6 +1505,7 @@ function syncClockUI() {
         btn.textContent = 'Clock In';
         if (status) status.textContent = 'Clocked Out';
     }
+    syncClockoutGate();
     syncActivityButtons();
     syncGpsSimUI();
     // The page's activity log is fresh markup — re-add any still-ongoing
@@ -1443,7 +1519,7 @@ function syncClockUI() {
             entry.className = 'list-item';
             entry.innerHTML = `
                 <div class="list-item-body">
-                    <div class="list-item-title">${type.charAt(0).toUpperCase() + type.slice(1)}</div>
+                    <div class="list-item-title">${active.label || type.charAt(0).toUpperCase() + type.slice(1)}</div>
                     <div class="list-item-sub">${formatClockTime(active.startMs)} &ndash; ongoing</div>
                 </div>
                 <span class="badge badge-gray">Active</span>`;
@@ -1451,12 +1527,16 @@ function syncClockUI() {
             active.entry = entry;
         });
     }
+    // Arriving back from the gate chain with a cleared task starts it.
+    startClearedTask();
 }
 
 // Driving / Lunch / Task are toggles: first tap starts recording (log entry
 // shows "ongoing"), second tap stops it and stamps start–end plus the total
 // duration. Keyed by type so e.g. Lunch can run while a Task is ongoing.
-const activeActivities = {}; // type -> { startMs, entry (DOM node in #activity-log) }
+// Task is special: its first tap opens the task picker sheet instead, and the
+// recording only starts once the gate chain clears (see startClearedTask).
+const activeActivities = {}; // type -> { startMs, label, entry (DOM node in #activity-log) }
 
 function formatClockTime(ms) {
     return new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -1471,41 +1551,93 @@ function formatDuration(ms) {
 }
 
 function addActivity(type) {
+    if (activeActivities[type]) {
+        endActivity(type);
+        return;
+    }
+    if (type === 'task') {
+        // Recording a task runs the competency gate chain (picker → training
+        // → co-sign/PPE), and its phase log needs an open time entry.
+        if (!clockedIn) { alert('Clock in first to record a task.'); return; }
+        openTaskSelect();
+        return;
+    }
+    startActivity(type, type.charAt(0).toUpperCase() + type.slice(1));
+}
+
+function startActivity(type, label) {
     const log = document.getElementById('activity-log');
     if (!log) return;
-    const label = type.charAt(0).toUpperCase() + type.slice(1);
-    const active = activeActivities[type];
-
-    if (!active) {
-        const startMs = Date.now();
-        const entry = document.createElement('div');
-        entry.className = 'list-item';
-        entry.innerHTML = `
-            <div class="list-item-body">
-                <div class="list-item-title">${label}</div>
-                <div class="list-item-sub">${formatClockTime(startMs)} &ndash; ongoing</div>
-            </div>
-            <span class="badge badge-gray">Active</span>`;
-        log.prepend(entry);
-        activeActivities[type] = { startMs: startMs, entry: entry };
-    } else {
-        const endMs = Date.now();
-        // Navigating away rebuilds the page, so the ongoing entry's DOM node
-        // may no longer be in the (fresh) log — recreate it in that case.
-        let entry = active.entry;
-        if (!log.contains(entry)) {
-            entry = document.createElement('div');
-            entry.className = 'list-item';
-            log.prepend(entry);
-        }
-        entry.innerHTML = `
-            <div class="list-item-body">
-                <div class="list-item-title">${label}</div>
-                <div class="list-item-sub">${formatClockTime(active.startMs)} &ndash; ${formatClockTime(endMs)} &bull; ${formatDuration(endMs - active.startMs)}</div>
-            </div>`;
-        delete activeActivities[type];
-    }
+    const startMs = Date.now();
+    const entry = document.createElement('div');
+    entry.className = 'list-item';
+    entry.innerHTML = `
+        <div class="list-item-body">
+            <div class="list-item-title">${label}</div>
+            <div class="list-item-sub">${formatClockTime(startMs)} &ndash; ongoing</div>
+        </div>
+        <span class="badge badge-gray">Active</span>`;
+    log.prepend(entry);
+    activeActivities[type] = { startMs: startMs, label: label, entry: entry };
     syncActivityButtons();
+}
+
+function endActivity(type) {
+    const active = activeActivities[type];
+    const log = document.getElementById('activity-log');
+    if (!active || !log) return;
+    const endMs = Date.now();
+    // Navigating away rebuilds the page, so the ongoing entry's DOM node
+    // may no longer be in the (fresh) log — recreate it in that case.
+    let entry = active.entry;
+    if (!log.contains(entry)) {
+        entry = document.createElement('div');
+        entry.className = 'list-item';
+        log.prepend(entry);
+    }
+    entry.innerHTML = `
+        <div class="list-item-body">
+            <div class="list-item-title">${active.label}</div>
+            <div class="list-item-sub">${formatClockTime(active.startMs)} &ndash; ${formatClockTime(endMs)} &bull; ${formatDuration(endMs - active.startMs)}</div>
+        </div>`;
+    // Ending a recorded task also closes its phase log.
+    if (type === 'task' && currentPhaseLogId) {
+        DB.update('phase_logs', currentPhaseLogId, { ended_at: new Date(endMs).toISOString() });
+        currentPhaseLogId = null;
+    }
+    delete activeActivities[type];
+    syncActivityButtons();
+}
+
+// A task cleared through the gates (picker → training → co-sign/PPE) lands
+// back on feild-clock with state.clockInTask.cleared set — syncClockUI()
+// calls this to start recording it as the active Task and open its
+// phase_logs row against the running time entry.
+function startClearedTask() {
+    const task = state.clockInTask;
+    if (!task || !task.cleared || activeActivities['task']) return;
+    state.clockInTask = null;
+    startActivity('task', task.name || 'Task');
+    if (currentTimeEntryId) {
+        const fakeHex = Date.now().toString(16).padStart(16, '0') + (_nextIdSeq++).toString(16).padStart(4, '0');
+        const phaseLog = DB.insert('phase_logs', {
+            company_id: state.currentCompanyId,
+            time_entry_id: currentTimeEntryId,
+            user_id: state.currentUserId,
+            task_module_id: task.taskModuleId || null,
+            job_id: state.currentJobId,
+            masons_mark: 'sha256:' + fakeHex,
+            competency_at_time_of_log: task.level || null,
+            cosigned_by: task.cosignedBy || null,
+            cosigned_at: task.cosignedAt || null,
+            video_completion_verified: true,
+            ppe_video_url: task.ppeVerified ? 'https://r2.kineticflow.app/ppe/local-capture.mp4' : null,
+            started_at: new Date().toISOString(),
+            ended_at: null,
+        });
+        currentPhaseLogId = phaseLog.id;
+    }
+    saveState();
 }
 
 // Reflect which activities are recording on the Driving/Lunch/Task buttons —
@@ -1854,7 +1986,7 @@ function activate() {
         openSchedule, openTimeSheet, openKits, openLabelGenerator, openFieldClock, openInventory,
         openScorecard, openMyScorecard, submitScorecard, isManagerOrAdmin, pendingSelfScorecard,
         computeProductionSpeed,
-        selectClockInTask, trainingVideoComplete, showCoSignModal, closeCoSignModal, confirmCoSign,
+        openTaskSelect, closeTaskSelectModal, selectClockInTask, trainingVideoComplete, showCoSignModal, closeCoSignModal, confirmCoSign,
         recordPpeVideo, ppeVideoComplete,
         toggleClock, addActivity,
         openMaterialLog, closeMaterialModal, saveMaterialLog,
@@ -1878,6 +2010,9 @@ window.Apps['kinetic-flow'] = {
     start: function () {
         pageHistory = [];
         restoreState(); // may already populate the mock DB from localStorage
+        // task-select.html no longer exists (the picker is a sheet on
+        // feild-clock now) — a session saved mid-flow shouldn't resume onto a 404.
+        if (state.currentPage === 'task-select') state.currentPage = 'feild-clock';
         (DB.isLoaded() ? Promise.resolve() : DB.load()).then(function () {
             ensurePlatformAdmin();
             if (state.role === 'customer') {

@@ -197,7 +197,8 @@ described in §4 — there's no in-app role switch.
 ### 6.9 Job Home (`job-home.html`) — the dynamic per-job landing page
 - Title/subtitle and the "View Bid" vs "+ Create Bid" button label are computed live
   from `state.currentJob` and whether it's in `NO_BID_JOBS`.
-- "Clock In / Out" → `openFieldClock()` → `task-select.html` (full gate chain, §6.12).
+- "Clock In / Out" → `openFieldClock()` → `feild-clock.html` (the task gate chain now
+  starts from the Task activity button there, §6.13).
 - Quick actions: Schedule, Kits, View/Create Bid, Time Sheet — all generic pages, none
   scoped to the current job beyond the bid button's label.
 - "Full Job Details" card → `openJob(state.currentJob)` → re-routes through the same
@@ -212,9 +213,8 @@ described in §4 — there's no in-app role switch.
 - "View Bid" (section action) and Bid & Finance quick-action → `openBid()`.
 - Both JIT training cards route to `feild-clock.html` regardless of Done/Pending
   status — not actually gating anything from here.
-- "Clock In" quick action skips the task-select flow entirely and goes straight to
-  `openFieldClock()` → task-select (same as job-home's button — this is the flow
-  entry point, not a bypass).
+- "Clock In" quick action → `openFieldClock()` → `feild-clock.html` directly (same as
+  job-home's button; task selection happens on the field clock itself now).
 
 ### 6.11 Job Detail — No Bid (`job-detail-nobid.html`)
 - Static Westgate Electrical Panel content. Big centered CTA: "No Bid Created" → 
@@ -230,19 +230,18 @@ described in §4 — there's no in-app role switch.
 - Neither path actually adds the new job to the jobs list — `jobs.html` is fully
   static, so a "created" job never appears there.
 
-### 6.13 Clock-In Gate Chain (task-select → training-video → co-sign/PPE → field clock)
+### 6.13 Task Gate Chain (task picker sheet → training-video → co-sign/PPE → back to field clock)
 
 This is the most branch-heavy flow in the app, simulating the reference doc's
-JIT-training/competency system. **Only reachable via `openFieldClock()`** (job-home's
-"Clock In/Out" button or job-detail's "Clock In" quick action) — the bottom-nav
-**Field** tab bypasses all of it and loads `feild-clock.html` directly, for checking
-an already-active session rather than starting a new one.
+JIT-training/competency system. **Entry point: the Task activity button on
+`feild-clock.html`** (requires being clocked in) — the old standalone
+`task-select.html` page is gone; the picker is now a bottom-sheet modal on the field
+clock. Once the chain clears, the task starts recording in the activity log and a
+`phase_logs` row is opened against the running time entry.
 
-1. **`task-select.html`** — 3 hardcoded demo tasks, each calling
-   `selectClockInTask(name, level, isHighHazard)`:
-   - *Air Handler Install* — `mastery`, `isHighHazard: true`
-   - *Ductwork Sealing* — `competent`, not hazardous
-   - *Refrigerant Handling* — `exposure`, not hazardous
+1. **Task picker sheet** (`openTaskSelect()`) — lists the company's task modules with
+   the worker's competency badge, each calling
+   `selectClockInTask(taskModuleId, level, isHighHazard)`.
 2. **`training-video.html`** — unskippable; Continue button stays `disabled` for a
    hardcoded 3-second `setTimeout` (simulating a training video), then
    `trainingVideoComplete()` branches on `state.clockInTask.level`:
@@ -252,8 +251,8 @@ an already-active session rather than starting a new one.
      modal, leaving the user stuck on the training-video page (no further action
      available except backing out via bottom nav or the app doesn't offer a retry
      button here).
-   - **`student` / `exposure`** → the Continue button is replaced with "Back to Job"
-     (→ `job-home`) and status text reads "Not cleared to perform this task solo yet."
+   - **`student` / `exposure`** → the Continue button is replaced with "Back to Field
+     Clock" (→ `feild-clock`) and status text reads "Not cleared to perform this task solo yet."
      This is a dead end by design — the worker cannot clock in on this task.
 3. **`proceedPastGates()`** — the single chokepoint for "cleared, but is this task
    high-hazard?" logic:
@@ -261,8 +260,8 @@ an already-active session rather than starting a new one.
    - otherwise → `feild-clock.html` directly.
 4. **`ppe-video.html`** (only reached for Air Handler Install in the demo data) —
    "Record PPE Video" button disables itself, shows "Recording…" for 1.2s, then
-   re-enables as "Re-record" and unlocks "Continue to Clock In" → `feild-clock.html`.
-   Re-recording is allowed any number of times before continuing.
+   re-enables as "Re-record" and unlocks Continue → `feild-clock.html`, where the
+   task starts recording. Re-recording is allowed any number of times before continuing.
 
 ### 6.14 Field Clock (`feild-clock.html`)
 - **Clock In:** immediate — no gate. Sets timer running (`tickTimer()` every second,

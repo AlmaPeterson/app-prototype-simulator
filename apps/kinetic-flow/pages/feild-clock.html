@@ -14,6 +14,28 @@
         <div style="font-size:0.78rem; color:#64748b; margin-top:4px;">Jun 30, 2024 &bull; Job JOB-2024</div>
     </div>
 
+    <!-- Clock-out gate — sits directly above the clock button and only
+         appears while clocked in (syncClockUI/toggleClock manage visibility) -->
+    <div id="clockout-gate" style="display:none;">
+        <div class="section-header">
+            <span class="section-title">Before You Clock Out</span>
+        </div>
+        <div class="card" style="cursor:default; margin-bottom:16px;">
+            <div class="list-item" style="padding:8px 0;">
+                <div class="list-item-body"><div class="list-item-title">Materials logged</div></div>
+                <input type="checkbox" id="gate-materials" class="label-checkbox">
+            </div>
+            <div class="list-item" style="padding:8px 0;">
+                <div class="list-item-body"><div class="list-item-title">Kit photo uploaded</div></div>
+                <input type="checkbox" id="gate-kit-photo" class="label-checkbox">
+            </div>
+            <div class="list-item" style="padding:8px 0; border-bottom:none;">
+                <div class="list-item-body"><div class="list-item-title">Site cleanliness confirmed</div></div>
+                <input type="checkbox" id="gate-cleanliness" class="label-checkbox">
+            </div>
+        </div>
+    </div>
+
     <button id="clock-btn" class="btn btn-primary" onclick="toggleClock()">Clock In</button>
 
     <!-- GPS simulator — the prototype has no real geolocation, so this stands
@@ -25,26 +47,6 @@
                 <div class="list-item-sub" id="gps-sim-sub">Simulating inside the job-site geofence</div>
             </div>
             <button class="btn btn-secondary btn-sm" style="margin:0;" id="gps-sim-btn" onclick="toggleSimulatedGps()">On-site</button>
-        </div>
-    </div>
-
-    <!-- Clock-out gate -->
-    <div class="section-header mt-4">
-        <span class="section-title">Before You Clock Out</span>
-    </div>
-
-    <div class="card" style="cursor:default; margin-bottom:16px;">
-        <div class="list-item" style="padding:8px 0;">
-            <div class="list-item-body"><div class="list-item-title">Materials logged</div></div>
-            <input type="checkbox" id="gate-materials" class="label-checkbox">
-        </div>
-        <div class="list-item" style="padding:8px 0;">
-            <div class="list-item-body"><div class="list-item-title">Kit photo uploaded</div></div>
-            <input type="checkbox" id="gate-kit-photo" class="label-checkbox">
-        </div>
-        <div class="list-item" style="padding:8px 0; border-bottom:none;">
-            <div class="list-item-body"><div class="list-item-title">Site cleanliness confirmed</div></div>
-            <input type="checkbox" id="gate-cleanliness" class="label-checkbox">
         </div>
     </div>
 
