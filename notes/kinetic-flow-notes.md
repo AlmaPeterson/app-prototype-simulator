@@ -44,3 +44,14 @@ This is where the task select should be, when click to record a task it should p
 ---
 
 
+## 2026-07-06T21:28:58.478Z
+
+- Screen: kinetic-flow — kits
+- Role: worker
+- Account: Existing Account
+- Phone size: 390 × 720
+
+If there are no kits there should be a button to take you to add kits
+
+---
+
