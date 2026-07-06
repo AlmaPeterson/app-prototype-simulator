@@ -55,3 +55,14 @@ If there are no kits there should be a button to take you to add kits
 
 ---
 
+## 2026-07-06T21:30:12.999Z
+
+- Screen: kinetic-flow — companies
+- Role: worker
+- Account: Existing Account
+- Phone size: 390 × 720
+
+This needs to be data base drive, only show  companies your a part of.
+
+---
+
