@@ -11,6 +11,11 @@
     </div>
 
     <div class="section-header">
+        <span class="section-title" style="color:#b91c1c;">Flagged &mdash; Outside Geofence</span>
+    </div>
+    <div id="tt-flagged" style="border:1px solid #fca5a5; padding:0 14px; margin-bottom:16px;"></div>
+
+    <div class="section-header">
         <span class="section-title">Submitted &mdash; Awaiting Export</span>
     </div>
     <div id="tt-workers"></div>
@@ -36,11 +41,45 @@
     var workers = managedWorkers();
     var workerIds = workers.map(function (u) { return u.id; });
 
+    // GPS-flagged entries need the manager's explicit approval before they can
+    // join the QuickBooks queue — approving one moves it to 'approved' below.
+    var flagged = DB.find('time_entries', function (t) {
+        return workerIds.indexOf(t.user_id) !== -1 && t.status === 'flagged';
+    }).sort(function (a, b) { return new Date(b.clock_in_at) - new Date(a.clock_in_at); });
+
+    var flaggedHtml = flagged.map(function (t, i) {
+        var u = workers.find(function (w) { return w.id === t.user_id; });
+        var job = DB.getById('jobs', t.job_id);
+        var site = jobSiteCoords(t.job_id);
+        var dist = (site && t.clock_in_lat != null)
+            ? metersBetween(t.clock_in_lat, t.clock_in_lng, site.lat, site.lng) : null;
+        return '<div class="list-item"' + (i === flagged.length - 1 ? ' style="border-bottom:none;"' : '') + '>' +
+            '<div class="list-item-body">' +
+                '<div class="list-item-title">' + (u ? u.full_name : 'Team member') + ' &bull; ' + fmtDate(t.clock_in_at) + '</div>' +
+                '<div class="list-item-sub">' + (job ? job.name : 'Unknown Job') + '</div>' +
+                '<div class="list-item-detail" style="color:#b91c1c;">Clocked in ' +
+                    (dist != null ? formatDistanceM(dist) + ' from site' : 'with no GPS fix') + '</div>' +
+            '</div>' +
+            '<button class="btn btn-secondary btn-sm" style="margin:0;" onclick="ttApproveFlagged(\'' + t.id + '\')">Approve</button>' +
+        '</div>';
+    }).join('');
+    document.getElementById('tt-flagged').innerHTML = flaggedHtml ||
+        '<div class="list-item" style="border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">No flagged entries — everyone clocked in on site.</div></div>';
+
+    window.ttApproveFlagged = function (entryId) {
+        DB.update('time_entries', entryId, {
+            status: 'approved',
+            approved_by: state.currentUserId,
+            approved_at: new Date().toISOString(),
+        });
+        loadPage('team-time');
+    };
+
     // "Submitted" = the worker pressed Submit Timesheet (submitted_at), or a
     // seed entry already approved — so the page has content out of the box.
-    // Excluded once exported to QuickBooks.
+    // Excluded once exported to QuickBooks, and while still GPS-flagged.
     var pending = DB.find('time_entries', function (t) {
-        return workerIds.indexOf(t.user_id) !== -1 && !t.qb_exported_at
+        return workerIds.indexOf(t.user_id) !== -1 && !t.qb_exported_at && t.status !== 'flagged'
             && (t.submitted_at || t.status === 'approved');
     });
     var exported = DB.find('time_entries', function (t) {

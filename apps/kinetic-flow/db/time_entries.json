@@ -98,5 +98,26 @@
     "created_at": "2026-06-30T06:00:00Z",
     "updated_at": "2026-06-30T15:00:00Z",
     "sync_status": "synced"
+  },
+  {
+    "id": "8b1f4e2a-77aa-4c1e-9f30-5e2d6c1b0a44",
+    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "user_id": "97c5b5b7-16c8-4e84-81c4-5817847f7dac",
+    "job_id": "c229964f-71e9-4d66-af48-fdb1db4c7404",
+    "clock_in_at": "2026-07-03T14:05:00Z",
+    "clock_out_at": "2026-07-03T22:40:00Z",
+    "clock_in_lat": 51.0627,
+    "clock_in_lng": -114.0599,
+    "clock_out_lat": 51.0625,
+    "clock_out_lng": -114.0601,
+    "unpaid_break_minutes": 30,
+    "auto_clocked_out": false,
+    "status": "flagged",
+    "approved_by": null,
+    "approved_at": null,
+    "submitted_at": "2026-07-03T22:45:00Z",
+    "created_at": "2026-07-03T14:05:00Z",
+    "updated_at": "2026-07-03T22:45:00Z",
+    "sync_status": "synced"
   }
 ]

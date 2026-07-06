@@ -41,6 +41,7 @@ const state = {
     // edited on bid-division.html (set by openDivision()).
     currentBidId: null,
     currentDivisionId: null,
+    simulateOffsite: false,   // feild-clock GPS simulator: true = pretend the phone is ~2 km from the job site
 };
 
 // ── Mock DB ──────────────────────────────────────────────────────────────
@@ -123,7 +124,7 @@ function resetDemoData() {
             signedIn: false, currentPage: '', currentJob: null, currentJobId: null, currentCompany: null,
             currentBranch: null, clockInTask: null, scorecardWorkerId: null, scorecardReturnTo: null,
             currentUserId: null, currentUser: null, currentCompanyId: null, currentBranchId: null,
-            currentBidId: null, currentDivisionId: null,
+            currentBidId: null, currentDivisionId: null, simulateOffsite: false,
         });
         clockedIn = false;
         clockStartedAt = null;
@@ -878,18 +879,22 @@ function applyScorecardToGuildProgression(scorecard) {
     return promotions;
 }
 
-// Transient banner for auto-promotions. Appended to body (not the page
-// container) so it survives the loadPage() that follows a scorecard submit.
-function showPromotionToast(messages) {
-    if (!messages.length) return;
+// Transient banner appended to body (not the page container) so it survives
+// the loadPage() that often follows the event it announces.
+function showToast(title, lines, bg) {
+    if (!lines.length) return;
     const toast = document.createElement('div');
     toast.style.cssText = 'position:fixed; left:50%; bottom:90px; transform:translateX(-50%);'
-        + 'background:#166534; color:#fff; padding:12px 18px; border-radius:12px;'
+        + 'background:' + (bg || '#166534') + '; color:#fff; padding:12px 18px; border-radius:12px;'
         + 'font-size:0.85rem; line-height:1.4; text-align:center; z-index:2000;'
         + 'box-shadow:0 8px 24px rgba(0,0,0,0.35); max-width:85%;';
-    toast.innerHTML = '<strong>Guild Promotion</strong><br>' + messages.join('<br>');
+    toast.innerHTML = '<strong>' + title + '</strong><br>' + lines.join('<br>');
     document.body.appendChild(toast);
     setTimeout(function () { toast.remove(); }, 5000);
+}
+
+function showPromotionToast(messages) {
+    showToast('Guild Promotion', messages, '#166534');
 }
 
 // Reads the 10 score inputs straight out of the DOM at submit time (the
@@ -1097,6 +1102,67 @@ function ppeVideoComplete() {
     loadPage('feild-clock');
 }
 
+// ── Geofenced Clock-In (simulated GPS) ──────────────────────────────────────
+// The reference doc's rule: GPS is captured only at the instant of clock
+// in/out — no background tracking. An out-of-radius clock-in still succeeds,
+// but the entry's status becomes 'flagged' for manager review instead of a
+// hard block. The prototype has no real geolocation, so coordinates are
+// simulated (state.simulateOffsite, toggled on feild-clock.html) — but the
+// distance check itself is real haversine math against the job's address, so
+// the flagging mechanism works exactly as it will in production.
+const GEOFENCE_RADIUS_M = 150;
+
+function jobSiteCoords(jobId) {
+    const job = jobId ? DB.getById('jobs', jobId) : null;
+    const addr = job && job.address_id ? DB.getById('addresses', job.address_id) : null;
+    return (addr && addr.lat != null && addr.lng != null) ? { lat: addr.lat, lng: addr.lng } : null;
+}
+
+function metersBetween(lat1, lng1, lat2, lng2) {
+    const toRad = Math.PI / 180;
+    const dLat = (lat2 - lat1) * toRad;
+    const dLng = (lng2 - lng1) * toRad;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+        + Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Jobs with no address coordinates can't be geofenced — treat as within, with
+// null coords, matching a production phone that gets no GPS fix.
+function simulatedGpsCapture(jobId) {
+    const site = jobSiteCoords(jobId);
+    if (!site) return { lat: null, lng: null, distanceM: null, within: true };
+    const offsite = state.simulateOffsite === true;
+    const lat = site.lat + (offsite ? 0.018 : (Math.random() - 0.5) * 0.0008);
+    const lng = site.lng + (offsite ? 0.012 : (Math.random() - 0.5) * 0.0008);
+    const distanceM = metersBetween(lat, lng, site.lat, site.lng);
+    return { lat: lat, lng: lng, distanceM: distanceM, within: distanceM <= GEOFENCE_RADIUS_M };
+}
+
+function formatDistanceM(m) {
+    if (m == null) return '';
+    return m < 1000 ? Math.round(m) + ' m' : (m / 1000).toFixed(1) + ' km';
+}
+
+function toggleSimulatedGps() {
+    state.simulateOffsite = !state.simulateOffsite;
+    saveState();
+    syncGpsSimUI();
+}
+
+function syncGpsSimUI() {
+    const btn = document.getElementById('gps-sim-btn');
+    const sub = document.getElementById('gps-sim-sub');
+    if (!btn) return;
+    const off = state.simulateOffsite === true;
+    btn.textContent = off ? 'Off-site' : 'On-site';
+    btn.style.color = off ? '#b91c1c' : '';
+    btn.style.borderColor = off ? '#fca5a5' : '';
+    if (sub) sub.textContent = off
+        ? 'Simulating ~2 km from the job — clock-in will be flagged'
+        : 'Simulating inside the job-site geofence';
+}
+
 // ── Field Clock ─────────────────────────────────────────────────────────────
 let clockedIn = false;
 let timerInterval = null;
@@ -1136,18 +1202,23 @@ function toggleClock() {
         });
 
         const clockInAt = new Date(clockStartedAt).toISOString();
+        const gps = simulatedGpsCapture(state.currentJobId);
         const timeEntry = DB.insert('time_entries', {
             company_id: state.currentCompanyId,
             user_id: state.currentUserId,
             job_id: state.currentJobId,
             clock_in_at: clockInAt,
             clock_out_at: null,
-            clock_in_lat: null,
-            clock_in_lng: null,
+            clock_in_lat: gps.lat,
+            clock_in_lng: gps.lng,
             unpaid_break_minutes: 0,
             auto_clocked_out: false,
-            status: 'active',
+            status: gps.within ? 'active' : 'flagged',
         });
+        if (!gps.within) {
+            showToast('Outside Job-Site Geofence', ['Clock-in accepted, but you’re '
+                + formatDistanceM(gps.distanceM) + ' from the site — this entry is flagged for manager review.'], '#b91c1c');
+        }
         currentTimeEntryId = timeEntry.id;
         currentPhaseLogId = null;
 
@@ -1184,7 +1255,21 @@ function toggleClock() {
 
         const clockOutAt = new Date().toISOString();
         if (currentTimeEntryId) {
-            DB.update('time_entries', currentTimeEntryId, { clock_out_at: clockOutAt, status: 'pending' });
+            // A flag from either end of the shift sticks — only a manager
+            // approval on team-time clears it.
+            const entry = DB.getById('time_entries', currentTimeEntryId);
+            const gpsOut = simulatedGpsCapture(entry ? entry.job_id : state.currentJobId);
+            const wasFlagged = (entry && entry.status === 'flagged') || !gpsOut.within;
+            DB.update('time_entries', currentTimeEntryId, {
+                clock_out_at: clockOutAt,
+                clock_out_lat: gpsOut.lat,
+                clock_out_lng: gpsOut.lng,
+                status: wasFlagged ? 'flagged' : 'pending',
+            });
+            if (!gpsOut.within && entry && entry.status !== 'flagged') {
+                showToast('Outside Job-Site Geofence', ['Clock-out recorded '
+                    + formatDistanceM(gpsOut.distanceM) + ' from the site — this entry is flagged for manager review.'], '#b91c1c');
+            }
         }
         if (currentPhaseLogId) {
             DB.update('phase_logs', currentPhaseLogId, { ended_at: clockOutAt });
@@ -1233,6 +1318,7 @@ function syncClockUI() {
         if (status) status.textContent = 'Clocked Out';
     }
     syncActivityButtons();
+    syncGpsSimUI();
     // The page's activity log is fresh markup — re-add any still-ongoing
     // activity entries (and re-point their DOM refs) so they survive navigation.
     const log = document.getElementById('activity-log');
@@ -1441,7 +1527,11 @@ function submitTimeSheet() {
     DB.find('time_entries', function (t) {
         return t.user_id === state.currentUserId && !t.submitted_at;
     }).forEach(function (t) {
-        DB.update('time_entries', t.id, { status: 'submitted', submitted_at: now });
+        // A GPS flag survives submission — only manager approval clears it.
+        DB.update('time_entries', t.id, {
+            status: t.status === 'flagged' ? 'flagged' : 'submitted',
+            submitted_at: now,
+        });
     });
     loadPage('scoreboard');
 }

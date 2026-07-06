@@ -87,10 +87,20 @@
         totalHours += hrs;
         var phaseLog = DB.findOne('phase_logs', function (p) { return p.time_entry_id === t.id; });
         var isLast = i === entries.length - 1;
+        var gpsFlag = '';
+        if (t.status === 'flagged') {
+            var site = jobSiteCoords(t.job_id);
+            var dist = (site && t.clock_in_lat != null)
+                ? metersBetween(t.clock_in_lat, t.clock_in_lng, site.lat, site.lng) : null;
+            gpsFlag = '<div class="list-item-detail" style="color:#b91c1c;">GPS flagged'
+                + (dist != null ? ' — ' + formatDistanceM(dist) + ' from site' : '')
+                + ' &bull; awaiting manager review</div>';
+        }
         return '<div class="list-item"' + (isLast ? ' style="border-bottom:none;"' : '') + '>' +
             '<div class="list-item-body">' +
                 '<div class="list-item-title">' + fmtDate(t.clock_in_at) + '</div>' +
                 '<div class="list-item-sub">' + (job ? job.name : 'Unknown Job') + '</div>' +
+                gpsFlag +
                 (phaseLog ? '<div class="list-item-detail" style="font-family:monospace;">Mark: ' + phaseLog.masons_mark.replace('sha256:', '').slice(0, 12) + '&hellip;' + phaseLog.masons_mark.slice(-4) + '</div>' : '') +
             '</div>' +
             '<div class="list-item-right">' +

@@ -16,6 +16,18 @@
 
     <button id="clock-btn" class="btn btn-primary" onclick="toggleClock()">Clock In</button>
 
+    <!-- GPS simulator — the prototype has no real geolocation, so this stands
+         in for where the phone actually is when the clock button is tapped -->
+    <div class="card" style="cursor:default; margin-bottom:16px;">
+        <div class="list-item" style="padding:8px 0; border-bottom:none;">
+            <div class="list-item-body">
+                <div class="list-item-title">Simulated GPS</div>
+                <div class="list-item-sub" id="gps-sim-sub">Simulating inside the job-site geofence</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" style="margin:0;" id="gps-sim-btn" onclick="toggleSimulatedGps()">On-site</button>
+        </div>
+    </div>
+
     <!-- Clock-out gate -->
     <div class="section-header mt-4">
         <span class="section-title">Before You Clock Out</span>
