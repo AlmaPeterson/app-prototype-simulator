@@ -563,12 +563,12 @@ development.
 ### Future Color Palette
 
 The planned palette for the real visual design (source:
-https://coolors.co/fdffff-df9d01-960d26-570000-280000):
+https://coolors.co/fdffff-feb50b-960d26-570000-280000):
 
 | Swatch | Hex | Name | Intended Role |
 |---|---|---|---|
 | ⬜ | `#FDFFFF` | White | Backgrounds / light surfaces |
-| 🟨 | `#DF9D01` | Amber Honey (gold) | Accent / highlights / CTAs |
+| 🟨 | `#FEB50B` | Amber Flame (gold) | Accent / highlights / CTAs |
 | 🟥 | `#960D26` | Ruby Red (red) | Primary brand color |
 | 🟫 | `#570000` | Black Cherry (dark) | Deep accents / hover states |
 | ⬛ | `#280000` | Rich Mahogany | Darkest tone / text / dark surfaces |
