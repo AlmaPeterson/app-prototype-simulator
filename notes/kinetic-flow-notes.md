@@ -66,3 +66,14 @@ Why do all the tasks say Not yet cleared for this task, and STUDENT. make this w
 
 ---
 
+## 2026-07-06T14:06:51.246Z
+
+- Screen: kinetic-flow — schedule
+- Role: worker
+- Account: Existing Account
+- Phone size: 430 × 932
+
+Their should be a view that has a list of tasks on the left in a column and the days in a row at the top and blocks for each task under each day that task is to be worked on.
+
+---
+
