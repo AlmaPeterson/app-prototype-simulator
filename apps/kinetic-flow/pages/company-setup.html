@@ -37,23 +37,24 @@
         </div>
     </div>
 
-    <div class="card" style="margin-bottom:8px;" onclick="openCompanyLevels()">
-        <div class="list-item" style="padding:0; border-bottom:none;">
+    <!-- Guild levels (Entered Apprentice → Fellow Craft → Master) and
+         competency levels (Student → Exposure → Competent → Mastery) are
+         fixed app-wide ladders — the same for every company — so they are
+         shown for reference, not configuration. -->
+    <div class="card" style="margin-bottom:16px; cursor:default;">
+        <div class="list-item" style="padding:8px 0;">
             <div class="list-item-body">
                 <div class="list-item-title">Guild Levels</div>
-                <div class="list-item-sub" id="level-count-sub"></div>
+                <div class="list-item-sub" id="level-names-sub"></div>
             </div>
-            <span class="card-arrow">&#8250;</span>
+            <span class="badge badge-gray">Fixed</span>
         </div>
-    </div>
-
-    <div class="card" style="margin-bottom:16px;" onclick="openCompanyCompetencyLevels()">
-        <div class="list-item" style="padding:0; border-bottom:none;">
+        <div class="list-item" style="padding:8px 0; border-bottom:none;">
             <div class="list-item-body">
                 <div class="list-item-title">Competency Levels</div>
-                <div class="list-item-sub" id="competency-count-sub"></div>
+                <div class="list-item-sub" id="competency-names-sub"></div>
             </div>
-            <span class="card-arrow">&#8250;</span>
+            <span class="badge badge-gray">Fixed</span>
         </div>
     </div>
 
@@ -96,8 +97,8 @@
 (function () {
     var activeDivisions = window.DIVISIONS.filter(function (d) { return d.isActive; }).length;
     document.getElementById('division-count-sub').textContent = activeDivisions + ' of ' + window.DIVISIONS.length + ' active';
-    document.getElementById('level-count-sub').textContent = window.LEVELS.length + ' configured';
-    document.getElementById('competency-count-sub').textContent = window.COMPETENCY_LEVELS.length + ' configured';
+    document.getElementById('level-names-sub').textContent = window.LEVELS.map(function (l) { return l.name; }).join(' → ');
+    document.getElementById('competency-names-sub').textContent = window.COMPETENCY_LEVELS.map(function (c) { return c.name; }).join(' → ');
 
     // ── Positions & Permissions (both views over the same roles rows) ──
     function companyRoles() {

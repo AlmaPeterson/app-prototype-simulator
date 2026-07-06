@@ -608,12 +608,17 @@ function manageCompany(companyId) {
 
 // ── Company Configuration: Divisions / Levels / Competency Levels ───────────
 // Mirrors db/divisions.json, db/levels.json, db/competency_levels.json.
-// Lives here (not in the page) for the same reason DIVISIONS/LEVELS do — app.js
-// persists across navigations, but a page fragment's inline <script> re-runs
-// every time loadPage() navigates to it, so per-visit-local state would
-// forget edits. Managed by company-divisions.html / company-levels.html /
-// company-competency-levels.html; read by bid.html to build a new bid's
+// DIVISIONS lives here (not in the page) because app.js persists across
+// navigations, but a page fragment's inline <script> re-runs every time
+// loadPage() navigates to it, so per-visit-local state would forget edits.
+// Managed by company-divisions.html; read by bid.html to build a new bid's
 // division checklist.
+// LEVELS (guild career ladder) and COMPETENCY_LEVELS (per-task skill ladder)
+// are deliberately FIXED, app-wide constants — the same for every company, so
+// a rank means the same thing everywhere and the progression engine's slug
+// lookups ('fellow_craft', 'mastery') can never be broken by config edits.
+// There is no UI to change them (the old company-levels /
+// company-competency-levels pages were removed on purpose).
 const DIVISIONS = [
     'Planning / Design', 'Site Prep', 'Temporary Utilities', 'Demolition',
     'Excavation and Trenching', 'Underground Utilities', 'Concrete', 'Framing',
@@ -642,8 +647,6 @@ const COMPETENCY_LEVELS = [
 ];
 
 function openCompanyDivisions() { loadPage('company-divisions'); }
-function openCompanyLevels() { loadPage('company-levels'); }
-function openCompanyCompetencyLevels() { loadPage('company-competency-levels'); }
 
 // ── Jobs Flow ───────────────────────────────────────────────────────────────
 function openJob(jobId) {
@@ -1844,7 +1847,7 @@ function activate() {
         joinCompany, createCompany, submitJoinRequest, submitNewCompany, continueFromSetup, openBranch,
         selectCompany, manageCompany, companyMemberUsers,
         DIVISIONS, LEVELS, COMPETENCY_LEVELS,
-        openCompanyDivisions, openCompanyLevels, openCompanyCompetencyLevels,
+        openCompanyDivisions,
         openJob, createJob, submitJob,
         openBid, submitBid, recalcBidTotals,
         openDivision, saveDivision, previewProposal,

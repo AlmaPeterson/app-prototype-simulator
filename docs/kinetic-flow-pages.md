@@ -50,12 +50,12 @@ sense — nothing hits a server.
 - **Do:** Create Company — inserts the company + address, seeds default roles (admin/manager/employee), makes you admin, and continues to company-setup. Cancel → companies.
 
 ### company-setup.html (reached via "Manage" on a company card)
-- **See:** Position chips; branch cards (name, address, Primary badge); Company Configuration cards (Bid Divisions, Guild Levels, Competency Levels with counts); a Permissions list summarizing each position's finance access / manage-users / manage-bids; pending Join Requests (name, email, requested role, message) when any exist; Team Members list (name, position, branch) with a user search box.
+- **See:** Position chips; branch cards (name, address, Primary badge); Company Configuration: a Bid Divisions card (with active count) plus a read-only card listing the fixed Guild and Competency ladders (badged "Fixed" — same for every company, not configurable); a Permissions list summarizing each position's finance access / manage-users / manage-bids; pending Join Requests (name, email, requested role, message) when any exist; Team Members list (name, position, branch) with a user search box.
 - **Edit:** Everything above through bottom-sheet panels:
   - Position panel (+ Add or tap a chip/permission row): name, finance access (none/job/branch/nationwide), manage-users and manage-bids toggles; Remove Position (blocked-with-confirm if members hold it; admin can't be removed).
   - Branch panel (+ Add): name, street, city, state (first branch becomes Primary). Remove non-primary branches (unassigns their members).
   - Member panel (tap a member): branch, position, per-member finance access override, manage-users / manage-bids toggles.
-- **Do:** Accept / Decline join requests (accept flips the `user_roles` row to active). Search any user and + Add them as an employee. Remove a member. Tap a branch card → branch-detail. Open the three configuration pages. Continue to Jobs / Skip for Now.
+- **Do:** Accept / Decline join requests (accept flips the `user_roles` row to active). Search any user and + Add them as an employee. Remove a member. Tap a branch card → branch-detail. Open Bid Divisions. Continue to Jobs / Skip for Now.
 
 ### branch-detail.html
 - **See:** Branch name, Primary badge, address, manager, manager's phone, active-job count, branch member list (name + guild level) with a search box scoped to company members.
@@ -67,15 +67,14 @@ sense — nothing hits a server.
 - **Edit:** Division names inline; order (▲/▼); active state (inactive divisions are hidden from new bids without losing history); add a new division by name; remove a division.
 - **Do:** All of the above; changes apply to every bid opened afterwards. Note: edits mutate the in-memory `DIVISIONS` array only (not a DB table).
 
-### company-levels.html
-- **See:** The Guild career ladder (Entered Apprentice → Fellow Craft → Master), each level's slug, promotion type (Manual/Auto), and — for auto — its criteria (trailing days, scorecard %).
-- **Edit:** Level names inline, order, promotion type chips, auto-promotion criteria; add/remove levels.
-- **Do:** All of the above. Auto levels are what `applyScorecardToGuildProgression()` checks after each scorecard.
-
-### company-competency-levels.html
-- **See:** The per-task skill ladder used by the clock-in gate (Student → Exposure → Competent → Mastery), each with slug, a "Requires co-sign" toggle, and an auto-promote-after-days field.
-- **Edit:** Names, order, co-sign requirement, auto-promote days; add/remove levels.
-- **Do:** All of the above.
+> **Note:** the Guild ladder (Entered Apprentice → Fellow Craft → Master) and the
+> per-task Competency ladder (Student → Exposure → Competent → Mastery) are fixed,
+> app-wide constants — the same for every company. The former company-levels.html
+> and company-competency-levels.html configuration pages were removed on purpose:
+> a rank should mean the same thing everywhere, and the progression engine's slug
+> lookups (`fellow_craft`, `mastery`) must never break from config edits.
+> Guild level = overall career rank (one badge per person, promoted via scorecards);
+> competency level = per-task clearance (gates the clock-in flow).
 
 ---
 

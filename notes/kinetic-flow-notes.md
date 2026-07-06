@@ -21,17 +21,6 @@ Add navigation animations, it should be clear when you are entering a new page o
 
 ---
 
-## 2026-07-06T19:56:53.811Z
-
-- Screen: kinetic-flow — company-levels
-- Role: worker
-- Account: Existing Account
-- Phone size: 430 × 932
-
-Guild Levels should be 4 fixed levels that are the same for every company and don't change, they should be "student", "exposure", "competent", and "master". We do not need this page.
-
----
-
 ## 2026-07-06T20:10:04.167Z
 
 - Screen: kinetic-flow — task-select
@@ -54,14 +43,4 @@ This is where the task select should be, when click to record a task it should p
 
 ---
 
-## 2026-07-06T20:13:04.867Z
-
-- Screen: kinetic-flow — company-setup
-- Role: worker
-- Account: Existing Account
-- Phone size: 430 × 932
-
-I made a note about how guild levels should be fixed levels but I did'nt realize it was no the same as compentency levels. competency levels should be fixed and the same for every company but I am unsure what guild levels are, if you can explain, I would appriciate it.
-
----
 
