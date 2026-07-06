@@ -43,3 +43,14 @@ This page should Not be here I will leave another note where it should be.
 
 ---
 
+## 2026-07-06T20:11:07.781Z
+
+- Screen: kinetic-flow — feild-clock
+- Role: worker
+- Account: Existing Account
+- Phone size: 430 × 932
+
+This is where the task select should be, when click to record a task it should pull up the list of relavant tasks for you to select.
+
+---
+
