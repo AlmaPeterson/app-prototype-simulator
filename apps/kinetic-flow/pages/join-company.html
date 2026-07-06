@@ -7,16 +7,13 @@
     </div>
 
     <div class="form-group">
-        <label>Search Company</label>
-        <input type="text" id="jc-search" class="search-bar" placeholder="Type to filter companies..." style="margin-bottom:0" oninput="jcRenderCompanies()">
+        <label>Company</label>
+        <div class="account-search">
+            <input type="text" id="jc-search" placeholder="Search companies..." autocomplete="off"
+                onfocus="jcShowSearch()" oninput="jcFilterSearch()" onblur="jcHideSearch()">
+            <div class="account-search-list" id="jc-search-list"></div>
+        </div>
     </div>
-
-    <div class="section-header mt-4">
-        <span class="section-title">Results</span>
-        <span class="section-action" id="jc-count"></span>
-    </div>
-
-    <div id="jc-list"></div>
 
     <div class="form-group mt-4">
         <label>Your Role / Position</label>
@@ -55,36 +52,58 @@
         }).join('') || '<option value="">No positions defined</option>';
     }
 
-    window.jcSelectCompany = function (companyId) {
-        selectedCompanyId = (selectedCompanyId === companyId) ? null : companyId;
-        window.jcRenderCompanies();
+    // Same focus-opens / type-to-filter / mousedown-to-pick dropdown as the
+    // sign-in email account picker (reuses its .account-search styles).
+    window.jcShowSearch = function () { window.jcFilterSearch(); };
+
+    window.jcHideSearch = function () {
+        // Delay so an item's onmousedown selection lands before the list closes.
+        setTimeout(function () {
+            var list = document.getElementById('jc-search-list');
+            if (list) list.classList.remove('open');
+        }, 150);
+    };
+
+    window.jcFilterSearch = function () {
+        var input = document.getElementById('jc-search');
+        var list = document.getElementById('jc-search-list');
+        if (!input || !list) return;
+        var q = input.value.trim().toLowerCase();
+        // Typing something other than the picked company's name clears the pick.
+        if (selectedCompanyId) {
+            var sel = DB.getById('companies', selectedCompanyId);
+            if (!sel || sel.name.toLowerCase() !== input.value.trim().toLowerCase()) {
+                selectedCompanyId = null;
+                renderRoles();
+            }
+        }
+        var matches = DB.find('companies', function (c) {
+            if (c.deleted_at) return false;
+            return !q || c.name.toLowerCase().indexOf(q) !== -1;
+        });
+        list.innerHTML = matches.length ? matches.map(function (c) {
+            var count = memberCount(c.id);
+            return '<div class="account-search-item" onmousedown="jcPickCompany(\'' + c.id + '\')">' +
+                '<div class="account-search-name">' + c.name + '</div>' +
+                '<div class="account-search-email">' + count + ' member' + (count === 1 ? '' : 's') + '</div>' +
+            '</div>';
+        }).join('') : '<div class="account-search-empty">No matching companies</div>';
+        list.classList.add('open');
+    };
+
+    window.jcPickCompany = function (companyId) {
+        selectedCompanyId = companyId;
+        var company = DB.getById('companies', companyId);
+        var input = document.getElementById('jc-search');
+        if (input && company) input.value = company.name;
+        var list = document.getElementById('jc-search-list');
+        if (list) list.classList.remove('open');
         renderRoles();
     };
 
-    window.jcRenderCompanies = function () {
-        var q = (document.getElementById('jc-search').value || '').trim().toLowerCase();
-        var all = DB.find('companies', function (c) { return !c.deleted_at; });
-        var companies = all.filter(function (c) {
-            return !q || c.name.toLowerCase().indexOf(q) !== -1;
-        });
-        document.getElementById('jc-count').textContent =
-            'Showing ' + companies.length + ' of ' + all.length + (all.length === 1 ? ' company' : ' companies');
-        document.getElementById('jc-list').innerHTML = companies.map(function (c) {
-            var count = memberCount(c.id);
-            var isSel = c.id === selectedCompanyId;
-            return '<div class="card' + (isSel ? ' card-selected' : '') + '" data-company-id="' + c.id + '" onclick="jcSelectCompany(\'' + c.id + '\')">' +
-                '<div class="card-row">' +
-                    '<div class="card-body">' +
-                        '<div class="card-title">' + c.name + '</div>' +
-                        '<div class="card-subtitle">' + count + ' member' + (count === 1 ? '' : 's') + '</div>' +
-                    '</div>' +
-                    (isSel ? '<span class="badge badge-gray">Selected</span>' : '') +
-                '</div>' +
-            '</div>';
-        }).join('') || '<div class="page-subtitle" style="font-size:0.78rem;">No companies match "' + (document.getElementById('jc-search').value || '').trim() + '".</div>';
-    };
+    // submitJoinRequest() (app.js) reads the pick through this hook.
+    window.jcSelectedCompanyId = function () { return selectedCompanyId; };
 
-    window.jcRenderCompanies();
     renderRoles();
 })();
 </script>
