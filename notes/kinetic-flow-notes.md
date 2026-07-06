@@ -66,3 +66,14 @@ This needs to be data base drive, only show  companies your a part of.
 
 ---
 
+## 2026-07-06T21:33:34.054Z
+
+- Screen: kinetic-flow — label-generator
+- Role: worker
+- Account: Existing Account
+- Phone size: 390 × 720
+
+This should not generate labels, in the future it will open another app that I made with the details of the labels. This page will also have saved templates and previews of labels from my other app
+
+---
+
