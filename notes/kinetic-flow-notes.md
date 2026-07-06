@@ -77,3 +77,14 @@ This should not generate labels, in the future it will open another app that I m
 
 ---
 
+## 2026-07-06T21:45:55.326Z
+
+- Screen: kinetic-flow — feild-clock
+- Role: worker
+- Account: Existing Account
+- Phone size: 430 × 932
+
+The sumbit timesheet button should be changed to be a button that takes you to the daily score card that will then take you to review your time sheet, then sumbit it.
+
+---
+
