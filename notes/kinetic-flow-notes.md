@@ -88,3 +88,14 @@ The sumbit timesheet button should be changed to be a button that takes you to t
 
 ---
 
+## 2026-07-06T21:46:54.844Z
+
+- Screen: kinetic-flow — feild-clock
+- Role: worker
+- Account: Existing Account
+- Phone size: 430 × 932
+
+Clockout button should be clearly disabled if checklist not complete
+
+---
+
