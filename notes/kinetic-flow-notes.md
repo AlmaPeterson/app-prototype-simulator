@@ -10,3 +10,14 @@ The before you clock out section should be a checklist above the clockout button
 
 ---
 
+## 2026-07-06T19:43:17.285Z
+
+- Screen: kinetic-flow — review-time
+- Role: worker
+- Account: Existing Account
+- Phone size: 430 × 932
+
+Add navigation animations, it should be clear when you are entering a new page or exiting a page.
+
+---
+
