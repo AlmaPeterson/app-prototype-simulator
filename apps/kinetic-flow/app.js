@@ -750,6 +750,149 @@ function openScorecard(userId) {
     loadPage('scorecard');
 }
 
+// Most recent time entry for a worker — the shift a scorecard applies to.
+function latestTimeEntryFor(userId) {
+    return DB.find('time_entries', function (t) { return t.user_id === userId; })
+        .slice()
+        .sort(function (a, b) { return new Date(b.clock_in_at) - new Date(a.clock_in_at); })[0] || null;
+}
+
+// Production Speed (0–5): actual vs. estimated hours for the shift's tasks.
+// Estimated hours come from task_modules.estimated_hours; actual hours from
+// the task rows' started_at/ended_at (falling back to the whole entry minus
+// unpaid break when no task has a duration). At-or-under estimate scores 5,
+// then points fall off proportionally as the overrun grows. Shifts with no
+// task/estimate data score 5 rather than 4 — a worker isn't docked because
+// the demo data is thin, and it keeps a perfect 100 reachable (the
+// fellow_craft auto-promotion gate needs it).
+function computeProductionSpeed(userId) {
+    const entry = latestTimeEntryFor(userId);
+    if (!entry) return 5;
+    const shiftTasks = DB.find('tasks', function (t) { return t.time_entry_id === entry.id && t.task_module_id; });
+
+    let estimatedHours = 0;
+    shiftTasks.forEach(function (t) {
+        const mod = DB.getById('task_modules', t.task_module_id);
+        if (mod && mod.estimated_hours) estimatedHours += Number(mod.estimated_hours);
+    });
+    if (!estimatedHours) return 5;
+
+    let actualHours = 0;
+    shiftTasks.forEach(function (t) {
+        if (t.started_at && t.ended_at) actualHours += (new Date(t.ended_at) - new Date(t.started_at)) / 3600000;
+    });
+    if (!actualHours && entry.clock_in_at && entry.clock_out_at) {
+        actualHours = (new Date(entry.clock_out_at) - new Date(entry.clock_in_at)) / 3600000
+            - (Number(entry.unpaid_break_minutes) || 0) / 60;
+    }
+    if (actualHours <= 0) return 5;
+
+    return Math.max(0, Math.min(5, Math.round(5 * estimatedHours / actualHours)));
+}
+
+// The guild progression engine — runs after every scorecard submit.
+// Reference doc workflow: Job Well Done PASS increments compliant_days_count
+// on each task logged that shift (one per calendar day); any FAIL resets the
+// counter to zero and the worker starts over. A competent worker reaching the
+// threshold (30 compliant days within the last 365) auto-promotes to mastery.
+// Separately, an apprentice whose trailing-window scorecard average hits the
+// fellow_craft criteria auto-promotes globally, recorded in
+// user_level_history. Returns human-readable promotion messages for the toast.
+function applyScorecardToGuildProgression(scorecard) {
+    const promotions = [];
+    const pass = scorecard.score_job_well_done > 0;
+    const nowIso = new Date().toISOString();
+
+    // 1. Per-task compliant-day counter on every task logged this shift.
+    const entry = scorecard.time_entry_id ? DB.getById('time_entries', scorecard.time_entry_id) : null;
+    const shiftTasks = entry ? DB.find('tasks', function (t) { return t.time_entry_id === entry.id && t.task_module_id; }) : [];
+    const masteryLevel = DB.findOne('competency_levels', function (c) { return c.slug === 'mastery'; });
+    const masteryThreshold = (masteryLevel && masteryLevel.auto_promote_days) || 30;
+
+    const seenModules = {};
+    shiftTasks.forEach(function (t) {
+        if (seenModules[t.task_module_id]) return;
+        seenModules[t.task_module_id] = true;
+
+        let wtc = DB.findOne('worker_task_competency', function (r) {
+            return r.user_id === scorecard.user_id && r.task_module_id === t.task_module_id;
+        });
+        if (!wtc) {
+            // First time this worker is scored on this task — start them at
+            // student, the reference doc's default for every new task.
+            wtc = DB.insert('worker_task_competency', {
+                company_id: scorecard.company_id, user_id: scorecard.user_id,
+                task_module_id: t.task_module_id, competency_level: 'student',
+                compliant_days_count: 0, last_compliant_day: null,
+                promoted_to_exposure_at: null, promoted_to_competent_at: null,
+                promoted_to_mastery_at: null, promoted_by: null,
+            });
+        }
+
+        if (!pass) {
+            DB.update('worker_task_competency', wtc.id, { compliant_days_count: 0 });
+            return;
+        }
+        if (wtc.last_compliant_day === scorecard.shift_date) return; // one compliant day per calendar day
+
+        // "30 compliant days within the last 365" — a stale counter restarts.
+        const staleCutoff = new Date(scorecard.shift_date);
+        staleCutoff.setDate(staleCutoff.getDate() - 365);
+        const stale = wtc.last_compliant_day && new Date(wtc.last_compliant_day) < staleCutoff;
+        const newCount = stale ? 1 : (wtc.compliant_days_count || 0) + 1;
+
+        const patch = { compliant_days_count: newCount, last_compliant_day: scorecard.shift_date };
+        if (wtc.competency_level === 'competent' && newCount >= masteryThreshold) {
+            patch.competency_level = 'mastery';
+            patch.promoted_to_mastery_at = nowIso;
+            patch.promoted_by = null; // system auto-promotion, not a master's call
+            const mod = DB.getById('task_modules', t.task_module_id);
+            promotions.push('Mastery earned: ' + (mod ? mod.task_name : 'task') + ' — runs it solo now');
+        }
+        DB.update('worker_task_competency', wtc.id, patch);
+    });
+
+    // 2. Global level: apprentice → fellow_craft on trailing scorecard average.
+    const user = DB.getById('users', scorecard.user_id);
+    if (user && user.global_level === 'apprentice') {
+        const fcLevel = DB.findOne('levels', function (l) { return l.slug === 'fellow_craft' && !l.deleted_at; });
+        const crit = (fcLevel && fcLevel.promotion_criteria) || { trailing_days: 30, scorecard_pct: 100 };
+        const cutoff = new Date(scorecard.shift_date);
+        cutoff.setDate(cutoff.getDate() - (crit.trailing_days || 30));
+        const cutoffDay = cutoff.toISOString().slice(0, 10);
+        const cards = DB.find('scorecard_entries', function (s) {
+            return s.user_id === scorecard.user_id && s.shift_date >= cutoffDay;
+        });
+        const avg = cards.reduce(function (sum, s) { return sum + s.total_score; }, 0) / (cards.length || 1);
+        if (cards.length && avg >= (crit.scorecard_pct || 100)) {
+            DB.update('users', user.id, { global_level: 'fellow_craft' });
+            DB.insert('user_level_history', {
+                company_id: scorecard.company_id, user_id: user.id,
+                from_level: 'apprentice', to_level: 'fellow_craft',
+                promoted_by: null, promoted_at: nowIso,
+                reason: 'Auto: ' + (crit.trailing_days || 30) + '-day trailing scorecard average ' + Math.round(avg) + '%',
+            });
+            promotions.push('Promoted to Fellow Craft — ' + (crit.trailing_days || 30) + '-day scorecard average at ' + Math.round(avg) + '%');
+        }
+    }
+
+    return promotions;
+}
+
+// Transient banner for auto-promotions. Appended to body (not the page
+// container) so it survives the loadPage() that follows a scorecard submit.
+function showPromotionToast(messages) {
+    if (!messages.length) return;
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed; left:50%; bottom:90px; transform:translateX(-50%);'
+        + 'background:#166534; color:#fff; padding:12px 18px; border-radius:12px;'
+        + 'font-size:0.85rem; line-height:1.4; text-align:center; z-index:2000;'
+        + 'box-shadow:0 8px 24px rgba(0,0,0,0.35); max-width:85%;';
+    toast.innerHTML = '<strong>Guild Promotion</strong><br>' + messages.join('<br>');
+    document.body.appendChild(toast);
+    setTimeout(function () { toast.remove(); }, 5000);
+}
+
 // Reads the 10 score inputs straight out of the DOM at submit time (the
 // slider/toggle math in scorecard.html's inline script already maintains
 // these live — no need to duplicate that logic here) and inserts one real
@@ -768,7 +911,7 @@ function submitScorecard() {
     const scoreMaterialAccountability = toggleOn('materials') ? 5 : 0;
     const scoreToolDiscipline = toggleOn('tools') ? 5 : 0;
     const scoreSiteCleanliness = toggleOn('cleanliness') ? 5 : 0;
-    const scoreProductionSpeed = 4; // fixed auto-calc demo value — matches scorecard.html's recalcScorecard()
+    const scoreProductionSpeed = computeProductionSpeed(state.scorecardWorkerId);
     const scoreInitiative = sliderVal('initiative');
     const scoreHabitualSafety = sliderVal('safety');
     const scoreConstructiveHeart = sliderVal('heart');
@@ -779,11 +922,9 @@ function submitScorecard() {
         + scoreProductionSpeed + scoreInitiative + scoreHabitualSafety + scoreConstructiveHeart
         + scoreDispositionToLearn + scoreEliteCharacter;
 
-    const recentEntry = DB.find('time_entries', function (t) { return t.user_id === state.scorecardWorkerId; })
-        .slice()
-        .sort(function (a, b) { return new Date(b.clock_in_at) - new Date(a.clock_in_at); })[0];
+    const recentEntry = latestTimeEntryFor(state.scorecardWorkerId);
 
-    DB.insert('scorecard_entries', {
+    const scorecard = DB.insert('scorecard_entries', {
         company_id: state.currentCompanyId,
         user_id: state.scorecardWorkerId,
         time_entry_id: recentEntry ? recentEntry.id : null,
@@ -804,6 +945,7 @@ function submitScorecard() {
         reviewed_by: state.currentUserId,
         reviewed_at: new Date().toISOString(),
     });
+    const promotions = applyScorecardToGuildProgression(scorecard);
     if (state.scorecardReturnTo) {
         const returnTo = state.scorecardReturnTo;
         state.scorecardReturnTo = null;
@@ -811,6 +953,7 @@ function submitScorecard() {
     } else {
         loadPage('job-detail');
     }
+    showPromotionToast(promotions);
 }
 
 // ── Task Select / Training Gate / Co-Sign ─────────────────────────────────────

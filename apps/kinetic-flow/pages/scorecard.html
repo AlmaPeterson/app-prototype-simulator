@@ -27,7 +27,7 @@
                 <div class="list-item-title">Production Speed</div>
                 <div class="list-item-sub">Auto-calculated &mdash; actual vs. estimated hours</div>
             </div>
-            <div class="list-item-value">4 / 5</div>
+            <div class="list-item-value" id="sc-prod-speed">&mdash; / 5</div>
         </div>
     </div>
 
@@ -122,6 +122,10 @@
     var binaries = { jwd: false, materials: false, tools: false, cleanliness: false };
     var sliderKeys = ['initiative', 'safety', 'heart', 'learn', 'elite'];
 
+    var prodSpeed = userId ? computeProductionSpeed(userId) : 5;
+    var prodSpeedEl = document.getElementById('sc-prod-speed');
+    if (prodSpeedEl) prodSpeedEl.textContent = prodSpeed + ' / 5';
+
     window.toggleScorecardBinary = function (key) {
         binaries[key] = !binaries[key];
         var el = document.getElementById('toggle-' + key);
@@ -137,7 +141,7 @@
     };
 
     function recalcScorecard() {
-        var total = 4; // Production Speed — fixed auto-calc demo value
+        var total = prodSpeed;
         total += binaries.jwd ? 55 : 0;
         total += binaries.materials ? 5 : 0;
         total += binaries.tools ? 5 : 0;
