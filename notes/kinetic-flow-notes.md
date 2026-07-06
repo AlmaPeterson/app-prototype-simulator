@@ -22,3 +22,14 @@ I can't edit the scorecard.
 
 ---
 
+## 2026-07-06T13:39:42.657Z
+
+- Screen: kinetic-flow — review-time
+- Role: worker
+- Account: Existing Account
+- Phone size: 430 × 932
+
+It does not look like this is db driven.
+
+---
+
