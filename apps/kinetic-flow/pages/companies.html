@@ -55,24 +55,20 @@
         companies = companies.filter(function (c) { return !!membershipIn(c.id); });
     }
     document.getElementById('company-list').innerHTML = companies.map(function (c) {
-        // Members = users homed in this company plus anyone holding one of
-        // its roles (covers the creator of a local company, whose users row
-        // still points at their original company).
-        var memberIds = {};
-        DB.find('users', function (u) { return u.company_id === c.id && !u.deleted_at; })
-            .forEach(function (u) { memberIds[u.id] = true; });
-        DB.find('user_roles', function (ur) {
-            if (ur.deleted_at) return false;
-            var role = DB.getById('roles', ur.role_id);
-            return role && role.company_id === c.id;
-        }).forEach(function (ur) { memberIds[ur.user_id] = true; });
-        var memberCount = Object.keys(memberIds).length;
+        // Members = users homed here plus active role-holders (pending
+        // user_roles rows are join requests, not memberships) — same
+        // definition as companyMemberUsers().
+        var memberCount = companyMemberUsers(c.id).length;
         var myRole = membershipIn(c.id);
-        var badge = myRole ? '<span style="font-size:0.78rem; color:#64748b;">' + (myRole.status === 'pending' ? 'Pending' : 'Active') + '</span>' : '';
-        var manageBtn = myRole
+        var isPending = !!(myRole && myRole.status === 'pending');
+        var badge = myRole ? '<span style="font-size:0.78rem; color:#64748b;">' + (isPending ? 'Pending' : 'Active') + '</span>' : '';
+        var manageBtn = (myRole && !isPending)
             ? '<button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); manageCompany(\'' + c.id + '\')">Manage</button>'
             : '';
-        return '<div class="card" onclick="selectCompany(\'' + c.id + '\')">' +
+        var clickAction = isPending
+            ? 'alert(\'Your join request is waiting on the company owner to accept it.\')'
+            : 'selectCompany(\'' + c.id + '\')';
+        return '<div class="card" onclick="' + clickAction + '">' +
             '<div class="flex-between mb-1">' +
                 '<div class="card-title" style="margin:0;">' + c.name + '</div>' +
                 badge +

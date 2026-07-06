@@ -1,0 +1,124 @@
+<div class="page" style="padding-bottom:80px;">
+    <button class="btn btn-secondary btn-sm mb-4" onclick="loadPage('more')">&larr; More</button>
+
+    <div class="page-title">Team Timesheets</div>
+    <div class="page-subtitle mb-4" id="tt-subtitle">Submitted time from your crew</div>
+
+    <div class="hero-stat">
+        <div style="font-size:0.78rem; opacity:0.7; margin-bottom:4px;">Hours Awaiting QuickBooks</div>
+        <div class="hero-stat-value" id="tt-total-hours">0 hrs</div>
+        <div style="font-size:0.82rem; opacity:0.8; margin-top:4px;" id="tt-total-sub"></div>
+    </div>
+
+    <div class="section-header">
+        <span class="section-title">Submitted &mdash; Awaiting Export</span>
+    </div>
+    <div id="tt-workers"></div>
+
+    <button class="btn btn-primary" id="tt-qb-btn" onclick="ttSubmitAll()">Submit All to QuickBooks</button>
+
+    <div class="section-header mt-2">
+        <span class="section-title">Already Sent to QuickBooks</span>
+    </div>
+    <div id="tt-exported" style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;"></div>
+</div>
+
+<script>
+(function () {
+    function fmtDate(iso) {
+        return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+    function entryHours(t) {
+        var clockOut = t.clock_out_at ? new Date(t.clock_out_at) : new Date();
+        return Math.max(0, (clockOut - new Date(t.clock_in_at)) / 3600000 - (t.unpaid_break_minutes || 0) / 60);
+    }
+
+    var workers = managedWorkers();
+    var workerIds = workers.map(function (u) { return u.id; });
+
+    // "Submitted" = the worker pressed Submit Timesheet (submitted_at), or a
+    // seed entry already approved — so the page has content out of the box.
+    // Excluded once exported to QuickBooks.
+    var pending = DB.find('time_entries', function (t) {
+        return workerIds.indexOf(t.user_id) !== -1 && !t.qb_exported_at
+            && (t.submitted_at || t.status === 'approved');
+    });
+    var exported = DB.find('time_entries', function (t) {
+        return workerIds.indexOf(t.user_id) !== -1 && t.qb_exported_at;
+    });
+
+    document.getElementById('tt-subtitle').textContent = workers.length
+        ? workers.length + ' team ' + (workers.length === 1 ? 'member' : 'members') + ' under you'
+        : 'No team members report to you';
+
+    var totalHours = 0;
+    var groupsHtml = workers.map(function (u) {
+        var rows = pending.filter(function (t) { return t.user_id === u.id; })
+            .sort(function (a, b) { return new Date(b.clock_in_at) - new Date(a.clock_in_at); });
+        if (!rows.length) return '';
+        var workerHours = 0;
+        var rowsHtml = rows.map(function (t, i) {
+            var job = DB.getById('jobs', t.job_id);
+            var hrs = entryHours(t);
+            workerHours += hrs;
+            return '<div class="list-item"' + (i === rows.length - 1 ? ' style="border-bottom:none;"' : '') + '>' +
+                '<div class="list-item-body">' +
+                    '<div class="list-item-title">' + fmtDate(t.clock_in_at) + '</div>' +
+                    '<div class="list-item-sub">' + (job ? job.name : 'Unknown Job') + '</div>' +
+                '</div>' +
+                '<div class="list-item-right">' +
+                    '<div class="list-item-value">' + hrs.toFixed(1) + ' hrs</div>' +
+                    '<div class="list-item-detail">' + (t.submitted_at ? 'Submitted' : 'Approved') + '</div>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+        totalHours += workerHours;
+        return '<div style="border:1px solid #e2e8f0; margin-bottom:14px;">' +
+            '<div class="flex-between" style="padding:10px 14px; border-bottom:1px solid #e2e8f0; background:#f8fafc;">' +
+                '<span style="font-size:0.88rem; color:#0f172a;">' + u.full_name + '</span>' +
+                '<span class="list-item-value">' + workerHours.toFixed(1) + ' hrs &bull; $' + Math.round(workerHours * 35).toLocaleString() + '</span>' +
+            '</div>' +
+            '<div style="padding:0 14px;">' + rowsHtml + '</div>' +
+        '</div>';
+    }).join('');
+
+    document.getElementById('tt-workers').innerHTML = groupsHtml ||
+        '<div style="border:1px solid #e2e8f0; padding:14px; margin-bottom:14px; color:#94a3b8; font-size:0.85rem;">No submitted timesheets awaiting export.</div>';
+
+    document.getElementById('tt-total-hours').textContent = totalHours.toFixed(1) + ' hrs';
+    document.getElementById('tt-total-sub').innerHTML = pending.length + ' ' + (pending.length === 1 ? 'entry' : 'entries')
+        + ' &bull; est. $' + Math.round(totalHours * 35).toLocaleString() + ' payroll';
+
+    var qbBtn = document.getElementById('tt-qb-btn');
+    if (!pending.length) {
+        qbBtn.disabled = true;
+        qbBtn.style.opacity = '0.5';
+    }
+    var pendingIds = pending.map(function (t) { return t.id; });
+    window.ttSubmitAll = function () {
+        if (!pendingIds.length) return;
+        submitTeamTimeToQuickBooks(pendingIds);
+    };
+
+    var users = {};
+    workers.forEach(function (u) { users[u.id] = u; });
+    var exportedHtml = exported
+        .sort(function (a, b) { return new Date(b.qb_exported_at) - new Date(a.qb_exported_at); })
+        .slice(0, 8)
+        .map(function (t, i, arr) {
+            var u = users[t.user_id];
+            return '<div class="list-item"' + (i === arr.length - 1 ? ' style="border-bottom:none;"' : '') + '>' +
+                '<div class="list-item-body">' +
+                    '<div class="list-item-title">' + (u ? u.full_name : 'Team member') + '</div>' +
+                    '<div class="list-item-sub">' + fmtDate(t.clock_in_at) + '</div>' +
+                '</div>' +
+                '<div class="list-item-right">' +
+                    '<div class="list-item-value">' + entryHours(t).toFixed(1) + ' hrs</div>' +
+                    '<div class="list-item-detail">Sent ' + fmtDate(t.qb_exported_at) + '</div>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+    document.getElementById('tt-exported').innerHTML = exportedHtml ||
+        '<div class="list-item" style="border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">Nothing sent to QuickBooks yet.</div></div>';
+})();
+</script>

@@ -1,5 +1,5 @@
 <div class="page" style="padding-bottom:80px;">
-    <button class="btn btn-secondary btn-sm mb-4" onclick="loadPage('job-detail')">&larr; Job</button>
+    <button class="btn btn-secondary btn-sm mb-4" id="sc-back-btn" onclick="loadPage('job-detail')">&larr; Job</button>
 
     <div class="page-header">
         <div class="page-title" id="sc-worker-name">Workman Scorecard</div>
@@ -95,6 +95,20 @@
 
 <script>
 (function () {
+    // When the timesheet gate sent the worker here (scorecardReturnTo set),
+    // backing out should return to the timesheet, not the PM's job page.
+    var returnTo = (typeof state !== 'undefined' && state.scorecardReturnTo) || null;
+    if (returnTo) {
+        var backBtn = document.getElementById('sc-back-btn');
+        if (backBtn) {
+            backBtn.innerHTML = '&larr; Time Sheet';
+            backBtn.onclick = function () {
+                state.scorecardReturnTo = null;
+                loadPage(returnTo);
+            };
+        }
+    }
+
     var userId = (typeof state !== 'undefined' && state.scorecardWorkerId) || null;
     var user = userId ? DB.getById('users', userId) : null;
     var name = user ? user.full_name : 'Team Member';

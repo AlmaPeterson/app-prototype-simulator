@@ -27,6 +27,7 @@ const state = {
     currentBranch: null,
     clockInTask: null,        // { taskModuleId, name, level, isHighHazard, ppeVerified, cosignedBy, cosignedAt } — level: student|exposure|competent|mastery
     scorecardWorkerId: null,  // users.id of the worker whose scorecard is being filled out (set by openScorecard())
+    scorecardReturnTo: null,  // page slug to return to after submitScorecard() (set when the timesheet gate redirects here)
     // Real-identity fields populated by afterSignIn() once auth is backed by
     // the mock DB (see DB module below) — kept alongside the legacy
     // name-string fields above until each consuming page is migrated to ids.
@@ -120,7 +121,7 @@ function resetDemoData() {
     DB.reset().then(function () {
         Object.assign(state, {
             signedIn: false, currentPage: '', currentJob: null, currentJobId: null, currentCompany: null,
-            currentBranch: null, clockInTask: null, scorecardWorkerId: null,
+            currentBranch: null, clockInTask: null, scorecardWorkerId: null, scorecardReturnTo: null,
             currentUserId: null, currentUser: null, currentCompanyId: null, currentBranchId: null,
             currentBidId: null, currentDivisionId: null,
         });
@@ -289,6 +290,14 @@ function signIn() {
     const typed = ((emailInput && emailInput.value) || '').trim().toLowerCase();
     const user = (typed && DB.findOne('users', function (u) { return !u.deleted_at && u.email.toLowerCase() === typed; }))
         || DB.findOne('users', function (u) { return u.email === DEFAULT_DEMO_EMAIL; });
+    // Accounts created through sign-up start as approval_status 'pending' and
+    // stay locked out until the platform admin (admin@gmail.com) approves them
+    // on admin-approvals. Seeded users have no approval_status — treated as
+    // approved.
+    if (user && user.approval_status === 'pending') {
+        loadPage('account-pending');
+        return;
+    }
     afterSignIn(user);
 }
 
@@ -301,6 +310,12 @@ function afterSignIn(user) {
         state.currentUser = { id: user.id, name: user.full_name, email: user.email, globalLevel: user.global_level };
     }
     saveState();
+    // The platform admin has no company/job context — their whole app is the
+    // approval queue for requested accounts.
+    if (user && user.is_platform_admin) {
+        loadPage('admin-approvals');
+        return;
+    }
     if (state.role === 'worker') {
         loadPage('companies');
     } else if (state.role === 'customer') {
@@ -348,7 +363,7 @@ function submitAccount() {
         return c.name.toLowerCase() === val('signup-company').toLowerCase();
     }) || DB.getById('companies', KINETIC_SOLUTIONS_ID);
     const fullName = [val('signup-first'), val('signup-last')].filter(Boolean).join(' ') || 'New User';
-    const newUser = DB.insert('users', {
+    DB.insert('users', {
         company_id: company.id,
         branch_id: null,
         email: val('signup-email') || ('pending-' + Date.now() + '@example.com'),
@@ -360,9 +375,13 @@ function submitAccount() {
         push_token: null,
         global_level: 'apprentice',
         is_active: true,
+        // New accounts are requests, not memberships — the platform admin
+        // (admin@gmail.com) approves them on admin-approvals before they can
+        // sign in. `newUser` is intentionally unused beyond the insert.
+        approval_status: 'pending',
     });
     closeSignUp();
-    afterSignIn(newUser);
+    loadPage('account-pending');
 }
 
 function goToSignIn() { loadPage('sign-in'); }
@@ -391,8 +410,40 @@ function hideSabbathLock() {
 // ── Company Flow ────────────────────────────────────────────────────────────
 function joinCompany() { loadPage('join-company'); }
 function createCompany() { loadPage('new-company'); }
-function submitJoinRequest() { loadPage('companies'); }
 function continueFromSetup() { loadPage('jobs'); }
+
+// Real insert path for join-company.html — creates a `pending` user_roles row
+// pointing at the selected company's chosen role. The company's owner/admin
+// accepts or declines it from the Join Requests section on company-setup.html
+// (accept flips status to 'active', which is what membership checks key on).
+function submitJoinRequest() {
+    const selected = document.querySelector('#jc-list .card-selected');
+    if (!selected) { alert('Select a company first.'); return; }
+    const companyId = selected.dataset.companyId;
+    const roleId = val('jc-role');
+    if (!roleId) { alert('Select a position.'); return; }
+    const existing = DB.findOne('user_roles', function (ur) {
+        if (ur.user_id !== state.currentUserId || ur.deleted_at) return false;
+        const role = DB.getById('roles', ur.role_id);
+        return role && role.company_id === companyId;
+    });
+    if (existing) {
+        alert(existing.status === 'pending'
+            ? 'You already have a pending request with this company.'
+            : 'You are already a member of this company.');
+        loadPage('companies');
+        return;
+    }
+    DB.insert('user_roles', {
+        user_id: state.currentUserId,
+        role_id: roleId,
+        assigned_at: null,
+        requested_at: new Date().toISOString(),
+        status: 'pending',
+        message: val('jc-message') || null,
+    });
+    loadPage('companies');
+}
 
 // Default position set for a freshly created company — mirrors the seeded
 // companies' roles rows (see db/roles.json), which use the same three-name
@@ -469,7 +520,9 @@ function companyMemberUsers(companyId) {
     DB.find('users', function (u) { return u.company_id === companyId && !u.deleted_at; })
         .forEach(function (u) { seen[u.id] = true; rows.push(u); });
     DB.get('user_roles').forEach(function (ur) {
-        if (ur.deleted_at || seen[ur.user_id]) return;
+        // Pending rows are join *requests*, not memberships — they only
+        // become members once accepted on company-setup's Join Requests.
+        if (ur.deleted_at || ur.status === 'pending' || seen[ur.user_id]) return;
         const role = DB.getById('roles', ur.role_id);
         if (!role || role.company_id !== companyId) return;
         const u = DB.getById('users', ur.user_id);
@@ -751,7 +804,13 @@ function submitScorecard() {
         reviewed_by: state.currentUserId,
         reviewed_at: new Date().toISOString(),
     });
-    loadPage('job-detail');
+    if (state.scorecardReturnTo) {
+        const returnTo = state.scorecardReturnTo;
+        state.scorecardReturnTo = null;
+        loadPage(returnTo);
+    } else {
+        loadPage('job-detail');
+    }
 }
 
 // ── Task Select / Training Gate / Co-Sign ─────────────────────────────────────
@@ -1141,8 +1200,67 @@ function saveMaterialLog() {
 }
 
 // ── Time Sheet ──────────────────────────────────────────────────────────────
+// A scorecard for today's shift is required before the timesheet can go to
+// the supervisor. If none exists yet, send the worker to fill one out and
+// have submitScorecard() route back here to finish the submission.
 function submitTimeSheet() {
+    const today = new Date().toISOString().slice(0, 10);
+    const hasScorecard = DB.find('scorecard_entries', function (s) {
+        return s.user_id === state.currentUserId && s.shift_date === today;
+    }).length > 0;
+    if (!hasScorecard) {
+        alert("A scorecard for today's shift is required before submitting your timesheet. Please complete it now.");
+        state.scorecardReturnTo = 'review-time';
+        openScorecard(state.currentUserId);
+        return;
+    }
+    // Stamp the worker's un-submitted entries so they show up on their
+    // manager's Team Timesheets page (team-time.html) for QuickBooks export.
+    const now = new Date().toISOString();
+    DB.find('time_entries', function (t) {
+        return t.user_id === state.currentUserId && !t.submitted_at;
+    }).forEach(function (t) {
+        DB.update('time_entries', t.id, { status: 'submitted', submitted_at: now });
+    });
     loadPage('scoreboard');
+}
+
+// ── Team Timesheets (manager) ────────────────────────────────────────────────
+function openTeamTime() { loadPage('team-time'); }
+
+// Workers "under" the signed-in user: members of any branch whose manager_id
+// is them. Admins with no branch of their own see the whole company so the
+// page isn't a dead end for the admin demo account.
+function managedWorkers() {
+    const managedBranchIds = DB.find('branches', function (b) {
+        return b.manager_id === state.currentUserId && !b.deleted_at;
+    }).map(function (b) { return b.id; });
+    let workers = companyMemberUsers(state.currentCompanyId).filter(function (u) {
+        return u.id !== state.currentUserId && managedBranchIds.indexOf(u.branch_id) !== -1;
+    });
+    if (!workers.length) {
+        const isAdmin = DB.get('user_roles').some(function (ur) {
+            if (ur.user_id !== state.currentUserId || ur.deleted_at || ur.status === 'pending') return false;
+            const role = DB.getById('roles', ur.role_id);
+            return !!role && role.company_id === state.currentCompanyId && (role.name === 'admin' || role.name === 'manager');
+        });
+        const user = state.currentUserId ? DB.getById('users', state.currentUserId) : null;
+        if (isAdmin || (user && user.is_platform_admin)) {
+            workers = companyMemberUsers(state.currentCompanyId).filter(function (u) { return u.id !== state.currentUserId; });
+        }
+    }
+    return workers;
+}
+
+// Fake QuickBooks export: no network call, just stamp the entries so the
+// team-time page moves them from "awaiting export" to "sent".
+function submitTeamTimeToQuickBooks(entryIds) {
+    const now = new Date().toISOString();
+    entryIds.forEach(function (id) {
+        DB.update('time_entries', id, { qb_exported_at: now, sync_status: 'quickbooks' });
+    });
+    alert(entryIds.length + ' time ' + (entryIds.length === 1 ? 'entry' : 'entries') + ' sent to QuickBooks. (Demo — no real QuickBooks connection.)');
+    loadPage('team-time');
 }
 
 // ── Dashboard pages ──────────────────────────────────────────────────────────
@@ -1253,6 +1371,31 @@ function restoreState() {
     if (supplierBtn) supplierBtn.classList.toggle('active', state.role === 'supplier');
 }
 
+// The admin account is seeded in db/users.json, but sessions that restored an
+// older localStorage DB snapshot (saved before that row existed) would never
+// see it — so start() re-asserts it into whatever table copy is live.
+const PLATFORM_ADMIN_EMAIL = 'admin@gmail.com';
+function ensurePlatformAdmin() {
+    const existing = DB.findOne('users', function (u) {
+        return (u.email || '').toLowerCase() === PLATFORM_ADMIN_EMAIL;
+    });
+    if (existing) return;
+    DB.insert('users', {
+        company_id: null,
+        branch_id: null,
+        email: PLATFORM_ADMIN_EMAIL,
+        password_hash: '',
+        phone: null,
+        full_name: 'admin',
+        avatar_url: null,
+        push_token: null,
+        global_level: 'master',
+        is_active: true,
+        is_platform_admin: true,
+        approval_status: 'approved',
+    });
+}
+
 window.addEventListener('beforeunload', saveState);
 
 // ── App Registration ────────────────────────────────────────────────────────
@@ -1281,6 +1424,7 @@ function activate() {
         toggleClock, addActivity,
         openMaterialLog, closeMaterialModal, saveMaterialLog,
         submitTimeSheet,
+        openTeamTime, managedWorkers, submitTeamTimeToQuickBooks,
         openScoreboard, openStats, openFinance, openCustomerHome, openMore,
         switchTab, toggleChip,
         CUSTOMER_DEMO_JOB_ID, computeSyntheticPaymentSchedule,
@@ -1300,6 +1444,7 @@ window.Apps['kinetic-flow'] = {
         pageHistory = [];
         restoreState(); // may already populate the mock DB from localStorage
         (DB.isLoaded() ? Promise.resolve() : DB.load()).then(function () {
+            ensurePlatformAdmin();
             if (state.role === 'customer') {
                 loadPage('customer-home');
             } else if (state.signedIn && state.currentPage) {

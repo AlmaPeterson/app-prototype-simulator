@@ -8,57 +8,79 @@
 
     <div class="form-group">
         <label>Search Company</label>
-        <input type="text" class="search-bar" placeholder="Company name or code..." style="margin-bottom:0">
+        <input type="text" id="jc-search" class="search-bar" placeholder="Company name..." style="margin-bottom:0" oninput="jcRenderCompanies()">
     </div>
 
     <div class="section-header mt-4">
         <span class="section-title">Results</span>
     </div>
 
-    <div class="card card-selected" onclick="this.classList.toggle('card-selected')">
-        <div class="card-row">
-            <div class="card-body">
-                <div class="card-title">Kinetic Solutions LLC</div>
-                <div class="card-subtitle">Calgary, AB &bull; 12 members</div>
-            </div>
-            <span class="badge badge-gray">Selected</span>
-        </div>
-    </div>
-
-    <div class="card" onclick="this.classList.toggle('card-selected')">
-        <div class="card-row">
-            <div class="card-body">
-                <div class="card-title">ProFlow Industries</div>
-                <div class="card-subtitle">Edmonton, AB &bull; 8 members</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card" onclick="this.classList.toggle('card-selected')">
-        <div class="card-row">
-            <div class="card-body">
-                <div class="card-title">Apex Field Services</div>
-                <div class="card-subtitle">Red Deer, AB &bull; 24 members</div>
-            </div>
-        </div>
-    </div>
+    <div id="jc-list"></div>
 
     <div class="form-group mt-4">
         <label>Your Role / Position</label>
-        <select>
-            <option>Technician</option>
-            <option>Senior Technician</option>
-            <option>Supervisor</option>
-            <option>Manager</option>
-            <option>Admin</option>
-        </select>
+        <select id="jc-role"></select>
     </div>
 
     <div class="form-group">
         <label>Message to Admin (optional)</label>
-        <textarea placeholder="Hi, I'm a new hire starting Monday..."></textarea>
+        <textarea id="jc-message" placeholder="Hi, I'm a new hire starting Monday..."></textarea>
     </div>
 
     <button class="btn btn-primary" onclick="submitJoinRequest()">Send Join Request</button>
     <button class="btn btn-secondary" onclick="loadPage('companies')">Cancel</button>
 </div>
+
+<script>
+(function () {
+    var selectedCompanyId = null;
+
+    function memberCount(companyId) {
+        return companyMemberUsers(companyId).length;
+    }
+
+    // The role dropdown mirrors the *selected* company's real roles rows —
+    // submitJoinRequest() persists the chosen role id on the pending
+    // user_roles row so accepting the request needs no extra role choice.
+    function renderRoles() {
+        var sel = document.getElementById('jc-role');
+        if (!selectedCompanyId) {
+            sel.innerHTML = '<option value="">Select a company first</option>';
+            return;
+        }
+        var roles = DB.find('roles', function (r) { return r.company_id === selectedCompanyId && !r.deleted_at; });
+        sel.innerHTML = roles.map(function (r) {
+            return '<option value="' + r.id + '">' + r.name.replace(/\b[a-z]/g, function (c) { return c.toUpperCase(); }) + '</option>';
+        }).join('') || '<option value="">No positions defined</option>';
+    }
+
+    window.jcSelectCompany = function (companyId) {
+        selectedCompanyId = (selectedCompanyId === companyId) ? null : companyId;
+        window.jcRenderCompanies();
+        renderRoles();
+    };
+
+    window.jcRenderCompanies = function () {
+        var q = (document.getElementById('jc-search').value || '').trim().toLowerCase();
+        var companies = DB.find('companies', function (c) {
+            return !c.deleted_at && (!q || c.name.toLowerCase().indexOf(q) !== -1);
+        });
+        document.getElementById('jc-list').innerHTML = companies.map(function (c) {
+            var count = memberCount(c.id);
+            var isSel = c.id === selectedCompanyId;
+            return '<div class="card' + (isSel ? ' card-selected' : '') + '" data-company-id="' + c.id + '" onclick="jcSelectCompany(\'' + c.id + '\')">' +
+                '<div class="card-row">' +
+                    '<div class="card-body">' +
+                        '<div class="card-title">' + c.name + '</div>' +
+                        '<div class="card-subtitle">' + count + ' member' + (count === 1 ? '' : 's') + '</div>' +
+                    '</div>' +
+                    (isSel ? '<span class="badge badge-gray">Selected</span>' : '') +
+                '</div>' +
+            '</div>';
+        }).join('') || '<div class="page-subtitle" style="font-size:0.78rem;">No matching companies.</div>';
+    };
+
+    window.jcRenderCompanies();
+    renderRoles();
+})();
+</script>

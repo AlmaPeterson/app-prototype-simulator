@@ -1,0 +1,66 @@
+<div class="page">
+    <div class="page-header">
+        <div class="page-title">User Requests</div>
+        <div class="page-subtitle">Approve or reject account requests from sign-up.</div>
+    </div>
+
+    <div class="section-header">
+        <span class="section-title">Pending Accounts</span>
+        <span class="section-action" id="aa-count" style="cursor:default;"></span>
+    </div>
+    <div id="aa-request-list"></div>
+
+    <div class="section-header mt-4">
+        <span class="section-title">Account</span>
+    </div>
+    <div class="card" onclick="signOut()">
+        <div class="card-row">
+            <div class="card-body">
+                <div class="card-title" style="color:#dc2626;">Sign Out</div>
+                <div class="card-subtitle">Return to sign-in screen</div>
+            </div>
+            <span class="card-arrow">&#8250;</span>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    function pendingUsers() {
+        return DB.find('users', function (u) {
+            return !u.deleted_at && u.approval_status === 'pending';
+        });
+    }
+
+    function render() {
+        var rows = pendingUsers();
+        document.getElementById('aa-count').textContent = rows.length + ' pending';
+        document.getElementById('aa-request-list').innerHTML = rows.map(function (u) {
+            var company = u.company_id ? DB.getById('companies', u.company_id) : null;
+            var sub = [u.email || 'No email', company ? company.name : null, u.phone].filter(Boolean).join(' &bull; ');
+            return '<div class="card" style="margin-bottom:8px; cursor:default;">' +
+                '<div class="card-title" style="margin-bottom:2px;">' + u.full_name + '</div>' +
+                '<div class="card-subtitle mb-2">' + sub + '</div>' +
+                '<div style="display:flex; gap:8px;">' +
+                    '<button class="btn btn-primary btn-sm" style="flex:1;" onclick="adminApproveUser(\'' + u.id + '\')">Approve</button>' +
+                    '<button class="btn btn-secondary btn-sm" style="flex:1; color:#dc2626;" onclick="adminRejectUser(\'' + u.id + '\')">Reject</button>' +
+                '</div>' +
+            '</div>';
+        }).join('') || '<div class="page-subtitle" style="font-size:0.78rem;">No pending account requests.</div>';
+    }
+
+    window.adminApproveUser = function (userId) {
+        DB.update('users', userId, { approval_status: 'approved' });
+        render();
+    };
+
+    window.adminRejectUser = function (userId) {
+        var u = DB.getById('users', userId);
+        if (!confirm('Reject ' + (u ? u.full_name : 'this user') + '’s account request?')) return;
+        DB.softDelete('users', userId);
+        render();
+    };
+
+    render();
+})();
+</script>

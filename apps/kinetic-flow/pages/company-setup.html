@@ -65,6 +65,15 @@
 
     <div class="card" id="permission-list" style="cursor:default; margin-bottom:16px;"></div>
 
+    <!-- Join Requests (hidden when none are pending) -->
+    <div id="cs-requests-section" style="display:none;">
+        <div class="section-header">
+            <span class="section-title">Join Requests</span>
+            <span class="section-action" id="cs-request-count" style="cursor:default;"></span>
+        </div>
+        <div id="cs-request-list" style="margin-bottom:16px;"></div>
+    </div>
+
     <!-- Team Members -->
     <div class="section-header">
         <span class="section-title">Team Members</span>
@@ -283,6 +292,56 @@
         return companyMemberUsers(state.currentCompanyId);
     }
 
+    // ── Join Requests ──
+    // Pending user_roles rows created by join-company.html's
+    // submitJoinRequest(). Accepting flips the row to 'active' (the status
+    // every membership check keys on); declining soft-deletes it so the
+    // requester can ask again later.
+    function pendingRequests() {
+        return DB.find('user_roles', function (ur) {
+            if (ur.deleted_at || ur.status !== 'pending') return false;
+            var role = DB.getById('roles', ur.role_id);
+            return role && role.company_id === state.currentCompanyId;
+        });
+    }
+
+    function renderRequests() {
+        var rows = pendingRequests();
+        document.getElementById('cs-requests-section').style.display = rows.length ? 'block' : 'none';
+        document.getElementById('cs-request-count').textContent = rows.length + ' pending';
+        document.getElementById('cs-request-list').innerHTML = rows.map(function (ur) {
+            var u = DB.getById('users', ur.user_id);
+            var role = DB.getById('roles', ur.role_id);
+            if (!u) return '';
+            var sub = [(u.email || 'No email'),
+                       role ? 'Requested: ' + role.name.replace(/\b[a-z]/g, function (c) { return c.toUpperCase(); }) : null]
+                .filter(Boolean).join(' • ');
+            return '<div class="card" style="margin-bottom:8px; cursor:default;">' +
+                '<div class="card-title" style="margin-bottom:2px;">' + u.full_name + '</div>' +
+                '<div class="card-subtitle' + (ur.message ? '' : ' mb-2') + '">' + sub + '</div>' +
+                (ur.message ? '<div class="card-subtitle mb-2" style="font-style:italic;">&ldquo;' + ur.message + '&rdquo;</div>' : '') +
+                '<div style="display:flex; gap:8px;">' +
+                    '<button class="btn btn-primary btn-sm" style="flex:1;" onclick="acceptJoinRequest(\'' + ur.id + '\')">Accept</button>' +
+                    '<button class="btn btn-secondary btn-sm" style="flex:1; color:#dc2626;" onclick="declineJoinRequest(\'' + ur.id + '\')">Decline</button>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+    }
+
+    window.acceptJoinRequest = function (userRoleId) {
+        DB.update('user_roles', userRoleId, { status: 'active', assigned_at: new Date().toISOString() });
+        renderRequests();
+        renderMembers();
+    };
+
+    window.declineJoinRequest = function (userRoleId) {
+        var ur = DB.getById('user_roles', userRoleId);
+        var u = ur ? DB.getById('users', ur.user_id) : null;
+        if (!confirm('Decline ' + (u ? u.full_name : 'this') + '’s join request?')) return;
+        DB.softDelete('user_roles', userRoleId);
+        renderRequests();
+    };
+
     function renderMembers() {
         var rows = companyMembers();
         document.getElementById('cs-member-count').textContent = rows.length + ' member' + (rows.length === 1 ? '' : 's');
@@ -303,6 +362,7 @@
         }).join('') || '<div class="page-subtitle" style="font-size:0.78rem; padding:8px 0;">No team members yet — search above to add.</div>';
     }
     renderMembers();
+    renderRequests();
 
     window.filterCompanyUsers = function () {
         var q = (document.getElementById('cs-member-search').value || '').trim().toLowerCase();
