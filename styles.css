@@ -912,6 +912,58 @@ body.fullscreen-mode #resize-grip {
 
 .search-bar:focus { border-color: #2563eb; }
 
+/* ── Sign-in Account Search ── */
+.account-search { position: relative; }
+
+.account-search-list {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+    z-index: 30;
+}
+
+.account-search-list.open { display: block; }
+
+.account-search-item {
+    padding: 9px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f5f9;
+}
+.account-search-item:last-child { border-bottom: none; }
+.account-search-item:hover { background: #f8fafc; }
+
+.account-search-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.account-search-position {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #2563eb;
+    background: #eff6ff;
+    border-radius: 999px;
+    padding: 2px 8px;
+    white-space: nowrap;
+}
+
+.account-search-email { font-size: 0.75rem; color: #64748b; margin-top: 1px; }
+
+.account-search-empty { padding: 12px 14px; font-size: 0.8rem; color: #94a3b8; }
+
 .kit-search-row {
     display: flex;
     align-items: stretch;

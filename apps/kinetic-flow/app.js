@@ -305,6 +305,60 @@ function signIn() {
     afterSignIn(user);
 }
 
+// The email field doubles as an account picker: focusing it lists every
+// existing (non-deleted) user account, and typing narrows the list by name,
+// email, or position. Picking one just fills the input — signIn() still does
+// the actual lookup.
+function accountPositionLabel(user) {
+    if (user.is_platform_admin) return 'Platform Admin';
+    const parts = [];
+    const ur = DB.findOne('user_roles', function (r) { return r.user_id === user.id && r.status === 'active'; });
+    const role = ur && DB.getById('roles', ur.role_id);
+    if (role) parts.push(role.name);
+    if (user.global_level) parts.push(user.global_level.replace(/_/g, ' '));
+    return parts.map(function (p) {
+        return p.replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+    }).join(' · ');
+}
+
+function showAccountSearch() { filterAccountSearch(); }
+
+function hideAccountSearch() {
+    // Delay so an item's onmousedown selection lands before the list closes.
+    setTimeout(function () {
+        const list = document.getElementById('account-search-list');
+        if (list) list.classList.remove('open');
+    }, 150);
+}
+
+function filterAccountSearch() {
+    const input = document.getElementById('signin-email');
+    const list = document.getElementById('account-search-list');
+    if (!input || !list) return;
+    const q = input.value.trim().toLowerCase();
+    const matches = DB.find('users', function (u) {
+        if (u.deleted_at) return false;
+        if (!q) return true;
+        return u.email.toLowerCase().indexOf(q) !== -1
+            || (u.full_name || '').toLowerCase().indexOf(q) !== -1
+            || accountPositionLabel(u).toLowerCase().indexOf(q) !== -1;
+    });
+    list.innerHTML = matches.length ? matches.map(function (u) {
+        return `<div class="account-search-item" onmousedown="pickAccount('${u.email}')">
+            <div class="account-search-name">${u.full_name}<span class="account-search-position">${accountPositionLabel(u)}</span></div>
+            <div class="account-search-email">${u.email}</div>
+        </div>`;
+    }).join('') : '<div class="account-search-empty">No matching accounts</div>';
+    list.classList.add('open');
+}
+
+function pickAccount(email) {
+    const input = document.getElementById('signin-email');
+    if (input) input.value = email;
+    const list = document.getElementById('account-search-list');
+    if (list) list.classList.remove('open');
+}
+
 function afterSignIn(user) {
     state.signedIn = true;
     if (user) {
@@ -1785,6 +1839,7 @@ function activate() {
         loadPage, navTo, goBack,
         setAccountType, setRole,
         signIn, afterSignIn, signOut, showSignUp, closeSignUp, submitAccount, goToSignIn,
+        showAccountSearch, hideAccountSearch, filterAccountSearch, pickAccount,
         showSabbathLock, hideSabbathLock,
         joinCompany, createCompany, submitJoinRequest, submitNewCompany, continueFromSetup, openBranch,
         selectCompany, manageCompany, companyMemberUsers,

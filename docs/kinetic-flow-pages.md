@@ -11,8 +11,8 @@ sense — nothing hits a server.
 ## Auth & Account
 
 ### sign-in.html
-- **See:** App title, email + password fields, "Forgot password?" link, Sign In button, "Continue with Google" button, "Request Access" link.
-- **Edit:** Email and password (password is not checked; email must match an approved user — demo: `j.smith@kineticsolutions.com`).
+- **See:** App title, email + password fields, "Forgot password?" link, Sign In button, "Continue with Google" button, "Request Access" link. Focusing the email field opens an account-picker dropdown listing every existing account (name, a role · guild-level pill, email); typing filters by name, email, or position.
+- **Edit:** Email (type it or pick an account from the dropdown, which just fills the field) and password (password is not checked; email must match an approved user — demo: `j.smith@kineticsolutions.com`).
 - **Do:** Sign In / Google (both call `signIn()`; a pending-approval email routes to account-pending, unknown email alerts). "Request Access" opens the sign-up sheet.
 
 ### sign-up.html (bottom-sheet modal over sign-in)
