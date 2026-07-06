@@ -14,6 +14,10 @@
 const PAGES_DIR = 'apps/kinetic-flow/pages/';
 const DB_DIR = 'apps/kinetic-flow/db/';
 const STORAGE_KEY = 'kineticFlow.state';
+// Bump whenever db/*.json seed data or table shapes change: restoreState()
+// discards localStorage DB snapshots from older versions and re-fetches the
+// fresh seeds, so users don't need a manual "Reset Demo Data".
+const DB_VERSION = 2;
 
 // ── App State ──────────────────────────────────────────────────────────────
 const state = {
@@ -1694,6 +1698,7 @@ function saveState() {
                 phaseLogId: currentPhaseLogId,
             },
             db: _dbLoaded ? _tables : null,
+            dbVersion: DB_VERSION,
         }));
     } catch (e) { /* localStorage unavailable (private mode, quota, etc.) */ }
 }
@@ -1708,10 +1713,12 @@ function restoreState() {
     if (!saved) return;
 
     if (saved.state) Object.assign(state, saved.state);
-    // A snapshot from before a schema change may be missing newly added
-    // tables — using it would make those tables silently empty. Discard it
-    // and let DB.load() re-fetch fresh seed data instead.
-    if (saved.db && TABLES.every(function (t) { return saved.db[t]; })) {
+    // A snapshot from an older DB_VERSION or from before a schema change may
+    // be missing newly added tables, rows, or fields — using it would shadow
+    // the fresh seed data (e.g. all tasks showing Student because the old
+    // worker_task_competency rows were sparse). Discard it and let DB.load()
+    // re-fetch fresh seed data instead.
+    if (saved.db && saved.dbVersion === DB_VERSION && TABLES.every(function (t) { return saved.db[t]; })) {
         _tables = saved.db;
         _dbLoaded = true;
     }

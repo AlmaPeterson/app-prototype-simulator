@@ -22,9 +22,21 @@
         <button class="btn btn-secondary btn-sm" style="width:auto; padding:6px 12px;" onclick="shiftScheduleWeek(1)" title="Next week">&rarr;</button>
     </div>
 
-    <div class="schedule-day">
+    <!-- View toggle -->
+    <div style="display:flex; gap:6px; margin-bottom:14px;">
+        <div id="view-day" class="chip selected" onclick="setScheduleView('day')">Day List</div>
+        <div id="view-grid" class="chip" onclick="setScheduleView('grid')">Task Grid</div>
+    </div>
+
+    <div class="schedule-day" id="schedule-day-view">
         <div class="schedule-day-label" id="schedule-day-label">Wednesday, Jul 1</div>
         <div id="schedule-day-list"></div>
+    </div>
+
+    <!-- Task grid: one row per task, one column per day; a colored block
+         marks each day the task is scheduled to be worked on. -->
+    <div id="schedule-grid-view" style="display:none; overflow-x:auto; border:1px solid #e2e8f0;">
+        <div id="schedule-grid"></div>
     </div>
 </div>
 
@@ -38,6 +50,7 @@
     var DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     var weekOffset = 0;
     var selectedDay = 'wed';
+    var viewMode = 'day';
 
     function currentWeekStart() {
         var d = new Date(WEEK_START);
@@ -86,16 +99,81 @@
         }).join('') || '<div style="font-size:0.8rem; color:#94a3b8; padding:8px 0;">No jobs scheduled</div>';
     }
 
+    // ── Task grid (Gantt-style): rows = this week's events, columns = days ──
+    function renderGrid() {
+        var ws = currentWeekStart();
+        document.getElementById('schedule-week-label').textContent = 'Week of ' + fmtShort(ws) + ', ' + ws.getFullYear();
+        var weekIsos = DAYS.map(function (day) { return isoDateOnly(dateForDay(day)); });
+        var viewType = state.role === 'customer' ? 'customer' : 'worker';
+
+        var events = DB.find('schedule_events', function (e) {
+            return e.company_id === state.currentCompanyId
+                && e.view_type === viewType
+                && e.start_date <= weekIsos[6] && e.end_date >= weekIsos[0];
+        }).sort(function (a, b) { return a.start_date < b.start_date ? -1 : 1; });
+
+        var grid = document.getElementById('schedule-grid');
+        if (!events.length) {
+            grid.innerHTML = '<div style="font-size:0.8rem; color:#94a3b8; padding:12px;">No tasks scheduled this week</div>';
+            return;
+        }
+
+        // Header row: blank task column + short day labels with dates.
+        var html = '<div style="display:grid; grid-template-columns:120px repeat(7, minmax(34px, 1fr)); min-width:380px; font-size:0.72rem;">';
+        html += '<div style="padding:8px 6px; border-bottom:1px solid #e2e8f0; font-weight:600;">Task</div>';
+        DAYS.forEach(function (day, di) {
+            var d = dateForDay(day);
+            html += '<div style="padding:8px 2px; border-bottom:1px solid #e2e8f0; border-left:1px solid #f1f5f9; text-align:center;">' +
+                DAY_LABELS[di].slice(0, 2) + '<br><span style="color:#94a3b8;">' + d.getDate() + '</span></div>';
+        });
+
+        events.forEach(function (e) {
+            var job = e.job_id ? DB.getById('jobs', e.job_id) : null;
+            var clickAttr = job ? ' onclick="openJob(\'' + job.id + '\')" style="cursor:pointer;"' : '';
+            html += '<div' + clickAttr + '><div style="padding:8px 6px; border-bottom:1px solid #f1f5f9;">' +
+                '<div style="font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + e.title + '">' + e.title + '</div>' +
+                (job ? '<div style="color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + job.name + '</div>' : '') +
+                '</div></div>';
+            weekIsos.forEach(function (iso) {
+                var active = e.start_date <= iso && e.end_date >= iso;
+                html += '<div style="border-bottom:1px solid #f1f5f9; border-left:1px solid #f1f5f9; padding:6px 3px;">' +
+                    (active ? '<div style="height:100%; min-height:22px; border-radius:4px; background:' + (e.color || '#2563eb') + '; opacity:0.85;"></div>' : '') +
+                    '</div>';
+            });
+        });
+        html += '</div>';
+        grid.innerHTML = html;
+    }
+
+    function render() {
+        if (viewMode === 'grid') renderGrid();
+        else renderDay(selectedDay);
+    }
+
+    window.setScheduleView = function (mode) {
+        viewMode = mode;
+        document.getElementById('view-day').classList.toggle('selected', mode === 'day');
+        document.getElementById('view-grid').classList.toggle('selected', mode === 'grid');
+        document.getElementById('schedule-day-view').style.display = mode === 'day' ? '' : 'none';
+        document.getElementById('schedule-grid-view').style.display = mode === 'grid' ? '' : 'none';
+        // Day chips only matter in day view — the grid always shows the whole week.
+        document.querySelectorAll('[id^="day-"]').forEach(function (el) {
+            el.style.opacity = mode === 'day' ? '' : '0.35';
+        });
+        render();
+    };
+
     window.selectDay = function (day) {
         selectedDay = day;
         document.querySelectorAll('[id^="day-"]').forEach(function (el) { el.classList.remove('selected'); });
         document.getElementById('day-' + day).classList.add('selected');
+        if (viewMode !== 'day') { window.setScheduleView('day'); return; }
         renderDay(day);
     };
 
     window.shiftScheduleWeek = function (delta) {
         weekOffset += delta;
-        renderDay(selectedDay);
+        render();
     };
 
     window.showCreateSchedule = function () {

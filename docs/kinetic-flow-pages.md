@@ -134,7 +134,7 @@ sense — nothing hits a server.
 ## Clock-In Gate Chain & Time
 
 ### task-select.html (entry to every clock-in)
-- **See:** The company's task modules, each with your competency badge (Student/Exposure/Competent/Mastery — defaults to Student if never evaluated) and a subtitle explaining what that level allows; high-hazard tasks are flagged "PPE required".
+- **See:** The company's task modules, each with your competency badge (Student/Exposure/Competent/Mastery — defaults to Student if never evaluated) and a subtitle explaining what that level allows; high-hazard tasks are flagged "PPE required". Seed data covers every Kinetic Solutions worker × task (levels distributed by guild rank), so demo accounts see a realistic mix rather than all-Student.
 - **Edit:** Nothing.
 - **Do:** Tap a task → training-video, carrying the task + level + hazard flag into `state.clockInTask`. ← Job.
 
@@ -211,9 +211,9 @@ sense — nothing hits a server.
 - **Do:** Switch tier and view (Overview / Invoices / Expenses). Export Report is an alert placeholder.
 
 ### schedule.html ("Schedule" tab — workers and customers)
-- **See:** A week of day chips with prev/next-week arrows (anchored to the seeded event cluster, week of Jun 29 2026); the selected day's events (title, date range, assignee). Workers see `view_type: 'worker'` events; the customer role sees the customer-facing subset.
+- **See:** A week of day chips with prev/next-week arrows (anchored to the seeded event cluster, week of Jun 29 2026), plus a Day List / Task Grid view toggle. Day List: the selected day's events (title, date range, assignee). Task Grid: Gantt-style week grid — tasks down the left, days across the top, a colored block (the event's `color`) under each day the task runs. Workers see `view_type: 'worker'` events; the customer role sees the customer-facing subset.
 - **Edit:** Nothing.
-- **Do:** Pick a day, shift weeks, tap an event with a job → that job. "+ Add" is an alert placeholder.
+- **Do:** Toggle Day List / Task Grid, pick a day (day view), shift weeks (both views), tap an event or grid row with a job → that job. "+ Add" is an alert placeholder.
 
 ---
 
