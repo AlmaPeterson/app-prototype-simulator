@@ -44,3 +44,14 @@ quantity and hour inputs for tasks should increment by whole numbers.
 
 ---
 
+## 2026-07-06T13:43:24.420Z
+
+- Screen: kinetic-flow — job-detail
+- Role: worker
+- Account: Existing Account
+- Phone size: 430 × 932
+
+I can't add team members to job
+
+---
+
