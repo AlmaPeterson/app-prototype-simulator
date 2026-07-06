@@ -21,3 +21,14 @@ Add navigation animations, it should be clear when you are entering a new page o
 
 ---
 
+## 2026-07-06T19:56:53.811Z
+
+- Screen: kinetic-flow — company-levels
+- Role: worker
+- Account: Existing Account
+- Phone size: 430 × 932
+
+Guild Levels should be 4 fixed levels that are the same for every company and don't change, they should be "student", "exposure", "competent", and "master". We do not need this page.
+
+---
+
