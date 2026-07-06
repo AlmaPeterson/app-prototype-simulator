@@ -29,12 +29,12 @@
             <div class="stat-label">On-Site hrs</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">5.0</div>
-            <div class="stat-label">Drive hrs</div>
+            <div class="stat-value" id="rt-entry-count">0</div>
+            <div class="stat-label">Shifts</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value">3.0</div>
-            <div class="stat-label">Lunch hrs</div>
+            <div class="stat-value" id="rt-break-hrs">0</div>
+            <div class="stat-label">Break hrs</div>
         </div>
         <div class="stat-card">
             <div class="stat-value" id="rt-est-pay">$0</div>
@@ -80,11 +80,13 @@
         .slice(0, 5);
 
     var totalHours = 0;
+    var totalBreakHours = 0;
     var entriesHtml = entries.map(function (t, i) {
         var job = DB.getById('jobs', t.job_id);
         var clockOutDate = t.clock_out_at ? new Date(t.clock_out_at) : new Date();
         var hrs = Math.max(0, (clockOutDate - new Date(t.clock_in_at)) / 3600000 - (t.unpaid_break_minutes || 0) / 60);
         totalHours += hrs;
+        totalBreakHours += (t.unpaid_break_minutes || 0) / 60;
         var phaseLog = DB.findOne('phase_logs', function (p) { return p.time_entry_id === t.id; });
         var isLast = i === entries.length - 1;
         var gpsFlag = '';
@@ -118,7 +120,11 @@
     document.getElementById('rt-total-hours').textContent = totalHours.toFixed(1) + ' hrs';
     document.getElementById('rt-total-sub').textContent = 'Across ' + entries.length + ' ' + (entries.length === 1 ? 'entry' : 'entries');
     document.getElementById('rt-onsite-hrs').textContent = totalHours.toFixed(1);
-    document.getElementById('rt-est-pay').textContent = '$' + Math.round(totalHours * 35).toLocaleString();
+    document.getElementById('rt-entry-count').textContent = entries.length;
+    document.getElementById('rt-break-hrs').textContent = totalBreakHours.toFixed(1);
+    var me = state.currentUserId ? DB.getById('users', state.currentUserId) : null;
+    var hourlyRate = (me && me.hourly_rate) || 35;
+    document.getElementById('rt-est-pay').textContent = '$' + Math.round(totalHours * hourlyRate).toLocaleString();
 
     // Materials Recorded — task_materials has no direct user_id/job_id (only
     // an optional task_id, which itself only exists once a `tasks` row is

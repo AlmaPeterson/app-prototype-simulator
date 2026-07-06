@@ -269,7 +269,7 @@
                 '</div>' +
                 '<div class="form-group" style="margin:0; flex:1;">' +
                 '<label>Qty</label>' +
-                '<input type="number" min="0" step="0.01" value="' + (m.qty||'') + '" placeholder="0" ' +
+                '<input type="number" min="0" step="1" value="' + (m.qty||'') + '" placeholder="0" ' +
                 'oninput="window.divWorking.tasks[' + ti + '].materials[' + mi + '].qty=+this.value; window.bidRecalcDiv();">' +
                 '</div>' +
                 '<div style="padding-top:18px; min-width:64px; text-align:right;">' +
@@ -322,11 +322,11 @@
             '</select></div>' +
             '<div class="form-group" style="margin:0; flex:1;">' +
             '<label>Qty</label>' +
-            '<input type="number" min="0" step="0.01" value="' + (t.qty||'') + '" placeholder="0"' +
+            '<input type="number" min="0" step="1" value="' + (t.qty||'') + '" placeholder="0"' +
             ' oninput="window.divWorking.tasks[' + ti + '].qty=+this.value; window.bidRecalcDiv();"></div>' +
             '<div class="form-group" style="margin:0; flex:1;">' +
             '<label>Hrs / Each</label>' +
-            '<input type="number" min="0" step="0.001" value="' + (t.hrsEach||'') + '" placeholder="0"' +
+            '<input type="number" min="0" step="1" value="' + (t.hrsEach||'') + '" placeholder="0"' +
             ' oninput="window.divWorking.tasks[' + ti + '].hrsEach=+this.value; window.bidRecalcDiv();"></div>' +
             '</div>' +
             '<div style="display:flex; gap:16px; font-size:0.85rem; margin-top:4px;">' +

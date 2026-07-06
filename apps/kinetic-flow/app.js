@@ -744,10 +744,39 @@ function openLabelGenerator() { loadPage('label-generator'); }
 function openFieldClock() { loadPage('task-select'); }
 function openInventory() { loadPage('inventory'); }
 
-// ── PM Scorecard ─────────────────────────────────────────────────────────────
+// ── Scorecard ────────────────────────────────────────────────────────────────
+// Two-step flow: every worker fills out their own scorecard first (a
+// self-assessment, status 'self_submitted'); a manager/admin then opens it
+// from the job's team list, adjusts the scores, and finalizes it (status
+// 'reviewed'). Guild progression only runs on the manager's final submit.
+function isManagerOrAdmin() {
+    const user = state.currentUserId ? DB.getById('users', state.currentUserId) : null;
+    if (user && user.is_platform_admin) return true;
+    return DB.get('user_roles').some(function (ur) {
+        if (ur.user_id !== state.currentUserId || ur.deleted_at || ur.status === 'pending') return false;
+        const role = DB.getById('roles', ur.role_id);
+        return !!role && role.company_id === state.currentCompanyId && (role.name === 'admin' || role.name === 'manager');
+    });
+}
+
+// Latest self-assessment still awaiting manager review for a worker.
+function pendingSelfScorecard(userId) {
+    return DB.find('scorecard_entries', function (s) {
+        return s.user_id === userId && s.status === 'self_submitted' && !s.deleted_at;
+    }).sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); })[0] || null;
+}
+
 function openScorecard(userId) {
+    if (userId !== state.currentUserId && !isManagerOrAdmin()) {
+        alert("Only a manager can review another worker's scorecard. Use My Scorecard (More tab) to fill out your own.");
+        return;
+    }
     state.scorecardWorkerId = userId;
     loadPage('scorecard');
+}
+
+function openMyScorecard() {
+    openScorecard(state.currentUserId);
 }
 
 // Most recent time entry for a worker — the shift a scorecard applies to.
@@ -861,7 +890,7 @@ function applyScorecardToGuildProgression(scorecard) {
         cutoff.setDate(cutoff.getDate() - (crit.trailing_days || 30));
         const cutoffDay = cutoff.toISOString().slice(0, 10);
         const cards = DB.find('scorecard_entries', function (s) {
-            return s.user_id === scorecard.user_id && s.shift_date >= cutoffDay;
+            return s.user_id === scorecard.user_id && s.shift_date >= cutoffDay && s.status !== 'self_submitted';
         });
         const avg = cards.reduce(function (sum, s) { return sum + s.total_score; }, 0) / (cards.length || 1);
         if (cards.length && avg >= (crit.scorecard_pct || 100)) {
@@ -927,13 +956,10 @@ function submitScorecard() {
         + scoreDispositionToLearn + scoreEliteCharacter;
 
     const recentEntry = latestTimeEntryFor(state.scorecardWorkerId);
+    const isSelf = state.scorecardWorkerId === state.currentUserId;
+    const pendingSelf = isSelf ? null : pendingSelfScorecard(state.scorecardWorkerId);
 
-    const scorecard = DB.insert('scorecard_entries', {
-        company_id: state.currentCompanyId,
-        user_id: state.scorecardWorkerId,
-        time_entry_id: recentEntry ? recentEntry.id : null,
-        job_id: state.currentJobId,
-        shift_date: new Date().toISOString().slice(0, 10),
+    const scoreFields = {
         score_job_well_done: scoreJobWellDone,
         score_production_speed: scoreProductionSpeed,
         score_material_accountability: scoreMaterialAccountability,
@@ -945,19 +971,45 @@ function submitScorecard() {
         score_disposition_to_learn: scoreDispositionToLearn,
         score_elite_character: scoreEliteCharacter,
         total_score: totalScore,
-        tool_discipline_photo_url: null,
-        reviewed_by: state.currentUserId,
-        reviewed_at: new Date().toISOString(),
-    });
-    const promotions = applyScorecardToGuildProgression(scorecard);
+    };
+
+    let scorecard;
+    if (pendingSelf) {
+        // Manager finalizing a worker's self-assessment: overwrite the same
+        // row with the manager's scores, keeping the shift it applied to.
+        scorecard = DB.update('scorecard_entries', pendingSelf.id, Object.assign({}, scoreFields, {
+            status: 'reviewed',
+            reviewed_by: state.currentUserId,
+            reviewed_at: new Date().toISOString(),
+        }));
+    } else {
+        scorecard = DB.insert('scorecard_entries', Object.assign({
+            company_id: state.currentCompanyId,
+            user_id: state.scorecardWorkerId,
+            time_entry_id: recentEntry ? recentEntry.id : null,
+            job_id: state.currentJobId,
+            shift_date: new Date().toISOString().slice(0, 10),
+            tool_discipline_photo_url: null,
+            status: isSelf ? 'self_submitted' : 'reviewed',
+            reviewed_by: isSelf ? null : state.currentUserId,
+            reviewed_at: isSelf ? null : new Date().toISOString(),
+        }, scoreFields));
+    }
+
+    // Progression only moves on a manager-reviewed scorecard, never a self one.
+    const promotions = isSelf ? [] : applyScorecardToGuildProgression(scorecard);
     if (state.scorecardReturnTo) {
         const returnTo = state.scorecardReturnTo;
         state.scorecardReturnTo = null;
         loadPage(returnTo);
     } else {
-        loadPage('job-detail');
+        loadPage(isSelf ? 'more' : 'job-detail');
     }
-    showPromotionToast(promotions);
+    if (isSelf) {
+        showToast('Self-Assessment Submitted', ['Your manager will review and finalize it.'], '#1e40af');
+    } else {
+        showPromotionToast(promotions);
+    }
 }
 
 // ── Task Select / Training Gate / Co-Sign ─────────────────────────────────────
@@ -1735,7 +1787,8 @@ function activate() {
         openBid, submitBid, recalcBidTotals,
         openDivision, saveDivision, previewProposal,
         openSchedule, openTimeSheet, openKits, openLabelGenerator, openFieldClock, openInventory,
-        openScorecard, submitScorecard,
+        openScorecard, openMyScorecard, submitScorecard, isManagerOrAdmin, pendingSelfScorecard,
+        computeProductionSpeed,
         selectClockInTask, trainingVideoComplete, showCoSignModal, closeCoSignModal, confirmCoSign,
         recordPpeVideo, ppeVideoComplete,
         toggleClock, addActivity,

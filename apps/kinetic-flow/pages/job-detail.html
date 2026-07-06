@@ -26,8 +26,10 @@
     <!-- Team -->
     <div class="section-header">
         <span class="section-title">Assigned Team</span>
-        <button class="section-action">+ Add</button>
+        <button class="section-action" onclick="jdToggleAddMember()">+ Add</button>
     </div>
+
+    <div id="jd-add-member" class="card" style="cursor:default; margin-bottom:8px; display:none;"></div>
 
     <div id="job-detail-team" class="card" style="cursor:default; margin-bottom:16px;"></div>
 
@@ -112,6 +114,7 @@
             '<div class="list-item-right"><div class="list-item-value">$' + materialTotal.toLocaleString() + '</div></div>' +
         '</div>';
 
+    function renderTeam() {
     var assignments = DB.find('job_assignments', function (a) { return a.job_id === job.id; });
     var teamHtml = assignments.map(function (a, i) {
         var user = DB.getById('users', a.user_id);
@@ -134,5 +137,46 @@
     }).join('');
     document.getElementById('job-detail-team').innerHTML = teamHtml ||
         '<div class="list-item" style="padding:8px 0; border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">Unassigned</div></div>';
+    }
+
+    // "+ Add" — inline picker of company members not yet on this job.
+    function renderAddMemberPicker() {
+        var assignedIds = DB.find('job_assignments', function (a) { return a.job_id === job.id; })
+            .map(function (a) { return a.user_id; });
+        var candidates = companyMemberUsers(state.currentCompanyId).filter(function (u) {
+            return assignedIds.indexOf(u.id) === -1;
+        });
+        var box = document.getElementById('jd-add-member');
+        box.innerHTML = candidates.map(function (u, i) {
+            var isLast = i === candidates.length - 1;
+            return '<div class="list-item" style="padding:8px 0;' + (isLast ? ' border-bottom:none;' : '') + ' cursor:pointer;" onclick="jdAddMember(\'' + u.id + '\')">' +
+                '<div class="list-item-body"><div class="list-item-title">' + u.full_name + '</div>' +
+                '<div class="list-item-sub">Tap to add to this job</div></div>' +
+                '<span class="badge">+ Add</span>' +
+            '</div>';
+        }).join('') ||
+            '<div class="list-item" style="padding:8px 0; border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">Everyone in the company is already on this job.</div></div>';
+    }
+
+    window.jdToggleAddMember = function () {
+        var box = document.getElementById('jd-add-member');
+        var show = box.style.display === 'none';
+        if (show) renderAddMemberPicker();
+        box.style.display = show ? 'block' : 'none';
+    };
+
+    window.jdAddMember = function (userId) {
+        DB.insert('job_assignments', {
+            company_id: state.currentCompanyId,
+            job_id: job.id,
+            user_id: userId,
+            role_on_job: 'member',
+            assigned_at: new Date().toISOString(),
+        });
+        renderTeam();
+        renderAddMemberPicker();
+    };
+
+    renderTeam();
 })();
 </script>

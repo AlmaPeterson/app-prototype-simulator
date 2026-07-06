@@ -91,7 +91,7 @@
         </div>
     </div>
 
-    <button class="btn btn-primary" onclick="trySubmitScorecard()">Submit Scorecard</button>
+    <button class="btn btn-primary" id="sc-submit-btn" onclick="trySubmitScorecard()">Submit Scorecard</button>
 </div>
 
 <script>
@@ -99,26 +99,38 @@
     // When the timesheet gate sent the worker here (scorecardReturnTo set),
     // backing out should return to the timesheet, not the PM's job page.
     var returnTo = (typeof state !== 'undefined' && state.scorecardReturnTo) || null;
-    if (returnTo) {
-        var backBtn = document.getElementById('sc-back-btn');
-        if (backBtn) {
-            backBtn.innerHTML = '&larr; Time Sheet';
-            backBtn.onclick = function () {
-                state.scorecardReturnTo = null;
-                loadPage(returnTo);
-            };
-        }
+    var backBtn = document.getElementById('sc-back-btn');
+    if (returnTo && backBtn) {
+        backBtn.innerHTML = '&larr; Time Sheet';
+        backBtn.onclick = function () {
+            state.scorecardReturnTo = null;
+            loadPage(returnTo);
+        };
+    } else if (backBtn && state.scorecardWorkerId === state.currentUserId) {
+        // Self-assessment opened from the More tab — don't back into a job page.
+        backBtn.innerHTML = '&larr; Back';
+        backBtn.onclick = function () { loadPage('more'); };
     }
 
     var userId = (typeof state !== 'undefined' && state.scorecardWorkerId) || null;
     var user = userId ? DB.getById('users', userId) : null;
     var name = user ? user.full_name : 'Team Member';
+    var isSelf = !!userId && userId === state.currentUserId;
+    // Manager review mode: pre-fill from the worker's pending self-assessment.
+    var selfEntry = (!isSelf && userId) ? pendingSelfScorecard(userId) : null;
+
     var nameEl = document.getElementById('sc-worker-name');
-    if (nameEl) nameEl.textContent = name + ' — Workman Scorecard';
+    if (nameEl) nameEl.textContent = isSelf ? 'My Scorecard — Self-Assessment' : name + ' — Workman Scorecard';
 
     var job = (typeof state !== 'undefined' && state.currentJobId) ? DB.getById('jobs', state.currentJobId) : null;
     var subtitleEl = document.getElementById('sc-worker-subtitle');
-    if (subtitleEl) subtitleEl.textContent = (job ? job.name + ' • ' : '') + "Today's Shift";
+    if (subtitleEl) {
+        subtitleEl.textContent = isSelf
+            ? "Rate your own shift — your manager reviews and finalizes it"
+            : selfEntry
+                ? 'Reviewing self-assessment from ' + selfEntry.shift_date
+                : (job ? job.name + ' • ' : '') + "Today's Shift";
+    }
 
     var binaries = { jwd: false, materials: false, tools: false, cleanliness: false };
     var sliderKeys = ['initiative', 'safety', 'heart', 'learn', 'elite'];
@@ -143,6 +155,30 @@
         var val = document.getElementById('val-' + key);
         if (val) val.textContent = '—';
     });
+
+    // Pre-fill the form from the worker's self-assessment so the manager
+    // starts from the worker's answers and only adjusts what they disagree with.
+    if (selfEntry) {
+        var binaryFields = { jwd: 'score_job_well_done', materials: 'score_material_accountability',
+            tools: 'score_tool_discipline', cleanliness: 'score_site_cleanliness' };
+        Object.keys(binaryFields).forEach(function (key) {
+            if (selfEntry[binaryFields[key]] > 0) {
+                binaries[key] = true;
+                var el = document.getElementById('toggle-' + key);
+                if (el) el.classList.add('on');
+            }
+        });
+        var sliderFields = { initiative: 'score_initiative', safety: 'score_habitual_safety',
+            heart: 'score_constructive_heart', learn: 'score_disposition_to_learn', elite: 'score_elite_character' };
+        sliderKeys.forEach(function (key) {
+            var slider = document.getElementById('slider-' + key);
+            var val = document.getElementById('val-' + key);
+            var score = Number(selfEntry[sliderFields[key]] || 0);
+            touched[key] = true;
+            if (slider) slider.value = score;
+            if (val) val.textContent = String(score);
+        });
+    }
 
     window.updateScorecardSlider = function (key) {
         touched[key] = true;
@@ -176,6 +212,13 @@
         });
         var totalEl = document.getElementById('sc-total');
         if (totalEl) totalEl.textContent = total + ' / 100';
+    }
+
+    var submitBtn = document.getElementById('sc-submit-btn');
+    if (submitBtn) {
+        submitBtn.textContent = isSelf ? 'Submit Self-Assessment'
+            : selfEntry ? 'Approve & Finalize Scorecard'
+            : 'Submit Scorecard';
     }
 
     recalcScorecard();
