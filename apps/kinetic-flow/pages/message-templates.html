@@ -1,0 +1,91 @@
+<div class="page" style="padding-bottom:80px;">
+    <div class="page-title">Message Templates</div>
+    <div class="page-subtitle mb-2">What to say to the customer, ready to copy</div>
+
+    <div class="alert mb-4" style="font-size:0.8rem;">
+        Copy a message below, then paste and send it from your phone's messaging app.
+        Kinetic Flow does not send texts itself.
+    </div>
+
+    <div id="tmpl-job-context" class="card-subtitle mb-4"></div>
+
+    <div id="tmpl-list"></div>
+</div>
+
+<script>
+(function () {
+    // Known placeholders get filled from the current job context; anything we
+    // can't resolve is left as an editable [blank] so the worker fills it in
+    // before copying — never send a message with {{raw}} tokens in it.
+    var job = state.currentJobId ? DB.getById('jobs', state.currentJobId) : null;
+    var customer = job && job.customer_id ? DB.getById('customers', job.customer_id) : null;
+    var company = state.currentCompanyId ? DB.getById('companies', state.currentCompanyId) : null;
+
+    var fills = {
+        customer_name: customer ? customer.full_name.split(' ')[0] : null,
+        job_name: job ? job.name : null,
+        crew_name: company ? 'the ' + company.name + ' crew' : null,
+        start_time: job && job.scheduled_start
+            ? new Date(job.scheduled_start).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+            : null,
+    };
+
+    function scenarioLabel(s) {
+        return s.split('_').map(function (w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
+    }
+
+    function fillBody(body) {
+        return body.replace(/\{\{(\w+)\}\}/g, function (_, key) {
+            return fills[key] || '[' + key.replace(/_/g, ' ') + ']';
+        });
+    }
+
+    var templates = DB.find('message_templates', function (t) {
+        return t.company_id === state.currentCompanyId && t.is_active;
+    });
+
+    var ctx = document.getElementById('tmpl-job-context');
+    if (job) {
+        ctx.textContent = 'Filled in for ' + job.name + (customer ? ' • ' + customer.full_name : '');
+    } else {
+        ctx.textContent = 'No job selected — blanks like [customer name] need to be filled in before sending.';
+    }
+
+    document.getElementById('tmpl-list').innerHTML = templates.map(function (t, i) {
+        return '<div class="card">' +
+            '<div class="card-title mb-2">' + scenarioLabel(t.scenario) + '</div>' +
+            '<textarea id="tmpl-body-' + i + '" rows="3" ' +
+                'style="width:100%; border:1px solid #e2e8f0; padding:10px 12px; font-size:0.85rem; font-family:inherit; resize:vertical; outline:none;">' +
+                fillBody(t.body) +
+            '</textarea>' +
+            '<button class="btn btn-secondary mt-2" id="tmpl-copy-' + i + '" onclick="copyTemplate(' + i + ')" style="font-size:0.8rem; padding:8px 14px;">' +
+                'Copy Message' +
+            '</button>' +
+        '</div>';
+    }).join('') || '<div class="alert">No message templates for this company yet.</div>';
+
+    window.copyTemplate = function (i) {
+        var text = document.getElementById('tmpl-body-' + i).value;
+        var btn = document.getElementById('tmpl-copy-' + i);
+        function done() {
+            btn.textContent = 'Copied — paste into your messaging app';
+            setTimeout(function () { btn.textContent = 'Copy Message'; }, 2500);
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); done(); });
+        } else {
+            fallbackCopy(text);
+            done();
+        }
+    };
+
+    function fallbackCopy(text) {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+    }
+})();
+</script>

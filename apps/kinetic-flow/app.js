@@ -56,7 +56,7 @@ const TABLES = [
     'addresses', 'jobs', 'bids', 'bid_divisions', 'bid_line_items', 'divisions',
     'materials', 'inventory_kits', 'kit_items', 'kit_tools', 'kit_checkouts',
     'job_assignments', 'task_modules', 'tasks', 'task_materials', 'task_photos',
-    'time_entries', 'time_entry_edits', 'schedule_events', 'messages',
+    'time_entries', 'time_entry_edits', 'schedule_events',
     'message_templates', 'scorecard_entries', 'worker_task_competency',
     'competency_levels', 'levels', 'user_level_history', 'training_modules',
     'training_assignments', 'job_history_library', 'finance_snapshots',
@@ -160,7 +160,7 @@ const supplierNav = [
 
 // Pages that show the bottom nav
 const mainAppPages = [
-    'schedule', 'feild-clock', 'kits', 'label-generator', 'more', 'messages',
+    'schedule', 'feild-clock', 'kits', 'label-generator', 'more', 'message-templates',
     'inventory', 'stats', 'finance', 'customer-home', 'customer-bid', 'customer-invoice', 'scoreboard',
     'job-home', 'job-detail', 'job-detail-nobid', 'create-job',
 ];
@@ -239,7 +239,6 @@ function navTo(page) {
         return;
     }
     if (page === 'more') { loadPage('more'); return; }
-    if (page === 'messages') { loadPage('messages'); return; }
     loadPage(page);
 }
 
@@ -1233,21 +1232,100 @@ function syncClockUI() {
         btn.textContent = 'Clock In';
         if (status) status.textContent = 'Clocked Out';
     }
+    syncActivityButtons();
+    // The page's activity log is fresh markup — re-add any still-ongoing
+    // activity entries (and re-point their DOM refs) so they survive navigation.
+    const log = document.getElementById('activity-log');
+    if (log) {
+        Object.keys(activeActivities).forEach(function (type) {
+            const active = activeActivities[type];
+            if (log.contains(active.entry)) return;
+            const entry = document.createElement('div');
+            entry.className = 'list-item';
+            entry.innerHTML = `
+                <div class="list-item-body">
+                    <div class="list-item-title">${type.charAt(0).toUpperCase() + type.slice(1)}</div>
+                    <div class="list-item-sub">${formatClockTime(active.startMs)} &ndash; ongoing</div>
+                </div>
+                <span class="badge badge-gray">Active</span>`;
+            log.prepend(entry);
+            active.entry = entry;
+        });
+    }
+}
+
+// Driving / Lunch / Task are toggles: first tap starts recording (log entry
+// shows "ongoing"), second tap stops it and stamps start–end plus the total
+// duration. Keyed by type so e.g. Lunch can run while a Task is ongoing.
+const activeActivities = {}; // type -> { startMs, entry (DOM node in #activity-log) }
+
+function formatClockTime(ms) {
+    return new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatDuration(ms) {
+    const totalSec = Math.round(ms / 1000);
+    if (totalSec < 60) return totalSec + ' sec';
+    const totalMin = Math.round(totalSec / 60);
+    if (totalMin < 60) return totalMin + ' min';
+    return Math.floor(totalMin / 60) + ' hr ' + (totalMin % 60) + ' min';
 }
 
 function addActivity(type) {
     const log = document.getElementById('activity-log');
     if (!log) return;
-    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const entry = document.createElement('div');
-    entry.className = 'list-item';
-    entry.innerHTML = `
-        <div class="list-item-body">
-            <div class="list-item-title">${type.charAt(0).toUpperCase() + type.slice(1)}</div>
-            <div class="list-item-sub">Started at ${time}</div>
-        </div>
-        <span class="badge badge-gray">Active</span>`;
-    log.prepend(entry);
+    const label = type.charAt(0).toUpperCase() + type.slice(1);
+    const active = activeActivities[type];
+
+    if (!active) {
+        const startMs = Date.now();
+        const entry = document.createElement('div');
+        entry.className = 'list-item';
+        entry.innerHTML = `
+            <div class="list-item-body">
+                <div class="list-item-title">${label}</div>
+                <div class="list-item-sub">${formatClockTime(startMs)} &ndash; ongoing</div>
+            </div>
+            <span class="badge badge-gray">Active</span>`;
+        log.prepend(entry);
+        activeActivities[type] = { startMs: startMs, entry: entry };
+    } else {
+        const endMs = Date.now();
+        // Navigating away rebuilds the page, so the ongoing entry's DOM node
+        // may no longer be in the (fresh) log — recreate it in that case.
+        let entry = active.entry;
+        if (!log.contains(entry)) {
+            entry = document.createElement('div');
+            entry.className = 'list-item';
+            log.prepend(entry);
+        }
+        entry.innerHTML = `
+            <div class="list-item-body">
+                <div class="list-item-title">${label}</div>
+                <div class="list-item-sub">${formatClockTime(active.startMs)} &ndash; ${formatClockTime(endMs)} &bull; ${formatDuration(endMs - active.startMs)}</div>
+            </div>`;
+        delete activeActivities[type];
+    }
+    syncActivityButtons();
+}
+
+// Reflect which activities are recording on the Driving/Lunch/Task buttons —
+// called after each toggle and from syncClockUI() when the page re-renders.
+function syncActivityButtons() {
+    ['driving', 'lunch', 'task'].forEach(function (type) {
+        const btn = document.getElementById('act-btn-' + type);
+        if (!btn) return;
+        const label = type.charAt(0).toUpperCase() + type.slice(1);
+        if (activeActivities[type]) {
+            btn.textContent = 'End ' + label;
+            btn.classList.add('btn-primary');
+            btn.classList.remove('btn-secondary');
+        } else {
+            btn.textContent = label;
+            btn.classList.add('btn-secondary');
+            btn.classList.remove('btn-primary');
+        }
+    });
 }
 
 // ── Material Log Modal ───────────────────────────────────────────────────────
@@ -1488,7 +1566,13 @@ function restoreState() {
     if (!saved) return;
 
     if (saved.state) Object.assign(state, saved.state);
-    if (saved.db) { _tables = saved.db; _dbLoaded = true; }
+    // A snapshot from before a schema change may be missing newly added
+    // tables — using it would make those tables silently empty. Discard it
+    // and let DB.load() re-fetch fresh seed data instead.
+    if (saved.db && TABLES.every(function (t) { return saved.db[t]; })) {
+        _tables = saved.db;
+        _dbLoaded = true;
+    }
 
     if (saved.clock && saved.clock.clockedIn) {
         clockedIn = true;

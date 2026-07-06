@@ -75,32 +75,38 @@
         }).join('');
     }
 
-    function listSection(title, items, addHandler) {
+    function itemLabel(row) {
+        return row.quantity && row.quantity !== 1 ? (row.name + ' (' + row.quantity + ')') : row.name;
+    }
+
+    function listSection(title, kind, rows, addHandler) {
         var html = '<div class="section-header mt-4"><span class="section-title">' + title + '</span>' +
             (addHandler ? '<button class="section-action" onclick="' + addHandler + '">+ Add</button>' : '') +
             '</div>';
-        if (!items || items.length === 0) {
+        if (!rows || rows.length === 0) {
             html += '<div class="kit-empty">No ' + title.toLowerCase() + ' listed.</div>';
             return html;
         }
         html += '<div class="card" style="cursor:default; padding:0 14px;">';
-        html += items.map(function (i) { return '<div class="kit-detail-item">' + i + '</div>'; }).join('');
+        html += rows.map(function (r) {
+            return '<div class="kit-detail-item" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;" ' +
+                'onclick="openKitItemEditor(\'' + kind + '\',\'' + r.id + '\')">' +
+                '<span>' + itemLabel(r) + '</span><span class="card-arrow">&rsaquo;</span></div>';
+        }).join('');
         html += '</div>';
         return html;
     }
 
     function kitDetailHtml(cat, kit) {
         var tools = DB.find('kit_tools', function (t) { return t.kit_id === kit.id && !t.deleted_at; })
-            .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); })
-            .map(function (t) { return t.name; });
+            .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
         var materials = DB.find('kit_items', function (i) { return i.kit_id === kit.id && !i.deleted_at; })
-            .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); })
-            .map(function (i) { return i.quantity && i.quantity !== 1 ? (i.name + ' (' + i.quantity + ')') : i.name; });
+            .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
 
         var html = '<div class="page-title-sm">' + kit.name + '</div>';
         html += '<div class="page-subtitle mb-4">' + cat.name + '</div>';
-        html += listSection('Tools', tools, 'addKitEntry(\'tool\')');
-        html += listSection('Materials', materials, 'addKitEntry(\'material\')');
+        html += listSection('Tools', 'tool', tools, 'addKitEntry(\'tool\')');
+        html += listSection('Materials', 'material', materials, 'addKitEntry(\'material\')');
         html += '<div class="section-header mt-4"><span class="section-title">Videos</span>' +
             '<button class="section-action" onclick="addKitEntry(\'video\')">+ Add</button></div>';
         var videos = [{ title: kit.name + ' &mdash; Overview', subtitle: 'Training video placeholder' }]
@@ -205,7 +211,7 @@
                 '<div class="page-title-sm mb-2">' + labels[kind] + '</div>' +
                 '<div class="form-group"><label>' + (kind === 'video' ? 'Video Title' : 'Name') + '</label>' +
                     '<input type="text" id="ka-name" placeholder="' + (kind === 'video' ? 'e.g. Panel Swap Walkthrough' : 'e.g. Torpedo Level') + '"></div>' +
-                (kind === 'material'
+                (kind !== 'video'
                     ? '<div class="form-group"><label>Quantity</label><input type="number" id="ka-qty" min="1" step="1" value="1"></div>'
                     : '') +
                 '<button class="btn btn-primary mt-2" onclick="saveKitEntry(\'' + kind + '\')">Add</button>' +
@@ -220,8 +226,9 @@
         if (!name) { alert('Enter a name.'); return; }
         var kit = CATEGORIES[appState.selected.ci].kits[appState.selected.ki];
         if (kind === 'tool') {
+            var toolQty = parseInt(document.getElementById('ka-qty').value, 10) || 1;
             var maxTool = DB.find('kit_tools', function (t) { return t.kit_id === kit.id; }).length;
-            DB.insert('kit_tools', { company_id: kit.company_id, kit_id: kit.id, name: name, sort_order: maxTool });
+            DB.insert('kit_tools', { company_id: kit.company_id, kit_id: kit.id, name: name, quantity: toolQty, sort_order: maxTool });
         } else if (kind === 'material') {
             var qty = parseInt(document.getElementById('ka-qty').value, 10) || 1;
             var maxItem = DB.find('kit_items', function (i) { return i.kit_id === kit.id; }).length;
@@ -233,6 +240,53 @@
             DB.update('inventory_kits', kit.id, { videos: (kit.videos || []).concat([{ title: name }]) });
         }
         document.getElementById('kit-add-panel').remove();
+        render();
+    };
+
+    // Tap a tool/material row → edit sheet: rename, change quantity, or
+    // remove (soft delete via deleted_at, matching the list queries above).
+    function kindTable(kind) { return kind === 'tool' ? 'kit_tools' : 'kit_items'; }
+
+    window.openKitItemEditor = function (kind, id) {
+        var row = DB.getById(kindTable(kind), id);
+        if (!row) return;
+        var existing = document.getElementById('kit-edit-panel');
+        if (existing) existing.remove();
+        var modal = document.createElement('div');
+        modal.id = 'kit-edit-panel';
+        modal.className = 'modal-overlay';
+        modal.innerHTML =
+            '<div class="modal-sheet">' +
+                '<div class="modal-handle"></div>' +
+                '<div class="page-title-sm mb-2">' + (kind === 'tool' ? 'Edit Tool' : 'Edit Material') + '</div>' +
+                '<div class="form-group"><label>Name</label><input type="text" id="ke-name"></div>' +
+                '<div class="form-group"><label>Quantity</label><input type="number" id="ke-qty" min="1" step="1"></div>' +
+                '<button class="btn btn-primary mt-2" onclick="saveKitItemEdit(\'' + kind + '\',\'' + id + '\')">Save</button>' +
+                '<button class="btn btn-outline" style="color:#dc2626; border-color:#fca5a5;" onclick="removeKitItem(\'' + kind + '\',\'' + id + '\')">Remove from Kit</button>' +
+                '<button class="btn btn-secondary" onclick="document.getElementById(\'kit-edit-panel\').remove()">Cancel</button>' +
+            '</div>';
+        modal.addEventListener('click', function (e) { if (e.target === modal) modal.remove(); });
+        document.getElementById('phone').appendChild(modal);
+        // Set values via the DOM (not the HTML string) so names with quotes render intact.
+        document.getElementById('ke-name').value = row.name || '';
+        document.getElementById('ke-qty').value = row.quantity || 1;
+    };
+
+    window.saveKitItemEdit = function (kind, id) {
+        var name = (document.getElementById('ke-name').value || '').trim();
+        if (!name) { alert('Enter a name.'); return; }
+        var qty = parseInt(document.getElementById('ke-qty').value, 10);
+        if (!qty || qty < 1) qty = 1;
+        DB.update(kindTable(kind), id, { name: name, quantity: qty });
+        document.getElementById('kit-edit-panel').remove();
+        render();
+    };
+
+    window.removeKitItem = function (kind, id) {
+        var row = DB.getById(kindTable(kind), id);
+        if (!confirm('Remove "' + (row ? row.name : 'this item') + '" from the kit?')) return;
+        DB.update(kindTable(kind), id, { deleted_at: new Date().toISOString() });
+        document.getElementById('kit-edit-panel').remove();
         render();
     };
 
