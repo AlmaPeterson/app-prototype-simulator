@@ -32,3 +32,14 @@ Guild Levels should be 4 fixed levels that are the same for every company and do
 
 ---
 
+## 2026-07-06T20:10:04.167Z
+
+- Screen: kinetic-flow — task-select
+- Role: worker
+- Account: Existing Account
+- Phone size: 430 × 932
+
+This page should Not be here I will leave another note where it should be.
+
+---
+
