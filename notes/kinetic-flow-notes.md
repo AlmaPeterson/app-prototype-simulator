@@ -99,3 +99,14 @@ Clockout button should be clearly disabled if checklist not complete
 
 ---
 
+## 2026-07-06T21:48:31.477Z
+
+- Screen: kinetic-flow — feild-clock
+- Role: worker
+- Account: Existing Account
+- Phone size: 430 × 932
+
+When I try to open another app and go back to kinetic flow, it brings me back to the other app.
+
+---
+
