@@ -55,3 +55,14 @@ I can't add team members to job
 
 ---
 
+## 2026-07-06T14:04:55.558Z
+
+- Screen: kinetic-flow — task-select
+- Role: worker
+- Account: Existing Account
+- Phone size: 430 × 932
+
+Why do all the tasks say Not yet cleared for this task, and STUDENT. make this work how it should.
+
+---
+
