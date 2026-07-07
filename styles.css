@@ -494,6 +494,150 @@ body.fullscreen-mode #resize-grip {
 }
 
 
+/* ── App Header (identity bar above #main; filled per-page by the running
+   app's updateAppHeader(), empty = hidden, mirroring .bottom-nav:empty) ── */
+#app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 8px 16px;
+    flex-shrink: 0;
+}
+
+#app-header:empty {
+    display: none;
+}
+
+.app-header-id {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: none;
+    border: none;
+    padding: 4px;
+    margin: -4px;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: left;
+    min-width: 0;
+}
+
+.app-header-id:hover { background: #f1f5f9; }
+
+.app-header-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #475569;
+    color: white;
+    font-size: 0.78rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.app-header-names {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.app-header-name {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.app-header-sub {
+    font-size: 0.7rem;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.app-header-more {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.app-header-more:hover { background: #f1f5f9; }
+
+/* The header's ⋯ dropdown — dimmed full-phone overlay with a panel anchored
+   under the header's right edge (84px ≈ status bar + header height). */
+.header-menu-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.3);
+    z-index: 200;
+    animation: fadeIn 0.15s ease;
+}
+
+.header-menu {
+    position: absolute;
+    top: 84px;
+    right: 12px;
+    width: 236px;
+    max-height: calc(100% - 130px);
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 4px 6px 8px;
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.28);
+    transform-origin: top right;
+    animation: headerMenuPop 0.16s ease-out;
+}
+
+@keyframes headerMenuPop {
+    from { opacity: 0; transform: scale(0.92) translateY(-6px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.header-menu-section {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+    padding: 12px 10px 4px;
+}
+
+.header-menu-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #0f172a;
+    cursor: pointer;
+}
+
+.header-menu-item:hover { background: #f1f5f9; }
+.header-menu-item.danger { color: #dc2626; }
+
 /* ── Bottom Nav ── */
 .bottom-nav {
     display: flex;

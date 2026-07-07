@@ -152,21 +152,21 @@ sense — nothing hits a server.
 - **Edit:** Notes-for-supervisor textarea — Save Draft keeps it in state (restored next visit, and across the scorecard-gate detour); Submit stamps it onto the submitted entries as `worker_note`, where the manager sees it on team-time.
 - **Do:** Submit Timesheet — if today's shift has no scorecard yet it redirects you to scorecard first (and returns here); otherwise marks the entries submitted for the manager. Save Draft / ← Field Clock.
 
-### team-time.html — manager view (More → Team Timesheets)
+### team-time.html — manager view (⋯ menu → Team Timesheets)
 - **See:** Hours awaiting QuickBooks (hero, with entry count and estimated payroll); **Flagged — Outside Geofence** section listing GPS-flagged entries (who, when, job, distance from site); submitted-but-unexported entries grouped per worker with per-worker hour/pay subtotals, each entry showing the worker's timesheet note in italics when one was submitted; the last 8 entries already sent to QuickBooks.
 - **Edit:** Nothing directly.
-- **Do:** Approve a flagged entry (moves it into the export queue). Submit All to QuickBooks (simulated export — stamps `qb_exported_at` and moves entries to the "Already Sent" list). ← More.
+- **Do:** Approve a flagged entry (moves it into the export queue). Submit All to QuickBooks (simulated export — stamps `qb_exported_at` and moves entries to the "Already Sent" list). ← Back.
 
 ---
 
 ## Scorecard & Guild
 
-### scorecard.html (More → My Scorecard for self-assessment; job-detail's team list for manager review; or forced by the timesheet gate)
+### scorecard.html (⋯ menu → My Scorecard for self-assessment; job-detail's team list for manager review; or forced by the timesheet gate)
 - **See:** Two modes on the same form. **Self** (worker scoring themselves): "My Scorecard — Self-Assessment". **Review** (manager/admin opening a worker): "{Worker} — Workman Scorecard"; if the worker has a pending self-assessment, the form pre-fills with their answers and the subtitle shows its shift date. Both: live-recalculated total out of 100; Production Speed auto-computed (actual vs. estimated hours, 0–5) and read-only.
 - **Edit:** Job Well Done toggle (0 or 55 pts); Material Accountability / Tool Discipline / Site Cleanliness toggles (5 pts each); five Heart Side sliders 0–5 (Initiative, Habitual Safety, The Constructive Heart, Disposition to Learn, Elite Character) — all five must be touched before submitting (they show "—" until moved; pre-filled review mode counts as touched).
-- **Do:** **Self:** Submit Self-Assessment — inserts a `scorecard_entries` row with `status: 'self_submitted'` (no `reviewed_by`, no guild progression), toasts that the manager will review it, returns to More (or the timesheet if the gate sent you here). **Review:** Approve & Finalize Scorecard — updates that same row to `status: 'reviewed'` with the manager's scores and `reviewed_by`/`reviewed_at` (or inserts a fresh reviewed row when no self-assessment exists), runs Guild auto-promotion (toast announces promotions), returns to job-detail. Self-submitted rows are excluded from the fellow-craft trailing average until reviewed.
+- **Do:** **Self:** Submit Self-Assessment — inserts a `scorecard_entries` row with `status: 'self_submitted'` (no `reviewed_by`, no guild progression), toasts that the manager will review it, returns to the page it was opened from (or the timesheet if the gate sent you here). **Review:** Approve & Finalize Scorecard — updates that same row to `status: 'reviewed'` with the manager's scores and `reviewed_by`/`reviewed_at` (or inserts a fresh reviewed row when no self-assessment exists), runs Guild auto-promotion (toast announces promotions), returns to job-detail. Self-submitted rows are excluded from the fellow-craft trailing average until reviewed.
 
-### scoreboard.html (More → Scoreboard)
+### scoreboard.html (⋯ menu → Scoreboard)
 - **See:** Company leaderboard (top 5 by scorecard points, with guild level and a "You" badge), your rank and points, and your stat tiles (jobs done and total hours are real; on-time % and customer rating are static).
 - **Edit:** Nothing.
 - **Do:** Switch the leaderboard period: Monthly / Weekly / All Time.
@@ -185,12 +185,12 @@ sense — nothing hits a server.
 - **Edit:** The selection (check kits and/or individual items); search filters kits.
 - **Do:** "Open in Label Maker" — hands the selection off to the user's separate Label Maker app; until that app is installed in this simulator it's an honest stub (toast). This page deliberately does **not** generate labels itself (QA note 2026-07-06). Clear selection. ← Kits.
 
-### inventory.html (supplier-role landing page after picking a company; also More → Stock Inventory)
+### inventory.html (supplier-role landing page after picking a company; also ⋯ menu → Stock Inventory)
 
 > **Supplier role:** supplier is a company role (seeded as `supplier@kineticflow.com`;
 > every company gets a default `supplier` role), not an account type — the old header
 > Supplier toggle is gone. Supplier-role users get their own bottom nav
-> (Inventory / Jobs / Schedule / Kits / More): jobs and the schedule are included so
+> (Inventory / Jobs / Schedule / Kits): jobs and the schedule are included so
 > they can see what materials each job needs and when to order/ship, but they can't
 > create jobs, clock in, or see finance.
 - **See:** Stock list from `materials` with per-item name, category (inferred from SKU prefix), SKU, quantity, unit cost; Total Items and Low Stock counters; category tabs; a Low Stock Alerts section (stock below reorder point, showing "N left / Min: M"); search bar.
@@ -201,12 +201,12 @@ sense — nothing hits a server.
 
 ## Dashboards
 
-### stats.html ("Stats" tab / More → Task Statistics)
+### stats.html (⋯ menu → Task Statistics)
 - **See:** Stat tiles (Jobs Completed and Labour Hours computed from `time_entries` for the selected period; On-Time Rate and Avg Rating static); By Job Type breakdown with percentage bars (real, from `jobs.job_type`); Team Performance top-3 by scorecard points; static Customer Satisfaction tiles.
 - **Edit:** Nothing.
 - **Do:** Switch period (This Month / Quarter / Year); "Scoreboard" shortcut.
 
-### finance.html ("Finance" tab / More → Finance Dashboard)
+### finance.html (⋯ menu → Finance Dashboard)
 - **See:** Three scope tiers — Nationwide / Branch / Job — each gated by your role's `finance_dashboard_permissions` (tabs you can't view are hidden). Overview: revenue hero (from `finance_snapshots`; the Job tier shows contract value from the bid), Revenue / Expenses / Profit / Outstanding tiles with margin. Invoices view: outstanding synthetic invoices per sent/signed bid (computed from the 50/20/20/10 schedule — there is no real invoices table). Expenses view: Labour / Materials / Overhead breakdown bars from `expense_entries`.
 - **Edit:** Nothing.
 - **Do:** Switch tier and view (Overview / Invoices / Expenses). Export Report is an alert placeholder (labeled as demo).
@@ -218,12 +218,21 @@ sense — nothing hits a server.
 
 ---
 
-## More Menu & Messaging
+## App Header, ⋯ Menu & Messaging
 
-### more.html ("More" tab)
-- **See:** Your real user card — initials avatar, name, position (from your active role) + company, guild-level badge; subtitle shows company • position. Grouped nav cards.
-- **Edit:** Nothing.
-- **Do:** Open My Scorecard (self-assessment → scorecard.html), Scoreboard, Task Statistics, Finance Dashboard, Customer Home Details, Message Templates, Team Timesheets, Company & Branches, Stock Inventory; preview the Sabbath Lock overlay; Sign Out. (Resetting demo data lives in the website header's Reset Data button, not in the app.)
+### App header (not a page — persistent bar above every main-app page)
+The More tab and more.html were removed; a slim header now sits above `#main`
+on exactly the pages that show the bottom nav (never on sign-in/companies,
+never in Customer mode). Left: initials avatar + your name + current company —
+tap it for the profile sheet (name, email, position • company, guild-level
+badge, Sign Out). Right: a ⋯ button opening a dropdown with the old More
+content — Dashboards (My Scorecard, Scoreboard, Task Statistics, Finance
+Dashboard, Customer Home Details, Message Templates), Management (Team
+Timesheets, Company & Branches, Stock Inventory), Preview (Sabbath Lock), and
+Account (Sign Out). Both bottom navs are four tabs now — worker: Home /
+Schedule / Field / Kits; supplier: Inventory / Jobs / Schedule / Kits.
+(Resetting demo data lives in the website header's Reset Data button, not in
+the app.)
 
 ### message-templates.html
 - **See:** Company message templates (from `message_templates`), each pre-filled with the current job's context (customer first name, job name, crew, start time); unresolvable placeholders render as editable `[blanks]`. A banner states Kinetic Flow does not send texts itself.
@@ -247,7 +256,7 @@ nav. The old customer-bid.html and customer-invoice.html tabs were removed.
 - **Edit:** Nothing.
 - **Do:** Tap a link → that property's customer-home, exactly as if the QR code was scanned.
 
-### customer-home.html (the QR-website stand-in — also reachable by workers via More)
+### customer-home.html (the QR-website stand-in — also reachable by workers via the ⋯ menu)
 - **See:** Property record for the job: job/address/customer subtitle, Floor Plan (file link or "none on file"), Paint by Room list, Materials Used list.
 - **Edit:** **Workers only** (viewing the selected job's record): Edit floor-plan link (prompt), add/edit/remove paint-by-room and materials entries via a key/value sheet — this is how crews maintain what the customer's QR page will show. Customers see everything read-only.
 - **Do:** ← Back — workers return to where they came from, customers to the property-link picker.

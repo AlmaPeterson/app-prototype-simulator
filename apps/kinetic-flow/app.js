@@ -173,12 +173,14 @@ const NAV_ICONS = {
     archive:  navSvg('<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><path d="M10 13h4"/>'),
 };
 
+// Four tabs only — everything that used to live on the More tab moved into
+// the app header's ⋯ menu (see updateAppHeader/showHeaderMenu below), so each
+// remaining tab is a bigger glove-friendly target.
 const workerNav = [
     { icon: NAV_ICONS.home,     label: 'Home',     page: 'jobs' },
     { icon: NAV_ICONS.calendar, label: 'Schedule', page: 'schedule' },
     { icon: NAV_ICONS.clock,    label: 'Field',    page: 'field-clock' },
     { icon: NAV_ICONS.box,      label: 'Kits',     page: 'kits' },
-    { icon: NAV_ICONS.more,     label: 'More',     page: 'more' },
 ];
 
 // Customers get no bottom nav: their whole surface is the property-link
@@ -194,12 +196,11 @@ const supplierNav = [
     { icon: NAV_ICONS.home,     label: 'Jobs',      page: 'jobs' },
     { icon: NAV_ICONS.calendar, label: 'Schedule',  page: 'schedule' },
     { icon: NAV_ICONS.box,      label: 'Kits',      page: 'kits' },
-    { icon: NAV_ICONS.more,     label: 'More',      page: 'more' },
 ];
 
-// Pages that show the bottom nav
+// Pages that show the bottom nav and the app header
 const mainAppPages = [
-    'schedule', 'field-clock', 'kits', 'label-generator', 'more', 'message-templates',
+    'schedule', 'field-clock', 'kits', 'label-generator', 'message-templates',
     'inventory', 'stats', 'finance', 'customer-home', 'scoreboard',
     'job-home', 'job-detail', 'job-detail-nobid', 'create-job',
 ];
@@ -263,6 +264,7 @@ function loadPage(name) {
                 document.body.removeChild(newScript);
             });
             updateBottomNav();
+            updateAppHeader();
             if (name === 'field-clock') syncClockUI();
         })
         .catch(err => {
@@ -304,8 +306,120 @@ function navTo(page) {
         loadPage('jobs');
         return;
     }
-    if (page === 'more') { loadPage('more'); return; }
     loadPage(page);
+}
+
+// ── App Header ──────────────────────────────────────────────────────────────
+// Persistent identity bar above #main: avatar + name + company on the left
+// (tap → profile sheet), ⋯ overflow menu on the right holding everything the
+// old More tab used to (dashboards, management, sign out). Shown on exactly
+// the pages that show the bottom nav — so never on sign-in/companies, and
+// never in Customer mode, which simulates the QR property website where "your
+// profile" doesn't exist. The #app-header element lives in the shell's
+// index.html; the shell clears it whenever another app renders (see
+// shell.js openApp), so this app redraws it on every loadPage().
+function userInitials(name) {
+    return String(name || '').split(/\s+/).map(function (p) { return p.charAt(0); })
+        .slice(0, 2).join('').toUpperCase() || '?';
+}
+
+function updateAppHeader() {
+    const el = document.getElementById('app-header');
+    if (!el) return;
+    closeHeaderMenu(); // a menu left open would float over the next page
+    const show = state.signedIn && state.role !== 'customer' && mainAppPages.includes(state.currentPage);
+    if (!show) { el.innerHTML = ''; return; }
+    const user = state.currentUserId ? DB.getById('users', state.currentUserId) : null;
+    const company = state.currentCompanyId ? DB.getById('companies', state.currentCompanyId) : null;
+    const name = user ? user.full_name : 'Signed in';
+    el.innerHTML =
+        '<button class="app-header-id" onclick="showProfileSheet()" title="View profile">' +
+            '<span class="app-header-avatar">' + esc(userInitials(name)) + '</span>' +
+            '<span class="app-header-names">' +
+                '<span class="app-header-name">' + esc(name) + '</span>' +
+                (company ? '<span class="app-header-sub">' + esc(company.name) + '</span>' : '') +
+            '</span>' +
+        '</button>' +
+        '<button class="app-header-more" onclick="showHeaderMenu()" title="More" aria-label="More">' + NAV_ICONS.more + '</button>';
+}
+
+// The ⋯ overflow menu — the old More tab's cards, one compact row each.
+// Every row closes the menu first; page rows then navigate via the normal
+// loadPage()/open*() paths so the back-stack behaves like any other nav.
+function showHeaderMenu() {
+    closeHeaderMenu();
+    function item(label, action, extraClass) {
+        return '<button class="header-menu-item' + (extraClass ? ' ' + extraClass : '') + '" ' +
+            'onclick="closeHeaderMenu(); ' + action + '">' + label + '</button>';
+    }
+    const overlay = document.createElement('div');
+    overlay.id = 'header-menu';
+    overlay.className = 'header-menu-overlay';
+    overlay.innerHTML =
+        '<div class="header-menu">' +
+            '<div class="header-menu-section">Dashboards</div>' +
+            item('My Scorecard', 'openMyScorecard()') +
+            item('Scoreboard', 'openScoreboard()') +
+            item('Task Statistics', 'openStats()') +
+            item('Finance Dashboard', 'openFinance()') +
+            item('Customer Home Details', "loadPage('customer-home')") +
+            item('Message Templates', "loadPage('message-templates')") +
+            '<div class="header-menu-section">Management</div>' +
+            item('Team Timesheets', 'openTeamTime()') +
+            item('Company &amp; Branches', "loadPage('companies')") +
+            item('Stock Inventory', "loadPage('inventory')") +
+            '<div class="header-menu-section">Preview</div>' +
+            item('Sabbath Lock', 'showSabbathLock()') +
+            '<div class="header-menu-section">Account</div>' +
+            item('Sign Out', 'signOut()', 'danger') +
+        '</div>';
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) closeHeaderMenu(); });
+    document.getElementById('phone').appendChild(overlay);
+}
+
+function closeHeaderMenu() {
+    const menu = document.getElementById('header-menu');
+    if (menu) menu.remove();
+}
+
+// Tapping your avatar/name: the old More tab's user card as a bottom sheet —
+// pure identity (name, email, position, company, guild level) plus Sign Out,
+// since "who am I / stop being me" belong together.
+function showProfileSheet() {
+    const existing = document.getElementById('profile-sheet');
+    if (existing) existing.remove();
+    const user = state.currentUserId ? DB.getById('users', state.currentUserId) : null;
+    const company = state.currentCompanyId ? DB.getById('companies', state.currentCompanyId) : null;
+    const name = user ? user.full_name : 'Not signed in';
+    const position = user ? accountPositionLabel(user) : '';
+    const level = user && user.global_level
+        ? (LEVELS.find(function (l) { return l.slug === user.global_level; }) || { name: user.global_level }).name
+        : null;
+    const modal = document.createElement('div');
+    modal.id = 'profile-sheet';
+    modal.className = 'modal-overlay';
+    modal.innerHTML =
+        '<div class="modal-sheet">' +
+            '<div class="modal-handle"></div>' +
+            '<div style="display:flex; align-items:center; gap:14px; margin-bottom:16px;">' +
+                '<div class="leaderboard-avatar" style="width:52px; height:52px; font-size:1.1rem;">' + esc(userInitials(name)) + '</div>' +
+                '<div style="flex:1; min-width:0;">' +
+                    '<div style="font-size:1rem; font-weight:700; color:#0f172a;">' + esc(name) + '</div>' +
+                    '<div style="font-size:0.8rem; color:#64748b;">' + esc([position, company ? company.name : ''].filter(Boolean).join(' • ')) + '</div>' +
+                    (user && user.email ? '<div style="font-size:0.8rem; color:#64748b;">' + esc(user.email) + '</div>' : '') +
+                    (level ? '<span class="badge badge-gray mt-2" style="font-size:0.65rem;">' + esc(level) + '</span>' : '') +
+                '</div>' +
+            '</div>' +
+            '<button class="btn btn-secondary" onclick="closeProfileSheet()">Close</button>' +
+            '<button class="btn btn-secondary" style="color:#dc2626; border-color:#fca5a5;" onclick="closeProfileSheet(); signOut()">Sign Out</button>' +
+        '</div>';
+    modal.addEventListener('click', function (e) { if (e.target === modal) closeProfileSheet(); });
+    document.getElementById('phone').appendChild(modal);
+}
+
+function closeProfileSheet() {
+    const modal = document.getElementById('profile-sheet');
+    if (modal) modal.remove();
 }
 
 // Returns true if it navigated somewhere, false if the stack was empty (so
@@ -1042,7 +1156,7 @@ function pendingSelfScorecard(userId) {
 
 function openScorecard(userId) {
     if (userId !== state.currentUserId && !isManagerOrAdmin()) {
-        alert("Only a manager can review another worker's scorecard. Use My Scorecard (More tab) to fill out your own.");
+        alert("Only a manager can review another worker's scorecard. Use My Scorecard (⋯ menu, top right) to fill out your own.");
         return;
     }
     state.scorecardWorkerId = userId;
@@ -1281,8 +1395,12 @@ function submitScorecard() {
         const returnTo = state.scorecardReturnTo;
         state.scorecardReturnTo = null;
         loadPage(returnTo);
+    } else if (isSelf) {
+        // A self-assessment was opened from the ⋯ menu on some page — return
+        // there rather than to a fixed hub (the old More tab is gone).
+        if (!goBack()) loadPage('jobs');
     } else {
-        loadPage(isSelf ? 'more' : 'job-detail');
+        loadPage('job-detail');
     }
     if (isSelf) {
         showToast('Self-Assessment Submitted', ['Your manager will review and finalize it.'], '#1e40af');
@@ -2122,9 +2240,6 @@ function computeSyntheticPaymentSchedule(totalCost) {
     return { deposit: deposit, draw1: draw1, draw2: draw2, final: final };
 }
 
-// ── More Menu ────────────────────────────────────────────────────────────────
-function openMore(page) { loadPage(page); }
-
 // ── Tab Switching (generic) ──────────────────────────────────────────────────
 function switchTab(tabId, groupClass) {
     document.querySelectorAll('.' + groupClass).forEach(el => el.classList.remove('active'));
@@ -2283,7 +2398,9 @@ function activate() {
         openMaterialLog, closeMaterialModal, saveMaterialLog,
         submitTimeSheet, saveTimesheetDraft, openEndOfDay, syncClockoutButton,
         openTeamTime, managedWorkers, submitTeamTimeToQuickBooks,
-        openScoreboard, openStats, openFinance, openCustomerHome, openMore, showToast,
+        jobSiteCoords, metersBetween, formatDistanceM,
+        openScoreboard, openStats, openFinance, openCustomerHome, showToast,
+        updateAppHeader, showHeaderMenu, closeHeaderMenu, showProfileSheet, closeProfileSheet,
         switchTab, toggleChip,
         CUSTOMER_DEMO_JOB_ID, computeSyntheticPaymentSchedule, openCustomerProperty,
     });
@@ -2308,6 +2425,9 @@ window.Apps['kinetic-flow'] = {
         // customer-bid/customer-invoice were retired (customers get a PDF +
         // the QR property page instead) — resume onto the picker, not a 404.
         if (state.currentPage === 'customer-bid' || state.currentPage === 'customer-invoice') state.currentPage = 'customer-links';
+        // The More tab/page was folded into the app header's ⋯ menu — a
+        // session saved on it resumes on the job list instead of a 404.
+        if (state.currentPage === 'more') state.currentPage = 'jobs';
         // First open fetches 41 db/*.json seeds — show something meanwhile,
         // and surface a fetch failure instead of leaving a silent blank screen.
         const main = document.getElementById('main');

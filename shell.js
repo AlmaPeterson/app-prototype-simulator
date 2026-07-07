@@ -76,6 +76,10 @@ function openApp(appId) {
         // saved state, so a re-run is a resume, not a reset.
         const needsRender = !launchedApps.has(appId) || renderedAppId !== appId;
         launchedApps.add(appId);
+        // #app-header belongs to whichever app rendered last (Kinetic Flow
+        // fills it; others leave it empty) — clear the previous app's header
+        // before this one draws its own chrome.
+        if (needsRender) document.getElementById('app-header').innerHTML = '';
         if (needsRender && entry && entry.start) entry.start();
         renderedAppId = appId;
     });

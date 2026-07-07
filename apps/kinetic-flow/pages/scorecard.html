@@ -107,9 +107,10 @@
             loadPage(returnTo);
         };
     } else if (backBtn && state.scorecardWorkerId === state.currentUserId) {
-        // Self-assessment opened from the More tab — don't back into a job page.
+        // Self-assessment opened from the header's ⋯ menu — return to
+        // whatever page it was opened over, not into a job page.
         backBtn.innerHTML = '&larr; Back';
-        backBtn.onclick = function () { loadPage('more'); };
+        backBtn.onclick = function () { if (!goBack()) loadPage('jobs'); };
     }
 
     var userId = (typeof state !== 'undefined' && state.scorecardWorkerId) || null;
