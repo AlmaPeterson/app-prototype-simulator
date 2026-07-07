@@ -132,3 +132,14 @@ And actually the customer will not use the app they will be using a website when
 
 ---
 
+## 2026-07-07T15:10:42.811Z
+
+- Screen: kinetic-flow — sign-in
+- Role: supplier
+- Account: Existing Account
+- Phone size: 390 × 720
+
+Let's create a supplier account for supplying materials and tools for companies. It will not be a different type of account but it will have different permissions  And rolls in the companies. Is a user has a role in a company as the supplier then they should not see the jobs in that company.
+
+---
+
