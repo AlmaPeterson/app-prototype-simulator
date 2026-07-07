@@ -564,6 +564,32 @@ body.fullscreen-mode #resize-grip {
     text-overflow: ellipsis;
 }
 
+.app-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+/* Improved-rank chip — only rendered when your scoreboard rank is better
+   than the last time you looked at the scoreboard (tap → scoreboard). */
+.app-header-rank {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    border: 1px solid #bbf7d0;
+    border-radius: 999px;
+    background: #f0fdf4;
+    color: #15803d;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 5px 10px;
+    cursor: pointer;
+    animation: headerMenuPop 0.16s ease-out;
+}
+
+.app-header-rank:hover { background: #dcfce7; }
+
 .app-header-more {
     width: 40px;
     height: 40px;

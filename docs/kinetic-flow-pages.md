@@ -225,8 +225,12 @@ The More tab and more.html were removed; a slim header now sits above `#main`
 on exactly the pages that show the bottom nav (never on sign-in/companies,
 never in Customer mode). Left: initials avatar + your name + current company —
 tap it for the profile sheet (name, email, position • company, guild-level
-badge, Sign Out). Right: a ⋯ button opening a dropdown with the old More
-content — Dashboards (My Scorecard, Scoreboard, Task Statistics, Finance
+badge, a Scoreboard Rank card with your monthly rank + points → scoreboard,
+Sign Out). Right: a green "▲ #N" chip that appears **only when your monthly
+scoreboard rank improved since you last viewed the scoreboard** (tap →
+scoreboard, which re-baselines it; `state.rankSeen` persists the baseline —
+deliberately never an always-on rank, so a low rank isn't rubbed in all day),
+then a ⋯ button opening a dropdown with the old More content — Dashboards (My Scorecard, Scoreboard, Task Statistics, Finance
 Dashboard, Customer Home Details, Message Templates), Management (Team
 Timesheets, Company & Branches, Stock Inventory), Preview (Sabbath Lock), and
 Account (Sign Out). Both bottom navs are four tabs now — worker: Home /

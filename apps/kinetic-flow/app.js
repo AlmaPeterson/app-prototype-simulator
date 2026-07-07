@@ -43,6 +43,7 @@ const state = {
     simulateOffsite: false,   // field-clock GPS simulator: true = pretend the phone is ~2 km from the job site
     timesheetNote: null,      // draft "Notes for Supervisor" text from review-time.html, kept across visits until submit
     customerJobId: null,      // customer mode: the property (job) opened from the customer-links picker
+    rankSeen: null,           // { userId, companyId, rank } — your scoreboard rank the last time you looked at the scoreboard; drives the header's ▲ improved-rank chip
 };
 
 // ── Mock DB ──────────────────────────────────────────────────────────────
@@ -143,7 +144,7 @@ function resetDemoData() {
             clockInTask: null, scorecardWorkerId: null, scorecardReturnTo: null,
             currentUserId: null, currentUser: null, currentCompanyId: null, currentBranchId: null,
             currentBidId: null, currentDivisionId: null, simulateOffsite: false, timesheetNote: null,
-            customerJobId: null,
+            customerJobId: null, rankSeen: null,
         });
         clockedIn = false;
         clockStartedAt = null;
@@ -323,6 +324,26 @@ function userInitials(name) {
         .slice(0, 2).join('').toUpperCase() || '?';
 }
 
+// The signed-in user's current scoreboard standing — same user set (users
+// homed in the current company), period cut (Monthly, the scoreboard's
+// default tab), and ordering as scoreboard.html, so the header chip and
+// profile sheet can never disagree with the page itself. Null when the user
+// isn't in this company's ranking (e.g. a member joined via user_roles only).
+function scoreboardStanding() {
+    if (!state.currentUserId || !state.currentCompanyId) return null;
+    const cutoff = new Date(Date.now() - 30 * 86400000);
+    const ranked = DB.find('users', function (u) { return !u.deleted_at && u.company_id === state.currentCompanyId; })
+        .map(function (u) {
+            const points = DB.find('scorecard_entries', function (s) {
+                return s.user_id === u.id && new Date(s.shift_date) >= cutoff;
+            }).reduce(function (sum, e) { return sum + (e.total_score || 0); }, 0);
+            return { id: u.id, points: points };
+        })
+        .sort(function (a, b) { return b.points - a.points; });
+    const idx = ranked.findIndex(function (r) { return r.id === state.currentUserId; });
+    return idx >= 0 ? { rank: idx + 1, points: ranked[idx].points, of: ranked.length } : null;
+}
+
 function updateAppHeader() {
     const el = document.getElementById('app-header');
     if (!el) return;
@@ -332,6 +353,26 @@ function updateAppHeader() {
     const user = state.currentUserId ? DB.getById('users', state.currentUserId) : null;
     const company = state.currentCompanyId ? DB.getById('companies', state.currentCompanyId) : null;
     const name = user ? user.full_name : 'Signed in';
+
+    // Improved-rank chip: shown only when your rank is better than it was the
+    // last time you looked at the scoreboard — a nudge for climbing, never a
+    // permanent badge that rubs a low rank in all day. Visiting the
+    // scoreboard (that's "looking") re-baselines it, as does the first
+    // standing computed for a fresh user/company (silently, no chip).
+    let rankChip = '';
+    const standing = scoreboardStanding();
+    if (standing) {
+        const seen = state.rankSeen;
+        const hasBaseline = !!(seen && seen.userId === state.currentUserId && seen.companyId === state.currentCompanyId);
+        if (state.currentPage === 'scoreboard' || !hasBaseline) {
+            state.rankSeen = { userId: state.currentUserId, companyId: state.currentCompanyId, rank: standing.rank };
+            saveStateSoon();
+        } else if (standing.rank < seen.rank) {
+            rankChip = '<button class="app-header-rank" onclick="openScoreboard()"' +
+                ' title="Up from #' + seen.rank + ' since you last checked the scoreboard">&#9650; #' + standing.rank + '</button>';
+        }
+    }
+
     el.innerHTML =
         '<button class="app-header-id" onclick="showProfileSheet()" title="View profile">' +
             '<span class="app-header-avatar">' + esc(userInitials(name)) + '</span>' +
@@ -340,7 +381,9 @@ function updateAppHeader() {
                 (company ? '<span class="app-header-sub">' + esc(company.name) + '</span>' : '') +
             '</span>' +
         '</button>' +
-        '<button class="app-header-more" onclick="showHeaderMenu()" title="More" aria-label="More">' + NAV_ICONS.more + '</button>';
+        '<span class="app-header-actions">' + rankChip +
+            '<button class="app-header-more" onclick="showHeaderMenu()" title="More" aria-label="More">' + NAV_ICONS.more + '</button>' +
+        '</span>';
 }
 
 // The ⋯ overflow menu — the old More tab's cards, one compact row each.
@@ -395,6 +438,7 @@ function showProfileSheet() {
     const level = user && user.global_level
         ? (LEVELS.find(function (l) { return l.slug === user.global_level; }) || { name: user.global_level }).name
         : null;
+    const standing = scoreboardStanding();
     const modal = document.createElement('div');
     modal.id = 'profile-sheet';
     modal.className = 'modal-overlay';
@@ -410,6 +454,17 @@ function showProfileSheet() {
                     (level ? '<span class="badge badge-gray mt-2" style="font-size:0.65rem;">' + esc(level) + '</span>' : '') +
                 '</div>' +
             '</div>' +
+            (standing ?
+            '<div class="card" style="margin-bottom:16px;" onclick="closeProfileSheet(); openScoreboard()">' +
+                '<div class="card-row">' +
+                    '<div class="card-body">' +
+                        '<div class="card-title">Scoreboard Rank</div>' +
+                        '<div class="card-subtitle">' + standing.points + ' pts this month &bull; ' + standing.of + ' on the board</div>' +
+                    '</div>' +
+                    '<span style="font-size:1.15rem; font-weight:800; color:#2563eb;">#' + standing.rank + '</span>' +
+                    '<span class="card-arrow">&#8250;</span>' +
+                '</div>' +
+            '</div>' : '') +
             '<button class="btn btn-secondary" onclick="closeProfileSheet()">Close</button>' +
             '<button class="btn btn-secondary" style="color:#dc2626; border-color:#fca5a5;" onclick="closeProfileSheet(); signOut()">Sign Out</button>' +
         '</div>';
