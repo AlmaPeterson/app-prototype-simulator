@@ -1,6 +1,6 @@
 # Kinetic Flow — Page Reference
 
-Accurate as of 2026-07-06. One entry per file in `apps/kinetic-flow/pages/`.
+Accurate as of 2026-07-07. One entry per file in `apps/kinetic-flow/pages/`.
 Each entry says what information the page shows, what you can edit, and what
 actions you can take. All data comes from the in-memory mock DB (seeded from
 `db/*.json`, persisted to localStorage); "saves" below mean DB writes in that
@@ -12,8 +12,8 @@ sense — nothing hits a server.
 
 ### sign-in.html
 - **See:** App title, email + password fields, "Forgot password?" link, Sign In button, "Continue with Google" button, "Request Access" link. Focusing the email field opens an account-picker dropdown listing every existing account (name, a role · guild-level pill, email); typing filters by name, email, or position.
-- **Edit:** Email (type it or pick an account from the dropdown, which just fills the field) and password (password is not checked; email must match an approved user — demo: `j.smith@kineticsolutions.com`).
-- **Do:** Sign In / Google (both call `signIn()`; a pending-approval email routes to account-pending, unknown email alerts). "Request Access" opens the sign-up sheet.
+- **Edit:** Email (type it or pick an account from the dropdown, which just fills the field; Enter in the field submits) and password (password is not checked; email should match a user — demo accounts are role-named: `master@kineticflow.com`, etc.).
+- **Do:** Sign In / Google (both call `signIn()`; a pending-approval email routes to account-pending, an unknown email falls back to the master demo account). "Request Access" opens the sign-up sheet.
 
 ### sign-up.html (bottom-sheet modal over sign-in)
 - **See:** "Request an Account" form and a note that requests are reviewed.
@@ -81,9 +81,9 @@ sense — nothing hits a server.
 ## Jobs
 
 ### jobs.html
-- **See:** Job list for the selected company (scoped to the current branch when one is set): name, bid total or "No Bid", address + start date, job type • priority • lead. Company/branch subtitle. Search bar (visual only — not wired).
-- **Edit:** Nothing.
-- **Do:** Tap a job → job-home (sets it as the current job; the bottom nav appears from there on). + → create-job. ← Companies.
+- **See:** Job list for the selected company (scoped to the current branch when one is set): name, bid total or "No Bid", address + start date, job type • priority • lead. Company/branch subtitle. Empty states for no jobs / no search matches.
+- **Edit:** Search text — filters live on name, address, job type, and lead.
+- **Do:** Tap a job → job-home (sets it as the current job; the bottom nav appears from there on). + → create-job. ← Companies. Browsing this list does **not** clear the current job — only opening a different one changes it.
 
 ### create-job.html
 - **See:** New-job form; team chips scoped to the current branch.
@@ -91,14 +91,14 @@ sense — nothing hits a server.
 - **Do:** Create Job — inserts job + address + `job_assignments` (you as lead); routes to bid creation or back to jobs per the bid option. Cancel.
 
 ### job-home.html ("Home" tab once a job is selected)
-- **See:** Job name and status subtitle ("Active" / "No Bid Yet").
+- **See:** Job name and a tappable status subtitle ("Active / No Bid Yet • Switch job"). Job context is deliberately sticky: workers pick a job once and it stays current until they open another.
 - **Edit:** Nothing.
-- **Do:** Clock In / Out (→ feild-clock). Quick actions: Schedule, Kits, View Bid or + Create Bid (label switches on whether the job has a bid), Time Sheet. "Full Job Details" → job-detail. ← Jobs.
+- **Do:** Tap the subtitle (or tap the Home tab again while here) → jobs list to switch jobs. Clock In / Out (→ field-clock). Quick actions: Schedule, Kits, View Bid or + Create Bid (label switches on whether the job has a bid), Time Sheet. "Full Job Details" → job-detail. ← Jobs.
 
 ### job-detail.html (jobs that have a bid)
 - **See:** Job header (name, JOB-XXXX code, status badge, address, date range, static 65% progress bar); Bid & Finance card (estimated value from the bid, labour-to-date and materials-used summed from `expense_entries`); Assigned Team (each member's initials avatar, name, Lead/Team Member, guild-level badge, Clocked In / Off Site status); two static JIT training cards.
 - **Edit:** Nothing directly.
-- **Do:** Clock In / Schedule / Kits quick actions. View Bid → bid. Tap a team member row → scorecard for that worker (managers/admins only — others are blocked with an alert). "+ Add" (team) opens an inline picker of company members not yet on the job; tapping one inserts a `job_assignments` row (role: member) and refreshes the list. Training cards → feild-clock. ← Jobs.
+- **Do:** Clock In / Schedule / Kits quick actions. View Bid → bid. Tap a team member row → scorecard for that worker (managers/admins only — others are blocked with an alert). "+ Add" (team) opens an inline picker of company members not yet on the job; tapping one inserts a `job_assignments` row (role: member) and refreshes the list. Training cards → field-clock. ← Jobs.
 
 ### job-detail-nobid.html (jobs without a bid)
 - **See:** Job header with "No Bid Yet" badge and target start; a "No Bid Created" call-to-action panel; Job Details card (customer, job type, priority, assigned lead); job notes.
@@ -126,16 +126,16 @@ sense — nothing hits a server.
 ### bid-proposal.html — client-facing preview
 - **See:** Read-only proposal: company letterhead, bid header grid (date, expires, bid #, project, customer, craftsman, site address), included divisions with scope + cost, grand total, project schedule (on-site days auto-summed from division sheets unless overridden), legal boilerplate, 50/20/20/10 payment schedule with milestones, dual signature blocks (your company + owner).
 - **Edit:** Nothing.
-- **Do:** "Send to Customer" (alert only — not wired). ← Back to Bid Creation.
+- **Do:** "Send to Customer" — moves the bid to `status: 'sent'` and stamps `sent_at` (the customer pages read the same row; no real email goes out). Already-sent bids show "Re-Send to Customer (sent {date})" instead. ← Back to Bid Creation.
 
 ---
 
 ## Field Clock, Task Gate Chain & Time
 
-### feild-clock.html (filename typo is intentional — don't "fix" it)
-- **See:** Clock status badge, running HH:MM:SS timer, Clock In/Out button, a **Simulated GPS** card (stands in for real geolocation: On-site / Off-site toggle), the three-item "Before You Clock Out" checklist (appears directly above the clock button, only while clocked in), two static JIT-training cards, activity buttons, and today's activity log (clock-in, driving, task entries — the active task shows a Mason's Mark hash).
-- **Edit:** The three clock-out gate checkboxes (materials logged / kit photo / cleanliness); the GPS simulation toggle; the Material Log sheet (pick a checked-out kit, item, quantity).
-- **Do:** Clock In (creates a `time_entries` row; clocking in while the simulated GPS is off-site records it as `flagged` for manager review). Record activity: Driving / Lunch / Task / Material (opens the material log). **Task** (requires being clocked in) opens the task picker sheet — the company's task modules, each with your competency badge (Student/Exposure/Competent/Mastery — defaults to Student if never evaluated) and a subtitle explaining what that level allows; high-hazard tasks are flagged "PPE required". Picking one runs the gate chain (training-video → co-sign/PPE below); once cleared, the task starts recording in the activity log and opens a `phase_logs` row against the running time entry — tapping End Task stamps its `ended_at`. Clock Out — blocked until all three checklist items are checked; also ends any ongoing task. Submit Timesheet → review-time.
+### field-clock.html (renamed from feild-clock.html 2026-07-07; restoreState remaps sessions saved on the old name)
+- **See:** A tappable job chip in the header showing which job a punch will land on (red "No job selected — tap to choose" when unset), today's real date, clock status badge, running HH:MM:SS timer, Clock In/Out button, a **Simulated GPS** card (stands in for real geolocation: On-site / Off-site toggle), the three-item "Before You Clock Out" checklist (appears directly above the clock button, only while clocked in), a **JIT Training** list built from the company's real `training_modules` (Done with watch date via your `training_assignments`, or Pending — the section hides when the company has none), activity buttons, and **Today's Log** — your real clock punches and completed task phase-logs for today from the DB (tasks show their Mason's Mark), with in-progress activities prepended on top and an empty state when nothing's recorded yet.
+- **Edit:** The clock-out gate: materials-logged and cleanliness checkboxes, plus a "Take Photo" button for the kit photo (simulated capture — checks the box and timestamps it); the GPS simulation toggle; the Material Log sheet (pick a checked-out kit, item, quantity).
+- **Do:** Tap the job chip → jobs list to switch jobs. Clock In — **requires a selected job** (alerts and routes to the jobs list otherwise); creates a `time_entries` row; clocking in while the simulated GPS is off-site records it as `flagged` for manager review. Record activity: Driving / Lunch / Task / Material (opens the material log). **Task** (requires being clocked in) opens the task picker sheet — the company's task modules, each with your competency badge (Student/Exposure/Competent/Mastery — defaults to Student if never evaluated) and a subtitle explaining what that level allows; high-hazard tasks are flagged "PPE required". Picking one runs the gate chain (training-video → co-sign/PPE below); once cleared, the task starts recording in the activity log and opens a `phase_logs` row against the running time entry — tapping End Task stamps its `ended_at`. Tapping a Pending training card also routes into the Task gate chain. Clock Out — blocked until all three checklist items are checked; also ends any ongoing task. Submit Timesheet → review-time.
 
 ### training-video.html
 - **See:** "{Task} — Safety Training", a simulated 3-second video progress bar, a Continue button that stays disabled until the bar finishes.
@@ -145,15 +145,15 @@ sense — nothing hits a server.
 ### ppe-video.html (high-hazard tasks only)
 - **See:** "{Task} — PPE Verification", instructions to record a 3-second proof video.
 - **Edit:** Nothing.
-- **Do:** Record PPE Video (simulated) → enables Continue → feild-clock, where the task starts recording.
+- **Do:** Record PPE Video (simulated) → enables Continue → field-clock, where the task starts recording.
 
 ### review-time.html — worker timesheet
 - **See:** Your 5 most recent time entries (day, job, hours, in/out times, GPS-flagged warning with distance when applicable, Mason's Mark), total hours hero, activity summary tiles (on-site hrs, shift count, break hrs from `unpaid_break_minutes`, estimated pay at the user's `hourly_rate` — fallback $35/hr), recently recorded materials, a note that a completed scorecard is required to submit.
-- **Edit:** Notes-for-supervisor textarea (not persisted).
+- **Edit:** Notes-for-supervisor textarea — Save Draft keeps it in state (restored next visit, and across the scorecard-gate detour); Submit stamps it onto the submitted entries as `worker_note`, where the manager sees it on team-time.
 - **Do:** Submit Timesheet — if today's shift has no scorecard yet it redirects you to scorecard first (and returns here); otherwise marks the entries submitted for the manager. Save Draft / ← Field Clock.
 
 ### team-time.html — manager view (More → Team Timesheets)
-- **See:** Hours awaiting QuickBooks (hero, with entry count and estimated payroll); **Flagged — Outside Geofence** section listing GPS-flagged entries (who, when, job, distance from site); submitted-but-unexported entries grouped per worker with per-worker hour/pay subtotals; the last 8 entries already sent to QuickBooks.
+- **See:** Hours awaiting QuickBooks (hero, with entry count and estimated payroll); **Flagged — Outside Geofence** section listing GPS-flagged entries (who, when, job, distance from site); submitted-but-unexported entries grouped per worker with per-worker hour/pay subtotals, each entry showing the worker's timesheet note in italics when one was submitted; the last 8 entries already sent to QuickBooks.
 - **Edit:** Nothing directly.
 - **Do:** Approve a flagged entry (moves it into the export queue). Submit All to QuickBooks (simulated export — stamps `qb_exported_at` and moves entries to the "Already Sent" list). ← More.
 
@@ -178,7 +178,7 @@ sense — nothing hits a server.
 ### kits.html ("Kits" tab)
 - **See:** A slide-out drawer of kit categories (from `inventory_kits.category`) expanding to kit names; selecting a kit shows its Tools, Materials (with quantities), and Videos (placeholders). Search bar filters kits by name.
 - **Edit:** Per kit: + Add a tool, material (name + quantity), or video title; tap any tool/material row to rename it, change quantity, or Remove from Kit.
-- **Do:** Browse/search/select kits; all edits persist to `kit_tools` / `kit_items` / the kit's `videos`. "Generate Labels" → label-generator. Video rows just alert (placeholders).
+- **Do:** Browse/search/select kits; all edits persist to `kit_tools` / `kit_items` / the kit's `videos`. "Generate Labels" → label-generator. Video rows just alert (labeled as demo).
 
 ### label-generator.html
 - **See:** The same category → kit → tools/materials tree as kits.html, but with checkboxes at the kit level and on every individual tool/material row; a footer showing how many labels are selected (30 per sheet).
@@ -202,21 +202,21 @@ sense — nothing hits a server.
 ### finance.html ("Finance" tab / More → Finance Dashboard)
 - **See:** Three scope tiers — Nationwide / Branch / Job — each gated by your role's `finance_dashboard_permissions` (tabs you can't view are hidden). Overview: revenue hero (from `finance_snapshots`; the Job tier shows contract value from the bid), Revenue / Expenses / Profit / Outstanding tiles with margin. Invoices view: outstanding synthetic invoices per sent/signed bid (computed from the 50/20/20/10 schedule — there is no real invoices table). Expenses view: Labour / Materials / Overhead breakdown bars from `expense_entries`.
 - **Edit:** Nothing.
-- **Do:** Switch tier and view (Overview / Invoices / Expenses). Export Report is an alert placeholder.
+- **Do:** Switch tier and view (Overview / Invoices / Expenses). Export Report is an alert placeholder (labeled as demo).
 
 ### schedule.html ("Schedule" tab — workers and customers)
 - **See:** A week of day chips with prev/next-week arrows (anchored to the seeded event cluster, week of Jun 29 2026), plus a Day List / Task Grid view toggle. Day List: the selected day's events (title, date range, assignee). Task Grid: Gantt-style week grid — tasks down the left, days across the top, a colored block (the event's `color`) under each day the task runs. Workers see `view_type: 'worker'` events; the customer role sees the customer-facing subset.
-- **Edit:** Nothing.
-- **Do:** Toggle Day List / Task Grid, pick a day (day view), shift weeks (both views), tap an event or grid row with a job → that job. "+ Add" is an alert placeholder.
+- **Edit:** Via the "+ Add" bottom sheet: title, job (optional — dropdown of the company's jobs), start and end dates (default to the selected day).
+- **Do:** "+ Add" — inserts a real `schedule_events` row (assigned to you, blue, `status: 'scheduled'`) and re-renders. Toggle Day List / Task Grid, pick a day (day view), shift weeks (both views), tap an event or grid row with a job → that job.
 
 ---
 
 ## More Menu & Messaging
 
 ### more.html ("More" tab)
-- **See:** Your user card (static Jake Smith demo info); grouped nav cards.
+- **See:** Your real user card — initials avatar, name, position (from your active role) + company, guild-level badge; subtitle shows company • position. Grouped nav cards.
 - **Edit:** Nothing.
-- **Do:** Open My Scorecard (self-assessment → scorecard.html), Scoreboard, Task Statistics, Finance Dashboard, Customer Home Details, Message Templates, Team Timesheets, Company & Branches, Stock Inventory; preview the Sabbath Lock overlay; **Reset Demo Data** (discards localStorage and reloads seed JSON); Sign Out.
+- **Do:** Open My Scorecard (self-assessment → scorecard.html), Scoreboard, Task Statistics, Finance Dashboard, Customer Home Details, Message Templates, Team Timesheets, Company & Branches, Stock Inventory; preview the Sabbath Lock overlay; **Reset Demo Data** (confirm dialog, then discards localStorage and reloads seed JSON); Sign Out.
 
 ### message-templates.html
 - **See:** Company message templates (from `message_templates`), each pre-filled with the current job's context (customer first name, job name, crew, start time); unresolvable placeholders render as editable `[blanks]`. A banner states Kinetic Flow does not send texts itself.
