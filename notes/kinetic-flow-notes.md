@@ -39,3 +39,13 @@ When an input is selected in the phone keyboard opens the whole screen should mo
 
 ---
 
+## 2026-07-07T18:13:57.964Z
+
+- Screen: kinetic-flow — bid-division
+- Role: worker
+- Phone size: 390 × 720
+
+The quantity type should not be abbreviated. It is hard to know what it means.
+
+---
+
