@@ -69,3 +69,13 @@ Estimated completion date should be calculated automatically.  What is the purpo
 
 ---
 
+## 2026-07-07T18:20:07.363Z
+
+- Screen: kinetic-flow — bid-proposal
+- Role: worker
+- Phone size: 390 × 720
+
+Maybe instead of resending the bid to the customer it should be a download PDF button.
+
+---
+
