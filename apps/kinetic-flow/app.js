@@ -25,16 +25,12 @@ const state = {
     role: 'worker',           // 'worker' | 'customer' | 'supplier'
     signedIn: false,
     currentPage: '',
-    currentJob: null,
     currentJobId: null,
-    currentCompany: null,
-    currentBranch: null,
     clockInTask: null,        // { taskModuleId, name, level, isHighHazard, ppeVerified, cosignedBy, cosignedAt } — level: student|exposure|competent|mastery
     scorecardWorkerId: null,  // users.id of the worker whose scorecard is being filled out (set by openScorecard())
     scorecardReturnTo: null,  // page slug to return to after submitScorecard() (set when the timesheet gate redirects here)
     // Real-identity fields populated by afterSignIn() once auth is backed by
-    // the mock DB (see DB module below) — kept alongside the legacy
-    // name-string fields above until each consuming page is migrated to ids.
+    // the mock DB (see DB module below).
     currentUserId: null,
     currentUser: null,        // { id, name, email, globalLevel }
     currentCompanyId: null,
@@ -45,7 +41,7 @@ const state = {
     // edited on bid-division.html (set by openDivision()).
     currentBidId: null,
     currentDivisionId: null,
-    simulateOffsite: false,   // feild-clock GPS simulator: true = pretend the phone is ~2 km from the job site
+    simulateOffsite: false,   // field-clock GPS simulator: true = pretend the phone is ~2 km from the job site
     timesheetNote: null,      // draft "Notes for Supervisor" text from review-time.html, kept across visits until submit
 };
 
@@ -111,14 +107,14 @@ const DB = {
         const now = new Date().toISOString();
         const row = Object.assign({ id: genId(), created_at: now, updated_at: now, deleted_at: null, sync_status: 'local' }, partial);
         this.get(table).push(row);
-        saveState();
+        saveStateSoon();
         return row;
     },
     update: function (table, id, patch) {
         const row = this.getById(table, id);
         if (!row) return null;
         Object.assign(row, patch, { updated_at: new Date().toISOString(), sync_status: 'local' });
-        saveState();
+        saveStateSoon();
         return row;
     },
     softDelete: function (table, id) { return this.update(table, id, { deleted_at: new Date().toISOString() }); },
@@ -143,8 +139,8 @@ function resetDemoData() {
     // of the same clean state rather than a race that undoes the reset.
     DB.reset().then(function () {
         Object.assign(state, {
-            signedIn: false, currentPage: '', currentJob: null, currentJobId: null, currentCompany: null,
-            currentBranch: null, clockInTask: null, scorecardWorkerId: null, scorecardReturnTo: null,
+            signedIn: false, currentPage: '', currentJobId: null,
+            clockInTask: null, scorecardWorkerId: null, scorecardReturnTo: null,
             currentUserId: null, currentUser: null, currentCompanyId: null, currentBranchId: null,
             currentBidId: null, currentDivisionId: null, simulateOffsite: false, timesheetNote: null,
         });
@@ -179,7 +175,7 @@ const NAV_ICONS = {
 const workerNav = [
     { icon: NAV_ICONS.home,     label: 'Home',     page: 'jobs' },
     { icon: NAV_ICONS.calendar, label: 'Schedule', page: 'schedule' },
-    { icon: NAV_ICONS.clock,    label: 'Field',    page: 'feild-clock' },
+    { icon: NAV_ICONS.clock,    label: 'Field',    page: 'field-clock' },
     { icon: NAV_ICONS.box,      label: 'Kits',     page: 'kits' },
     { icon: NAV_ICONS.more,     label: 'More',     page: 'more' },
 ];
@@ -200,7 +196,7 @@ const supplierNav = [
 
 // Pages that show the bottom nav
 const mainAppPages = [
-    'schedule', 'feild-clock', 'kits', 'label-generator', 'more', 'message-templates',
+    'schedule', 'field-clock', 'kits', 'label-generator', 'more', 'message-templates',
     'inventory', 'stats', 'finance', 'customer-home', 'customer-bid', 'customer-invoice', 'scoreboard',
     'job-home', 'job-detail', 'job-detail-nobid', 'create-job',
 ];
@@ -217,7 +213,7 @@ let isNavigatingBack = false;
 
 const PAGE_ANIM_CLASSES = ['page-exit-forward', 'page-exit-back', 'page-enter-forward', 'page-enter-back'];
 
-function loadPage(name, data) {
+function loadPage(name) {
     const wasBack = isNavigatingBack;
     if (!isNavigatingBack && state.currentPage && state.currentPage !== name) {
         pageHistory.push(state.currentPage);
@@ -228,7 +224,6 @@ function loadPage(name, data) {
     // the opposite way on Back so entering vs. leaving reads differently.
     const animate = !!(state.currentPage && state.currentPage !== name);
 
-    if (data) state.currentPage = name;
     state.currentPage = name;
     saveState();
 
@@ -265,7 +260,7 @@ function loadPage(name, data) {
                 document.body.removeChild(newScript);
             });
             updateBottomNav();
-            if (name === 'feild-clock') syncClockUI();
+            if (name === 'field-clock') syncClockUI();
         })
         .catch(err => {
             main.classList.remove(...PAGE_ANIM_CLASSES);
@@ -883,7 +878,7 @@ function openSchedule() { loadPage('schedule'); }
 function openTimeSheet() { loadPage('review-time'); }
 function openKits() { loadPage('kits'); }
 function openLabelGenerator() { loadPage('label-generator'); }
-function openFieldClock() { loadPage('feild-clock'); }
+function openFieldClock() { loadPage('field-clock'); }
 function openInventory() { loadPage('inventory'); }
 
 // ── Scorecard ────────────────────────────────────────────────────────────────
@@ -1161,7 +1156,7 @@ function submitScorecard() {
 
 // ── Task Select / Training Gate / Co-Sign ─────────────────────────────────────
 // Simulated version of the reference doc's task workflow gates: tapping the
-// Task activity button on feild-clock pulls up the picker sheet below, then
+// Task activity button on field-clock pulls up the picker sheet below, then
 // the training video plays, then either the task starts recording
 // (mastery-unlocked), requires a co-sign (competent), or stays blocked
 // (student/exposure). No real video or server verification — this is a
@@ -1237,7 +1232,7 @@ function selectClockInTask(taskModuleId, level, isHighHazard) {
 
 // Called once a task is cleared (mastery-unlocked or co-signed) — routes
 // through the PPE gate first if the task is flagged high-hazard, otherwise
-// back to feild-clock, where syncClockUI() sees the cleared task and starts
+// back to field-clock, where syncClockUI() sees the cleared task and starts
 // recording it.
 function proceedPastGates() {
     const task = state.clockInTask || {};
@@ -1245,7 +1240,7 @@ function proceedPastGates() {
         loadPage('ppe-video');
     } else {
         task.cleared = true;
-        loadPage('feild-clock');
+        loadPage('field-clock');
     }
 }
 
@@ -1291,7 +1286,7 @@ function trainingVideoComplete() {
         const status = document.getElementById('tv-status');
         const btn = document.getElementById('tv-continue-btn');
         if (status) status.textContent = 'Not cleared to perform this task solo yet.';
-        if (btn) btn.outerHTML = '<button class="btn btn-secondary" onclick="loadPage(\'feild-clock\')">Back to Field Clock</button>';
+        if (btn) btn.outerHTML = '<button class="btn btn-secondary" onclick="loadPage(\'field-clock\')">Back to Field Clock</button>';
     }
 }
 
@@ -1326,7 +1321,7 @@ function confirmCoSign() {
         // master who co-signed" — stand in with the first master assigned to
         // this job (falling back to any master in the company), and stash
         // who/when on state.clockInTask so startClearedTask() can attach it
-        // to the phase_logs row it creates back on feild-clock.
+        // to the phase_logs row it creates back on field-clock.
         const assignedUserIds = DB.find('job_assignments', function (a) { return a.job_id === state.currentJobId; })
             .map(function (a) { return a.user_id; });
         const master = DB.findOne('users', function (u) {
@@ -1357,12 +1352,12 @@ function recordPpeVideo() {
 
 function ppeVideoComplete() {
     // Stash the "PPE was recorded" fact for startClearedTask() to read when
-    // it creates this task's phase_logs row back on feild-clock.
+    // it creates this task's phase_logs row back on field-clock.
     if (state.clockInTask) {
         state.clockInTask.ppeVerified = true;
         state.clockInTask.cleared = true;
     }
-    loadPage('feild-clock');
+    loadPage('field-clock');
 }
 
 // ── Geofenced Clock-In (simulated GPS) ──────────────────────────────────────
@@ -1370,7 +1365,7 @@ function ppeVideoComplete() {
 // in/out — no background tracking. An out-of-radius clock-in still succeeds,
 // but the entry's status becomes 'flagged' for manager review instead of a
 // hard block. The prototype has no real geolocation, so coordinates are
-// simulated (state.simulateOffsite, toggled on feild-clock.html) — but the
+// simulated (state.simulateOffsite, toggled on field-clock.html) — but the
 // distance check itself is real haversine math against the job's address, so
 // the flagging mechanism works exactly as it will in production.
 const GEOFENCE_RADIUS_M = 150;
@@ -1559,7 +1554,7 @@ function updateTimerDisplay() {
     }
 }
 
-// feild-clock.html's button/status/timer are static markup driven only by
+// field-clock.html's button/status/timer are static markup driven only by
 // toggleClock()/tickTimer() — so navigating back to this page (bottom-nav
 // "Field" tab, or resuming after a reload) needs this to reflect the current
 // clockedIn/elapsedSeconds instead of showing a stale "Clock In" button while
@@ -1615,7 +1610,7 @@ function formatClockTime(ms) {
     return new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-// feild-clock.html renders a "No activity recorded yet" row when today's log
+// field-clock.html renders a "No activity recorded yet" row when today's log
 // is empty — drop it the moment anything real lands in the log.
 function removeActivityEmptyState() {
     const empty = document.getElementById('activity-empty');
@@ -1692,7 +1687,7 @@ function endActivity(type) {
 }
 
 // A task cleared through the gates (picker → training → co-sign/PPE) lands
-// back on feild-clock with state.clockInTask.cleared set — syncClockUI()
+// back on field-clock with state.clockInTask.cleared set — syncClockUI()
 // calls this to start recording it as the active Task and open its
 // phase_logs row against the running time entry.
 function startClearedTask() {
@@ -1845,7 +1840,7 @@ function saveTimesheetDraft() {
     const notes = val('rt-notes');
     state.timesheetNote = notes || null;
     saveState();
-    loadPage('feild-clock');
+    loadPage('field-clock');
     if (notes) showToast('Draft Saved', ['Your note will be here when you come back.'], '#1e40af');
 }
 
@@ -1975,7 +1970,19 @@ function toggleChip(el) {
 // above), which is what bid.html/bid-division.html's inline oninput/onchange
 // handlers go through now (Phase 2) instead of mutating a bare in-memory
 // window.bidData object.
+// DB.insert()/DB.update() go through this debounced wrapper instead of
+// saving directly — a burst of writes (e.g. submitJob's assignment loop, or
+// bid-division typing) serializes the whole DB snapshot once, not per row.
+// Anything time-critical (navigation, reset, beforeunload) still calls
+// saveState() directly, which flushes the pending timer first.
+let _saveTimer = null;
+function saveStateSoon() {
+    if (_saveTimer) return;
+    _saveTimer = setTimeout(function () { _saveTimer = null; saveState(); }, 250);
+}
+
 function saveState() {
+    if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
             state: state,
@@ -2110,8 +2117,9 @@ window.Apps['kinetic-flow'] = {
         pageHistory = [];
         restoreState(); // may already populate the mock DB from localStorage
         // task-select.html no longer exists (the picker is a sheet on
-        // feild-clock now) — a session saved mid-flow shouldn't resume onto a 404.
-        if (state.currentPage === 'task-select') state.currentPage = 'feild-clock';
+        // field-clock now), and feild-clock.html was renamed to fix the typo
+        // — a session saved on either shouldn't resume onto a 404.
+        if (state.currentPage === 'task-select' || state.currentPage === 'feild-clock') state.currentPage = 'field-clock';
         // First open fetches 41 db/*.json seeds — show something meanwhile,
         // and surface a fetch failure instead of leaving a silent blank screen.
         const main = document.getElementById('main');

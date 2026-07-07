@@ -112,7 +112,7 @@
         var videos = [{ title: kit.name + ' &mdash; Overview', subtitle: 'Training video placeholder' }]
             .concat((kit.videos || []).map(function (v) { return { title: v.title, subtitle: 'Training video placeholder (added)' }; }));
         html += videos.map(function (v) {
-            return '<div class="card" onclick="alert(\'Training video placeholder\')">' +
+            return '<div class="card" onclick="alert(\'Demo — the training video would play here.\')">' +
                 '<div class="card-row"><div class="card-body">' +
                 '<div class="card-title">' + v.title + '</div>' +
                 '<div class="card-subtitle">' + v.subtitle + '</div>' +
