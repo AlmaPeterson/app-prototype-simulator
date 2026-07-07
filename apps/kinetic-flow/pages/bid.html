@@ -145,13 +145,13 @@
 <script>
 (function initBidCreation() {
 
-    // Sourced from the company's configurable division list (see
-    // company-divisions.html / app.js DIVISIONS) rather than a hardcoded
-    // array, so admins can add/remove/reorder/deactivate divisions and every
-    // new bid picks up the change. This part of the config system is
-    // unrelated to (and unchanged by) the bid-data-source rewrite below.
-    var NAMES = window.DIVISIONS.filter(function (d) { return d.isActive; })
-                                 .map(function (d) { return d.name; });
+    // Sourced from the company's persisted division list (the `divisions`
+    // table via companyDivisions(), edited on company-divisions.html) rather
+    // than a hardcoded array, so admins can add/remove/reorder/deactivate
+    // divisions and every new bid picks up the change.
+    var NAMES = companyDivisions(state.currentCompanyId)
+        .filter(function (d) { return d.is_active; })
+        .map(function (d) { return d.name; });
 
     var bidId = state.currentBidId;
     var bid   = DB.getById('bids', bidId);

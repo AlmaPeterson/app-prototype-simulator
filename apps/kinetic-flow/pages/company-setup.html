@@ -98,8 +98,9 @@
 
 <script>
 (function () {
-    var activeDivisions = window.DIVISIONS.filter(function (d) { return d.isActive; }).length;
-    document.getElementById('division-count-sub').textContent = activeDivisions + ' of ' + window.DIVISIONS.length + ' active';
+    var allDivisions = companyDivisions(state.currentCompanyId);
+    var activeDivisions = allDivisions.filter(function (d) { return d.is_active; }).length;
+    document.getElementById('division-count-sub').textContent = activeDivisions + ' of ' + allDivisions.length + ' active';
     document.getElementById('level-names-sub').textContent = window.LEVELS.map(function (l) { return l.name; }).join(' → ');
     document.getElementById('competency-names-sub').textContent = window.COMPETENCY_LEVELS.map(function (c) { return c.name; }).join(' → ');
 

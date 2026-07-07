@@ -710,12 +710,12 @@ function manageCompany(companyId) {
 }
 
 // ── Company Configuration: Divisions / Levels / Competency Levels ───────────
-// Mirrors db/divisions.json, db/levels.json, db/competency_levels.json.
-// DIVISIONS lives here (not in the page) because app.js persists across
-// navigations, but a page fragment's inline <script> re-runs every time
-// loadPage() navigates to it, so per-visit-local state would forget edits.
-// Managed by company-divisions.html; read by bid.html to build a new bid's
-// division checklist.
+// Bid divisions live in the real `divisions` DB table (per company, ordered
+// by sort_order) so edits on company-divisions.html persist like everything
+// else. DIVISIONS below is only the default template: a company with no rows
+// yet (locally created ones) gets it copied in on first access via
+// companyDivisions(). Consumers: company-divisions.html (editor),
+// company-setup.html (active count), bid.html (new-bid checklist).
 // LEVELS (guild career ladder) and COMPETENCY_LEVELS (per-task skill ladder)
 // are deliberately FIXED, app-wide constants — the same for every company, so
 // a rank means the same thing everywhere and the progression engine's slug
@@ -735,6 +735,27 @@ const DIVISIONS = [
     'Exterior Hardscape & Irrigation Sleeves', 'Exterior Flatwork', 'Irrigation and Landscaping',
     'Exterior Electrical', 'Exterior Structures', 'Furnishings',
 ].map(function (name) { return { name: name, isActive: true }; });
+
+// The company's persisted division list, ordered. Lazily seeds the default
+// template for companies that have no rows yet, so every company is editable
+// from day one and the editor/bid checklist never see an empty config.
+function companyDivisions(companyId) {
+    function rows() {
+        return DB.find('divisions', function (d) { return d.company_id === companyId && !d.deleted_at; })
+            .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+    }
+    let result = rows();
+    if (!result.length && companyId) {
+        DIVISIONS.forEach(function (d, i) {
+            DB.insert('divisions', {
+                company_id: companyId, division_number: null,
+                name: d.name, sort_order: i, is_active: true,
+            });
+        });
+        result = rows();
+    }
+    return result;
+}
 
 const LEVELS = [
     { slug: 'apprentice', name: 'Entered Apprentice', promotionType: 'manual', criteria: null },
@@ -2148,7 +2169,7 @@ function activate() {
         showSabbathLock, hideSabbathLock,
         joinCompany, createCompany, submitJoinRequest, submitNewCompany, continueFromSetup, openBranch,
         selectCompany, manageCompany, companyMemberUsers,
-        DIVISIONS, LEVELS, COMPETENCY_LEVELS,
+        LEVELS, COMPETENCY_LEVELS, companyDivisions,
         openCompanyDivisions,
         openJob, createJob, submitJob,
         openBid, submitBid, recalcBidTotals, sendBidToCustomer,

@@ -60,7 +60,9 @@
     var divRow = DB.getById('bid_divisions', state.currentDivisionId);
     var bidId  = divRow.bid_id;
 
-    var NAMES = window.DIVISIONS.filter(function (d) { return d.isActive; }).map(function (d) { return d.name; });
+    var NAMES = companyDivisions(state.currentCompanyId)
+        .filter(function (d) { return d.is_active; })
+        .map(function (d) { return d.name; });
     var idx   = NAMES.indexOf(divRow.division_name);
 
     var formData = divRow.form_data || {};
