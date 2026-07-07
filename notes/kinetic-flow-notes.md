@@ -59,3 +59,13 @@ Make it auto-generat a bid number.  The expires filled should be calculated auto
 
 ---
 
+## 2026-07-07T18:17:16.334Z
+
+- Screen: kinetic-flow — bid
+- Role: worker
+- Phone size: 390 × 720
+
+Estimated completion date should be calculated automatically.  What is the purpose of the expiration date?
+
+---
+
