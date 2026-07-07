@@ -1,65 +1,65 @@
 [
   {
-    "id": "5efe0aac-26ee-40ed-9cc1-c4148ac7d1b7",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "job_id": "c229964f-71e9-4d66-af48-fdb1db4c7404",
-    "user_id": "31c3942e-fc82-440b-990c-9b51c97a0d3a",
+    "id": "assign-1",
+    "company_id": "company-kineticflow",
+    "job_id": "job-riverside-hvac",
+    "user_id": "user-master",
     "role_on_job": "lead",
     "assigned_at": "2026-06-04T12:00:00Z"
   },
   {
-    "id": "b315c90e-7744-465d-9a18-8cbcebc4f2aa",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "job_id": "c229964f-71e9-4d66-af48-fdb1db4c7404",
-    "user_id": "97c5b5b7-16c8-4e84-81c4-5817847f7dac",
+    "id": "assign-2",
+    "company_id": "company-kineticflow",
+    "job_id": "job-riverside-hvac",
+    "user_id": "user-fellowcraft1",
     "role_on_job": "member",
     "assigned_at": "2026-06-04T12:00:00Z"
   },
   {
-    "id": "84247c57-3e2c-4b6c-a228-32f12bea2657",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "job_id": "c229964f-71e9-4d66-af48-fdb1db4c7404",
-    "user_id": "4507df68-54ca-4767-a78a-5a8526f402a9",
+    "id": "assign-3",
+    "company_id": "company-kineticflow",
+    "job_id": "job-riverside-hvac",
+    "user_id": "user-apprentice1",
     "role_on_job": "member",
     "assigned_at": "2026-06-05T12:00:00Z"
   },
   {
-    "id": "ce94140b-8a17-4784-abb2-543b257e8029",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "job_id": "d7150afc-b7a4-4419-9a84-45542b4c173b",
-    "user_id": "caa1abbf-fee3-4885-addc-7dd4b97028aa",
+    "id": "assign-4",
+    "company_id": "company-kineticflow",
+    "job_id": "job-northview-plumbing",
+    "user_id": "user-fellowcraft2",
     "role_on_job": "lead",
     "assigned_at": "2026-05-17T12:00:00Z"
   },
   {
-    "id": "26891697-fb61-49ff-8bef-86c3cd3e74e7",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "job_id": "d7150afc-b7a4-4419-9a84-45542b4c173b",
-    "user_id": "fb6a3bc4-26c1-4c2b-929c-792f3cf3acf9",
+    "id": "assign-5",
+    "company_id": "company-kineticflow",
+    "job_id": "job-northview-plumbing",
+    "user_id": "user-apprentice2",
     "role_on_job": "member",
     "assigned_at": "2026-05-18T12:00:00Z"
   },
   {
-    "id": "547622e2-357f-4024-89d0-112ad08350fa",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "job_id": "3c957f57-2571-43cb-990c-ea49e05560df",
-    "user_id": "292d4893-242f-48b7-9e52-73a717a1f128",
+    "id": "assign-6",
+    "company_id": "company-kineticflow",
+    "job_id": "job-summit-wiring",
+    "user_id": "user-manager",
     "role_on_job": "lead",
     "assigned_at": "2026-05-08T12:00:00Z"
   },
   {
-    "id": "9b1a2f3c-6d4e-4a8b-9c7d-1e2f3a4b5c6d",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "job_id": "3c957f57-2571-43cb-990c-ea49e05560df",
-    "user_id": "97c5b5b7-16c8-4e84-81c4-5817847f7dac",
+    "id": "assign-7",
+    "company_id": "company-kineticflow",
+    "job_id": "job-summit-wiring",
+    "user_id": "user-fellowcraft1",
     "role_on_job": "member",
     "assigned_at": "2026-05-09T12:00:00Z"
   },
   {
-    "id": "2d3e4f5a-7b6c-4d8e-8f9a-0b1c2d3e4f5a",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "job_id": "3c957f57-2571-43cb-990c-ea49e05560df",
-    "user_id": "4507df68-54ca-4767-a78a-5a8526f402a9",
+    "id": "assign-8",
+    "company_id": "company-kineticflow",
+    "job_id": "job-summit-wiring",
+    "user_id": "user-apprentice1",
     "role_on_job": "member",
     "assigned_at": "2026-05-10T12:00:00Z"
   }

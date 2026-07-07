@@ -1,62 +1,62 @@
 [
   {
-    "id": "56ef68b1-a78b-40c8-b77e-466608823357",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "role_id": "4789b81e-61b1-4c14-9f3c-476a78eaa372",
+    "id": "finperm-1",
+    "company_id": "company-kineticflow",
+    "role_id": "role-kf-admin",
     "can_view_nationwide": true,
     "can_view_branch": true,
     "can_view_job": true,
     "updated_at": "2026-03-24T12:00:00Z",
-    "updated_by": "31c3942e-fc82-440b-990c-9b51c97a0d3a"
+    "updated_by": "user-master"
   },
   {
-    "id": "ac35ebb1-be7c-4eb6-bcc8-bce54af50b78",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "role_id": "a865397b-f4bc-4218-8f54-56c27e59d8be",
+    "id": "finperm-2",
+    "company_id": "company-kineticflow",
+    "role_id": "role-kf-manager",
     "can_view_nationwide": false,
     "can_view_branch": true,
     "can_view_job": true,
     "updated_at": "2026-03-24T12:00:00Z",
-    "updated_by": "31c3942e-fc82-440b-990c-9b51c97a0d3a"
+    "updated_by": "user-master"
   },
   {
-    "id": "4add1867-318e-40df-afcb-aad0293f7353",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "role_id": "3e6f677a-980b-40e8-9532-b3ec2a5a4bca",
+    "id": "finperm-3",
+    "company_id": "company-kineticflow",
+    "role_id": "role-kf-employee",
     "can_view_nationwide": false,
     "can_view_branch": false,
     "can_view_job": true,
     "updated_at": "2026-03-24T12:00:00Z",
-    "updated_by": "31c3942e-fc82-440b-990c-9b51c97a0d3a"
+    "updated_by": "user-master"
   },
   {
-    "id": "8f72a39b-bf74-40ed-bb62-28fec4f26a26",
-    "company_id": "d50e13c3-8cba-46c3-9f44-1a705f2195cf",
-    "role_id": "bc071500-c3bc-41ea-b9ce-b50e81da0ace",
+    "id": "finperm-4",
+    "company_id": "company-other",
+    "role_id": "role-oc-admin",
     "can_view_nationwide": true,
     "can_view_branch": true,
     "can_view_job": true,
     "updated_at": "2026-04-13T12:00:00Z",
-    "updated_by": "ceca224d-14c1-411a-ab9a-599207b8b4b2"
+    "updated_by": "user-other-master"
   },
   {
-    "id": "a74c44dc-c8cf-4894-b3f6-cb90fb28a0eb",
-    "company_id": "d50e13c3-8cba-46c3-9f44-1a705f2195cf",
-    "role_id": "173e2701-b14d-40e8-8462-edf87d3ced11",
+    "id": "finperm-5",
+    "company_id": "company-other",
+    "role_id": "role-oc-manager",
     "can_view_nationwide": false,
     "can_view_branch": true,
     "can_view_job": true,
     "updated_at": "2026-04-13T12:00:00Z",
-    "updated_by": "ceca224d-14c1-411a-ab9a-599207b8b4b2"
+    "updated_by": "user-other-master"
   },
   {
-    "id": "4703116a-d925-442f-92fc-c53b53790d97",
-    "company_id": "d50e13c3-8cba-46c3-9f44-1a705f2195cf",
-    "role_id": "f136eb29-f12f-4101-992f-e7a7dafc6cea",
+    "id": "finperm-6",
+    "company_id": "company-other",
+    "role_id": "role-oc-employee",
     "can_view_nationwide": false,
     "can_view_branch": false,
     "can_view_job": true,
     "updated_at": "2026-04-13T12:00:00Z",
-    "updated_by": "ceca224d-14c1-411a-ab9a-599207b8b4b2"
+    "updated_by": "user-other-master"
   }
 ]

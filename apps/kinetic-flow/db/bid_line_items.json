@@ -1,8 +1,8 @@
 [
   {
-    "id": "582eea67-811d-4ae0-b930-81a20de368eb",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "bid_division_id": "6510a093-c9af-44e6-b08a-2181c4aa1035",
+    "id": "line-1",
+    "company_id": "company-kineticflow",
+    "bid_division_id": "biddiv-1",
     "description": "Air handler install labor",
     "quantity": 10,
     "unit": "hr",
@@ -22,9 +22,9 @@
     "deleted_at": null
   },
   {
-    "id": "5a98a1a2-5a5a-482c-894a-7063435b56e1",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "bid_division_id": "6510a093-c9af-44e6-b08a-2181c4aa1035",
+    "id": "line-2",
+    "company_id": "company-kineticflow",
+    "bid_division_id": "biddiv-1",
     "description": "Ductwork run & seal labor",
     "quantity": 20,
     "unit": "hr",
@@ -44,9 +44,9 @@
     "deleted_at": null
   },
   {
-    "id": "c20bb4b8-5630-406b-9ecc-027c989b309f",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "bid_division_id": "6510a093-c9af-44e6-b08a-2181c4aa1035",
+    "id": "line-3",
+    "company_id": "company-kineticflow",
+    "bid_division_id": "biddiv-1",
     "description": "Air handler unit - 3 ton",
     "quantity": 1,
     "unit": "each",
@@ -66,9 +66,9 @@
     "deleted_at": null
   },
   {
-    "id": "852e071c-a3b7-4e05-b44d-d5c9075a6c1e",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "bid_division_id": "6510a093-c9af-44e6-b08a-2181c4aa1035",
+    "id": "line-4",
+    "company_id": "company-kineticflow",
+    "bid_division_id": "biddiv-1",
     "description": "Flex duct + sealant",
     "quantity": 1,
     "unit": "lot",
@@ -88,9 +88,9 @@
     "deleted_at": null
   },
   {
-    "id": "85603932-dda8-4d32-abc4-381095367dd5",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "bid_division_id": "527c8817-ebcd-4abd-b3bb-bf6fa7d68c56",
+    "id": "line-5",
+    "company_id": "company-kineticflow",
+    "bid_division_id": "biddiv-2",
     "description": "Disconnect & tie-in labor",
     "quantity": 8,
     "unit": "hr",
@@ -110,9 +110,9 @@
     "deleted_at": null
   },
   {
-    "id": "d78f8bf9-62b1-4673-bf94-72cca603c38f",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "bid_division_id": "527c8817-ebcd-4abd-b3bb-bf6fa7d68c56",
+    "id": "line-6",
+    "company_id": "company-kineticflow",
+    "bid_division_id": "biddiv-2",
     "description": "Whip + breaker",
     "quantity": 1,
     "unit": "lot",
@@ -132,9 +132,9 @@
     "deleted_at": null
   },
   {
-    "id": "428387da-9de9-426e-83c6-161817301515",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "bid_division_id": "0218cccd-4243-4d6e-868f-dc4ead4a7ef0",
+    "id": "line-7",
+    "company_id": "company-kineticflow",
+    "bid_division_id": "biddiv-3",
     "description": "Rough-in supply & drain labor",
     "quantity": 24,
     "unit": "hr",
@@ -154,9 +154,9 @@
     "deleted_at": null
   },
   {
-    "id": "5a5208db-b7e6-4750-8b92-b6b24e6bf0aa",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "bid_division_id": "0218cccd-4243-4d6e-868f-dc4ead4a7ef0",
+    "id": "line-8",
+    "company_id": "company-kineticflow",
+    "bid_division_id": "biddiv-3",
     "description": "Fixture set labor",
     "quantity": 8,
     "unit": "hr",
@@ -176,9 +176,9 @@
     "deleted_at": null
   },
   {
-    "id": "a0d4c4b4-92a7-48a4-a951-2b7167c65c32",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "bid_division_id": "0218cccd-4243-4d6e-868f-dc4ead4a7ef0",
+    "id": "line-9",
+    "company_id": "company-kineticflow",
+    "bid_division_id": "biddiv-3",
     "description": "Copper pipe + fittings",
     "quantity": 1,
     "unit": "lot",
@@ -198,9 +198,9 @@
     "deleted_at": null
   },
   {
-    "id": "213857f3-358e-401e-8624-59340d1b5f9a",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "bid_division_id": "0218cccd-4243-4d6e-868f-dc4ead4a7ef0",
+    "id": "line-10",
+    "company_id": "company-kineticflow",
+    "bid_division_id": "biddiv-3",
     "description": "Kitchen faucet + sink",
     "quantity": 1,
     "unit": "each",
@@ -220,9 +220,9 @@
     "deleted_at": null
   },
   {
-    "id": "4aed8f7b-d4f7-4c93-8787-cb767a66c575",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "bid_division_id": "7431d3a5-973a-4cc5-8338-65ef6e5f17ed",
+    "id": "line-11",
+    "company_id": "company-kineticflow",
+    "bid_division_id": "biddiv-4",
     "description": "Branch circuit rough-in labor",
     "quantity": 60,
     "unit": "hr",
@@ -242,9 +242,9 @@
     "deleted_at": null
   },
   {
-    "id": "09e721a4-7995-4116-9f44-b5d50e99381b",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "bid_division_id": "7431d3a5-973a-4cc5-8338-65ef6e5f17ed",
+    "id": "line-12",
+    "company_id": "company-kineticflow",
+    "bid_division_id": "biddiv-4",
     "description": "Panel + breakers",
     "quantity": 1,
     "unit": "lot",
@@ -264,9 +264,9 @@
     "deleted_at": null
   },
   {
-    "id": "4634b277-cec1-43b7-ae87-6a27c1ec408a",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "bid_division_id": "7431d3a5-973a-4cc5-8338-65ef6e5f17ed",
+    "id": "line-13",
+    "company_id": "company-kineticflow",
+    "bid_division_id": "biddiv-4",
     "description": "Conduit + wire",
     "quantity": 1,
     "unit": "lot",

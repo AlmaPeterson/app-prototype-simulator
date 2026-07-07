@@ -1,16 +1,16 @@
 [
   {
-    "id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "name": "Kinetic Solutions LLC",
-    "slug": "kinetic-solutions-llc",
+    "id": "company-kineticflow",
+    "name": "Kinetic Flow LLC",
+    "slug": "kinetic-flow-llc",
     "created_at": "2024-04-03T12:00:00Z",
     "updated_at": "2026-06-29T12:00:00Z",
     "deleted_at": null
   },
   {
-    "id": "d50e13c3-8cba-46c3-9f44-1a705f2195cf",
-    "name": "ProFlow Industries",
-    "slug": "proflow-industries",
+    "id": "company-other",
+    "name": "Other Company LLC",
+    "slug": "other-company-llc",
     "created_at": "2025-05-18T12:00:00Z",
     "updated_at": "2026-05-23T12:00:00Z",
     "deleted_at": null

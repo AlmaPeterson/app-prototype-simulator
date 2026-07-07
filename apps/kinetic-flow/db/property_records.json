@@ -1,9 +1,9 @@
 [
   {
-    "id": "0606b1da-dd4f-4fc2-a8d9-a9da20f70899",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "job_id": "c229964f-71e9-4d66-af48-fdb1db4c7404",
-    "address_id": "b663996f-6531-47ac-898f-8dff84426ec8",
+    "id": "prop-1",
+    "company_id": "company-kineticflow",
+    "job_id": "job-riverside-hvac",
+    "address_id": "addr-job-riverside",
     "access_token": "30a4abf73fee4ef98a79a3e66f9d9db3a93c063c",
     "floor_plan_url": "https://r2.kineticflow.app/floorplans/riverside.pdf",
     "paint_colors": {
@@ -19,10 +19,10 @@
     "updated_at": "2026-07-01T12:00:00Z"
   },
   {
-    "id": "4f46927b-054b-4e6d-a54f-cddb407d9b36",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "job_id": "d7150afc-b7a4-4419-9a84-45542b4c173b",
-    "address_id": "6de70fcb-2d51-4eb5-8f38-824630d4cec6",
+    "id": "prop-2",
+    "company_id": "company-kineticflow",
+    "job_id": "job-northview-plumbing",
+    "address_id": "addr-job-northview",
     "access_token": "18f676af3efc47acb1ce140c6d1d6285be685f57",
     "floor_plan_url": null,
     "paint_colors": {},

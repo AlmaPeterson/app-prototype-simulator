@@ -1,7 +1,7 @@
 [
   {
-    "id": "e3a95cc6-1421-470d-92b9-8c66e4dcc719",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "msg-1",
+    "company_id": "company-kineticflow",
     "scenario": "job_starting_tomorrow",
     "body": "Hi {{customer_name}}, this is a reminder that {{crew_name}} will be arriving tomorrow at {{start_time}} for {{job_name}}.",
     "is_active": true,
@@ -9,8 +9,8 @@
     "updated_at": "2025-09-05T12:00:00Z"
   },
   {
-    "id": "7f2d1b48-9c3e-4a6f-b1d5-2e8a90c4f713",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "msg-2",
+    "company_id": "company-kineticflow",
     "scenario": "on_our_way",
     "body": "Hi {{customer_name}}, {{crew_name}} is on the way and should arrive around {{start_time}}. See you soon!",
     "is_active": true,
@@ -18,8 +18,8 @@
     "updated_at": "2025-09-05T12:00:00Z"
   },
   {
-    "id": "3eb7bc69-1272-4128-935c-2bad5bba0339",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "msg-3",
+    "company_id": "company-kineticflow",
     "scenario": "running_late",
     "body": "Hi {{customer_name}}, {{crew_name}} is running about {{delay_minutes}} minutes behind schedule today. Thanks for your patience.",
     "is_active": true,
@@ -27,8 +27,8 @@
     "updated_at": "2025-09-05T12:00:00Z"
   },
   {
-    "id": "a51c7e90-6d24-4b8f-9e37-c0d1f5a28b46",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "msg-4",
+    "company_id": "company-kineticflow",
     "scenario": "progress_update",
     "body": "Hi {{customer_name}}, quick update on {{job_name}}: we are about {{percent_complete}}% complete and on track. Let us know if you have any questions.",
     "is_active": true,
@@ -36,8 +36,8 @@
     "updated_at": "2025-09-05T12:00:00Z"
   },
   {
-    "id": "c8b3f612-04a9-47d3-8c5e-91e6d2a7b054",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "msg-5",
+    "company_id": "company-kineticflow",
     "scenario": "need_reschedule",
     "body": "Hi {{customer_name}}, we need to reschedule our visit for {{job_name}}. Would {{new_date}} work for you? Sorry for any inconvenience.",
     "is_active": true,
@@ -45,8 +45,8 @@
     "updated_at": "2025-09-05T12:00:00Z"
   },
   {
-    "id": "b9ec0aa5-8c89-4a85-a35b-8ab583312e84",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "msg-6",
+    "company_id": "company-kineticflow",
     "scenario": "job_complete",
     "body": "Hi {{customer_name}}, {{job_name}} is complete! Let us know if you have any questions.",
     "is_active": true,

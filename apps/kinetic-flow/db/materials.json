@@ -1,7 +1,7 @@
 [
   {
-    "id": "76f8866a-e21f-4418-8795-716016956a11",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "matl-3-ton-air-handler-unit",
+    "company_id": "company-kineticflow",
     "name": "3-Ton Air Handler Unit",
     "sku": "HVAC-AHU-3T",
     "unit": "each",
@@ -15,8 +15,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "95f99cc7-3485-4c03-911e-5fd23983ca71",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "matl-flex-duct-8in",
+    "company_id": "company-kineticflow",
     "name": "Flex Duct 8in",
     "sku": "HVAC-DUCT-8",
     "unit": "ft",
@@ -30,8 +30,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "f75f90b0-ccd6-4e9e-90ba-8ed0daba4501",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "matl-copper-pipe-3-4in",
+    "company_id": "company-kineticflow",
     "name": "Copper Pipe 3/4in",
     "sku": "PLB-CU-075",
     "unit": "ft",
@@ -45,8 +45,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "f9609428-75cd-4d9a-94c3-c450c80a2dd6",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "matl-pvc-dwv-pipe-3in",
+    "company_id": "company-kineticflow",
     "name": "PVC DWV Pipe 3in",
     "sku": "PLB-PVC-3",
     "unit": "ft",
@@ -60,8 +60,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "a37d7ca5-d97c-4273-aa4b-53b1ab8d7e53",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "matl-kitchen-faucet-pull-down",
+    "company_id": "company-kineticflow",
     "name": "Kitchen Faucet - Pull Down",
     "sku": "PLB-FAU-PD",
     "unit": "each",
@@ -75,8 +75,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "56b927da-fc7e-4842-b167-09da6e9482c1",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "matl-200a-panel",
+    "company_id": "company-kineticflow",
     "name": "200A Panel",
     "sku": "ELE-PNL-200",
     "unit": "each",
@@ -90,8 +90,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "955ad3ee-170b-4764-ae9f-74892f444bd4",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "matl-romex-12-2-wire",
+    "company_id": "company-kineticflow",
     "name": "Romex 12/2 Wire",
     "sku": "ELE-WIRE-122",
     "unit": "ft",
@@ -105,8 +105,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "0784b947-e1db-4256-8ea0-c703625a72ab",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "matl-duplex-receptacle",
+    "company_id": "company-kineticflow",
     "name": "Duplex Receptacle",
     "sku": "ELE-RCP-DPX",
     "unit": "each",
@@ -120,8 +120,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "9bcc27a1-3e80-48be-a1e6-d866b4ac75f1",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "matl-interior-pre-hung-door-32in",
+    "company_id": "company-kineticflow",
     "name": "Interior Pre-Hung Door 32in",
     "sku": "CAR-DOOR-32",
     "unit": "each",
@@ -135,8 +135,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "808997c8-6e46-483d-9576-ad7d0ef99017",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "matl-baseboard-trim-mdf-3-25in",
+    "company_id": "company-kineticflow",
     "name": "Baseboard Trim MDF 3.25in",
     "sku": "CAR-TRIM-325",
     "unit": "ft",
@@ -150,8 +150,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "94e16330-12a0-4fe8-85de-0e7daf15c0c8",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "matl-drywall-1-2in-4x8",
+    "company_id": "company-kineticflow",
     "name": "Drywall 1/2in 4x8",
     "sku": "DRY-SHT-48",
     "unit": "sheet",
@@ -165,8 +165,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "f2f6bc54-9f61-4514-81d3-e57dccbe77be",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "matl-joint-compound-5gal",
+    "company_id": "company-kineticflow",
     "name": "Joint Compound 5gal",
     "sku": "DRY-MUD-5G",
     "unit": "bucket",
@@ -180,8 +180,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "426fba30-acf6-43a1-bef3-01a37d139763",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "matl-interior-paint-eggshell-5gal",
+    "company_id": "company-kineticflow",
     "name": "Interior Paint - Eggshell 5gal",
     "sku": "PNT-INT-5G",
     "unit": "bucket",
@@ -195,8 +195,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "0cc5855f-b8c2-4c5b-81d5-e8b14ff12d19",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "matl-painters-tape-1-5in",
+    "company_id": "company-kineticflow",
     "name": "Painters Tape 1.5in",
     "sku": "PNT-TAPE-15",
     "unit": "roll",
@@ -210,8 +210,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "8382622c-ec86-4773-b858-50408d26a73a",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "matl-lvp-flooring-oak-haven",
+    "company_id": "company-kineticflow",
     "name": "LVP Flooring - Oak Haven",
     "sku": "FLR-LVP-OAK",
     "unit": "sqft",
@@ -225,8 +225,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "a44bfaaf-cb5c-4775-ab33-2eabfd708e2e",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "matl-wire-nuts-assorted",
+    "company_id": "company-kineticflow",
     "name": "Wire Nuts Assorted",
     "sku": "ELE-WN-AST",
     "unit": "box",
@@ -240,8 +240,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "82ff6f82-d774-47ea-b295-1c9a14f39755",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "matl-deck-screws-2-5in",
+    "company_id": "company-kineticflow",
     "name": "Deck Screws 2.5in",
     "sku": "FAS-SCR-25",
     "unit": "box",
@@ -255,8 +255,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "cf29d6fc-3f98-453a-8c73-af668c9c1e37",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "matl-safety-glasses",
+    "company_id": "company-kineticflow",
     "name": "Safety Glasses",
     "sku": "SAF-GLS-CLR",
     "unit": "each",

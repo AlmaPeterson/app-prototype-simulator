@@ -1,7 +1,7 @@
 [
   {
-    "id": "225b52dc-eab0-4e4d-b0fc-2c8899597dac",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "comp-student",
+    "company_id": "company-kineticflow",
     "slug": "student",
     "name": "Student",
     "rank": 1,
@@ -12,8 +12,8 @@
     "deleted_at": null
   },
   {
-    "id": "34c012bb-a5d2-43f4-bbd0-4077d37d2b7b",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "comp-exposure",
+    "company_id": "company-kineticflow",
     "slug": "exposure",
     "name": "Exposure",
     "rank": 2,
@@ -24,8 +24,8 @@
     "deleted_at": null
   },
   {
-    "id": "fad96264-52c3-443c-9bc8-d2f9f015aec9",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "comp-competent",
+    "company_id": "company-kineticflow",
     "slug": "competent",
     "name": "Competent",
     "rank": 3,
@@ -36,8 +36,8 @@
     "deleted_at": null
   },
   {
-    "id": "d4a3e1c1-34bd-4d92-b681-401dfcb9f3f8",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "comp-mastery",
+    "company_id": "company-kineticflow",
     "slug": "mastery",
     "name": "Mastery",
     "rank": 4,

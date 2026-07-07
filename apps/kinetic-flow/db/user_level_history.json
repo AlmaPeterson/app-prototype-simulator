@@ -1,8 +1,8 @@
 [
   {
-    "id": "a699892c-3107-4399-ad41-264faceab388",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "user_id": "97c5b5b7-16c8-4e84-81c4-5817847f7dac",
+    "id": "levelhist-1",
+    "company_id": "company-kineticflow",
+    "user_id": "user-fellowcraft1",
     "from_level": "apprentice",
     "to_level": "fellow_craft",
     "promoted_by": null,
@@ -10,9 +10,9 @@
     "reason": "30-day trailing average achieved"
   },
   {
-    "id": "b88ad38c-0aad-4f7b-a57e-bf47d1c9b98f",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "user_id": "caa1abbf-fee3-4885-addc-7dd4b97028aa",
+    "id": "levelhist-2",
+    "company_id": "company-kineticflow",
+    "user_id": "user-fellowcraft2",
     "from_level": "apprentice",
     "to_level": "fellow_craft",
     "promoted_by": null,
@@ -20,19 +20,19 @@
     "reason": "30-day trailing average achieved"
   },
   {
-    "id": "36962037-14eb-4c50-806b-edf514ffa98e",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "user_id": "31c3942e-fc82-440b-990c-9b51c97a0d3a",
+    "id": "levelhist-3",
+    "company_id": "company-kineticflow",
+    "user_id": "user-master",
     "from_level": "fellow_craft",
     "to_level": "master",
     "promoted_by": null,
     "promoted_at": "2025-02-17T12:00:00Z",
-    "reason": "Elite project lead promotion \u2014 board approved"
+    "reason": "Elite project lead promotion — board approved"
   },
   {
-    "id": "ff70b5f9-06e2-48a4-aa20-23095987639d",
-    "company_id": "d50e13c3-8cba-46c3-9f44-1a705f2195cf",
-    "user_id": "6e012e95-dcdb-489b-8935-ac8f1f49b3b1",
+    "id": "levelhist-4",
+    "company_id": "company-other",
+    "user_id": "user-other-employee",
     "from_level": "apprentice",
     "to_level": "fellow_craft",
     "promoted_by": null,

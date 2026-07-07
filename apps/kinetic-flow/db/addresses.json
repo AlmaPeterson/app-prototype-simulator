@@ -1,7 +1,7 @@
 [
   {
-    "id": "ee570876-d90a-4f4a-9314-43f6f831796b",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "addr-office-slc",
+    "company_id": "company-kineticflow",
     "street": "220 Innovation Way",
     "city": "Salt Lake City",
     "state": "UT",
@@ -13,8 +13,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "1bdddd16-452e-4c6f-8f46-d0ef5d833c9d",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "addr-office-phoenix",
+    "company_id": "company-kineticflow",
     "street": "88 Desert Sky Blvd",
     "city": "Phoenix",
     "state": "AZ",
@@ -26,8 +26,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "fbc855a0-bd15-4c79-9915-2133635355ba",
-    "company_id": "d50e13c3-8cba-46c3-9f44-1a705f2195cf",
+    "id": "addr-office-denver",
+    "company_id": "company-other",
     "street": "1400 Blake St",
     "city": "Denver",
     "state": "CO",
@@ -39,8 +39,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "b663996f-6531-47ac-898f-8dff84426ec8",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "addr-job-riverside",
+    "company_id": "company-kineticflow",
     "street": "123 Riverside Dr",
     "city": "Calgary",
     "state": "AB",
@@ -52,8 +52,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "d5cec112-3f1e-4af2-b102-b6c3aa3481c9",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "addr-job-westgate",
+    "company_id": "company-kineticflow",
     "street": "456 Westgate Blvd",
     "city": "Calgary",
     "state": "AB",
@@ -65,8 +65,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "6de70fcb-2d51-4eb5-8f38-824630d4cec6",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "addr-job-northview",
+    "company_id": "company-kineticflow",
     "street": "789 Northview Cres",
     "city": "Calgary",
     "state": "AB",
@@ -78,8 +78,8 @@
     "sync_status": "synced"
   },
   {
-    "id": "fc1f0333-83c5-4585-8b40-bc3f58325cd0",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "addr-job-summit",
+    "company_id": "company-kineticflow",
     "street": "55 Summit Ave",
     "city": "Calgary",
     "state": "AB",

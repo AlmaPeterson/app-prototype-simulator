@@ -1,8 +1,8 @@
 [
   {
-    "id": "3741f805-26d8-4287-bf71-bc35766252eb",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "task_id": "bc000258-cfe6-45c3-a37b-6c98cfbf1af0",
+    "id": "photo-1",
+    "company_id": "company-kineticflow",
+    "task_id": "task-air-handler-install",
     "url": "https://r2.kineticflow.app/photos/riverside-ahu-1.jpg",
     "taken_at": "2026-07-01T13:00:00Z",
     "lat": 51.0447,
@@ -10,9 +10,9 @@
     "sync_status": "synced"
   },
   {
-    "id": "2609ae5d-954d-481b-ae6f-6aa4a122ca46",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "task_id": "805ed980-6dd0-46ff-a9d4-3fc79646b1c6",
+    "id": "photo-2",
+    "company_id": "company-kineticflow",
+    "task_id": "task-ductwork-run-seal",
     "url": "https://r2.kineticflow.app/photos/riverside-duct-1.jpg",
     "taken_at": "2026-07-01T13:00:00Z",
     "lat": 51.0447,
@@ -20,9 +20,9 @@
     "sync_status": "synced"
   },
   {
-    "id": "17d618b6-418f-4272-879e-a03a82896eae",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "task_id": "96a1bc98-9632-4453-b3fc-7413c248235c",
+    "id": "photo-3",
+    "company_id": "company-kineticflow",
+    "task_id": "task-rough-in-supply-drain-lines",
     "url": "https://r2.kineticflow.app/photos/northview-rough-1.jpg",
     "taken_at": "2026-06-30T13:00:00Z",
     "lat": 51.101,

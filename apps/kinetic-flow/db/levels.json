@@ -1,7 +1,7 @@
 [
   {
-    "id": "1dd7bc0f-4756-4efe-b252-9f06e7cfab92",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "level-apprentice",
+    "company_id": "company-kineticflow",
     "slug": "apprentice",
     "name": "Entered Apprentice",
     "rank": 1,
@@ -12,8 +12,8 @@
     "deleted_at": null
   },
   {
-    "id": "12d14ec7-f600-4d24-9fcb-9739a91cb4f4",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "level-fellowcraft",
+    "company_id": "company-kineticflow",
     "slug": "fellow_craft",
     "name": "Fellow Craft",
     "rank": 2,
@@ -27,8 +27,8 @@
     "deleted_at": null
   },
   {
-    "id": "b67b2564-18a0-4288-8804-251d7273811b",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "level-master",
+    "company_id": "company-kineticflow",
     "slug": "master",
     "name": "Master",
     "rank": 3,

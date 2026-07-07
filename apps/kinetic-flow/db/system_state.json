@@ -1,23 +1,23 @@
 [
   {
-    "id": "e0727d83-84f0-4677-b17b-1eeb755c9df3",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "sys-sabbath-lock",
+    "company_id": "company-kineticflow",
     "key": "sabbath_lock",
     "value": "false",
     "updated_at": "2026-07-01T12:00:00Z",
     "updated_by": null
   },
   {
-    "id": "169a345b-2cf5-4a42-8172-52f84e0f61cf",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
+    "id": "sys-maintenance-mode",
+    "company_id": "company-kineticflow",
     "key": "maintenance_mode",
     "value": "false",
     "updated_at": "2026-05-18T12:00:00Z",
-    "updated_by": "31c3942e-fc82-440b-990c-9b51c97a0d3a"
+    "updated_by": "user-master"
   },
   {
-    "id": "1224a58d-8c1e-4802-9dbc-10abc46fa0dc",
-    "company_id": "d50e13c3-8cba-46c3-9f44-1a705f2195cf",
+    "id": "sys-sabbath-lock-2",
+    "company_id": "company-other",
     "key": "sabbath_lock",
     "value": "false",
     "updated_at": "2026-06-30T12:00:00Z",

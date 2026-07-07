@@ -1,178 +1,178 @@
 [
   {
-    "id": "d355cae4-165a-4172-9433-2bce0c28ca72",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "e461a5c7-091f-4987-a65d-d25636f98467",
-    "material_id": "56b927da-fc7e-4842-b167-09da6e9482c1",
+    "id": "kititem-200a-panel",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-basic-electrical-kit",
+    "material_id": "matl-200a-panel",
     "name": "200A Panel",
     "quantity": 1,
     "image_url": null,
     "sort_order": 0
   },
   {
-    "id": "6dab7770-25f7-4492-830a-357da9e6f479",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "e461a5c7-091f-4987-a65d-d25636f98467",
-    "material_id": "955ad3ee-170b-4764-ae9f-74892f444bd4",
+    "id": "kititem-romex-12-2-wire",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-basic-electrical-kit",
+    "material_id": "matl-romex-12-2-wire",
     "name": "Romex 12/2 Wire",
     "quantity": 50,
     "image_url": null,
     "sort_order": 1
   },
   {
-    "id": "914df748-8d42-4b34-82aa-446f80d31c98",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "e461a5c7-091f-4987-a65d-d25636f98467",
-    "material_id": "0784b947-e1db-4256-8ea0-c703625a72ab",
+    "id": "kititem-duplex-receptacle",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-basic-electrical-kit",
+    "material_id": "matl-duplex-receptacle",
     "name": "Duplex Receptacle",
     "quantity": 10,
     "image_url": null,
     "sort_order": 2
   },
   {
-    "id": "c0e522a3-81c5-467f-8ed7-bd3bb8d21900",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "e461a5c7-091f-4987-a65d-d25636f98467",
-    "material_id": "a44bfaaf-cb5c-4775-ab33-2eabfd708e2e",
+    "id": "kititem-wire-nuts-assorted",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-basic-electrical-kit",
+    "material_id": "matl-wire-nuts-assorted",
     "name": "Wire Nuts Assorted",
     "quantity": 2,
     "image_url": null,
     "sort_order": 3
   },
   {
-    "id": "8c12d704-8363-408e-b04e-8e36a816688d",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "2623935c-c752-4d9d-95d2-02c72a049e40",
-    "material_id": "f75f90b0-ccd6-4e9e-90ba-8ed0daba4501",
+    "id": "kititem-copper-pipe-3-4in",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-basic-plumbing-kit",
+    "material_id": "matl-copper-pipe-3-4in",
     "name": "Copper Pipe 3/4in",
     "quantity": 25,
     "image_url": null,
     "sort_order": 0
   },
   {
-    "id": "96b24970-f420-430b-9926-3fcecca6f3a7",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "2623935c-c752-4d9d-95d2-02c72a049e40",
-    "material_id": "f9609428-75cd-4d9a-94c3-c450c80a2dd6",
+    "id": "kititem-pvc-dwv-pipe-3in",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-basic-plumbing-kit",
+    "material_id": "matl-pvc-dwv-pipe-3in",
     "name": "PVC DWV Pipe 3in",
     "quantity": 15,
     "image_url": null,
     "sort_order": 1
   },
   {
-    "id": "25ae856f-f795-4b65-9bdd-79b502ba1104",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "2623935c-c752-4d9d-95d2-02c72a049e40",
-    "material_id": "a37d7ca5-d97c-4273-aa4b-53b1ab8d7e53",
+    "id": "kititem-kitchen-faucet-pull-down",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-basic-plumbing-kit",
+    "material_id": "matl-kitchen-faucet-pull-down",
     "name": "Kitchen Faucet - Pull Down",
     "quantity": 1,
     "image_url": null,
     "sort_order": 2
   },
   {
-    "id": "38fe5020-e576-470b-946c-cc550d8dde8d",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "1cd01261-e7ff-4b53-b20e-11318262b050",
-    "material_id": "76f8866a-e21f-4418-8795-716016956a11",
+    "id": "kititem-3-ton-air-handler-unit",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-hvac-install-kit",
+    "material_id": "matl-3-ton-air-handler-unit",
     "name": "3-Ton Air Handler Unit",
     "quantity": 1,
     "image_url": null,
     "sort_order": 0
   },
   {
-    "id": "c2e79269-0b16-4e88-abc1-f7d89fe3d0b2",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "1cd01261-e7ff-4b53-b20e-11318262b050",
-    "material_id": "95f99cc7-3485-4c03-911e-5fd23983ca71",
+    "id": "kititem-flex-duct-8in",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-hvac-install-kit",
+    "material_id": "matl-flex-duct-8in",
     "name": "Flex Duct 8in",
     "quantity": 40,
     "image_url": null,
     "sort_order": 1
   },
   {
-    "id": "e0d9bfa7-9163-41bf-8099-9fff3ef4901b",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "3b3df85e-7372-401d-9419-da59dfa1624a",
-    "material_id": "94e16330-12a0-4fe8-85de-0e7daf15c0c8",
+    "id": "kititem-drywall-1-2in-4x8",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-drywall-finishing-kit",
+    "material_id": "matl-drywall-1-2in-4x8",
     "name": "Drywall 1/2in 4x8",
     "quantity": 4,
     "image_url": null,
     "sort_order": 0
   },
   {
-    "id": "1f3efea9-ab83-43c3-ae6c-252f08000671",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "3b3df85e-7372-401d-9419-da59dfa1624a",
-    "material_id": "f2f6bc54-9f61-4514-81d3-e57dccbe77be",
+    "id": "kititem-joint-compound-5gal",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-drywall-finishing-kit",
+    "material_id": "matl-joint-compound-5gal",
     "name": "Joint Compound 5gal",
     "quantity": 2,
     "image_url": null,
     "sort_order": 1
   },
   {
-    "id": "58b2136d-957e-4073-b45b-8685d290c36d",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "af9cbabe-d7a2-4f02-8545-25af5c84d87c",
-    "material_id": "9bcc27a1-3e80-48be-a1e6-d866b4ac75f1",
+    "id": "kititem-interior-pre-hung-door-32in",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-finish-carpentry-kit",
+    "material_id": "matl-interior-pre-hung-door-32in",
     "name": "Interior Pre-Hung Door 32in",
     "quantity": 2,
     "image_url": null,
     "sort_order": 0
   },
   {
-    "id": "52fa1e06-1dd7-40f6-a6da-10c792e16519",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "af9cbabe-d7a2-4f02-8545-25af5c84d87c",
-    "material_id": "808997c8-6e46-483d-9576-ad7d0ef99017",
+    "id": "kititem-baseboard-trim-mdf-3-25in",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-finish-carpentry-kit",
+    "material_id": "matl-baseboard-trim-mdf-3-25in",
     "name": "Baseboard Trim MDF 3.25in",
     "quantity": 40,
     "image_url": null,
     "sort_order": 1
   },
   {
-    "id": "4cabda0f-c5dd-477f-a485-ae1721231f07",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "af9cbabe-d7a2-4f02-8545-25af5c84d87c",
-    "material_id": "82ff6f82-d774-47ea-b295-1c9a14f39755",
+    "id": "kititem-deck-screws-2-5in",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-finish-carpentry-kit",
+    "material_id": "matl-deck-screws-2-5in",
     "name": "Deck Screws 2.5in",
     "quantity": 1,
     "image_url": null,
     "sort_order": 2
   },
   {
-    "id": "b9e60f18-1634-497b-9173-687466b0f536",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "4835accd-ace4-4f96-ba0b-9a672e2a7130",
-    "material_id": "426fba30-acf6-43a1-bef3-01a37d139763",
+    "id": "kititem-interior-paint-eggshell-5gal",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-interior-painting-kit",
+    "material_id": "matl-interior-paint-eggshell-5gal",
     "name": "Interior Paint - Eggshell 5gal",
     "quantity": 2,
     "image_url": null,
     "sort_order": 0
   },
   {
-    "id": "087f01cb-859b-407c-8a2d-09ce2b551b75",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "4835accd-ace4-4f96-ba0b-9a672e2a7130",
-    "material_id": "0cc5855f-b8c2-4c5b-81d5-e8b14ff12d19",
+    "id": "kititem-painters-tape-1-5in",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-interior-painting-kit",
+    "material_id": "matl-painters-tape-1-5in",
     "name": "Painters Tape 1.5in",
     "quantity": 6,
     "image_url": null,
     "sort_order": 1
   },
   {
-    "id": "c1730d02-4a56-4d44-a03b-88b92572186d",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "c662d90a-8e69-4b87-9a65-08296de71e59",
-    "material_id": "cf29d6fc-3f98-453a-8c73-af668c9c1e37",
+    "id": "kititem-safety-glasses",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-safety-cleanup-kit",
+    "material_id": "matl-safety-glasses",
     "name": "Safety Glasses",
     "quantity": 4,
     "image_url": null,
     "sort_order": 0
   },
   {
-    "id": "e838bc81-49cb-4b11-a68f-2c128d2dbc1e",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "44201d3c-c217-4ff8-9a03-f9aa9622a854",
+    "id": "kititem-1-2-drywall-sheets",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-drywall-hanging-kit",
     "material_id": null,
     "name": "1/2\" Drywall Sheets",
     "quantity": 1,
@@ -180,9 +180,9 @@
     "sort_order": 0
   },
   {
-    "id": "fe544bcd-a955-40ed-8a4b-9d11b11855cb",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "44201d3c-c217-4ff8-9a03-f9aa9622a854",
+    "id": "kititem-1-1-4-drywall-screws",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-drywall-hanging-kit",
     "material_id": null,
     "name": "1-1/4\" Drywall Screws",
     "quantity": 1,
@@ -190,9 +190,9 @@
     "sort_order": 1
   },
   {
-    "id": "686786cd-6373-435a-aed6-87db3db16494",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "44201d3c-c217-4ff8-9a03-f9aa9622a854",
+    "id": "kititem-corner-bead",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-drywall-hanging-kit",
     "material_id": null,
     "name": "Corner Bead",
     "quantity": 1,
@@ -200,9 +200,9 @@
     "sort_order": 2
   },
   {
-    "id": "190d26c9-87e5-4f4f-9878-ee24831afa30",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "86f5db24-e494-4661-a94d-6b98bb66a674",
+    "id": "kititem-paper-tape",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-drywall-tape-kit",
     "material_id": null,
     "name": "Paper Tape",
     "quantity": 1,
@@ -210,9 +210,9 @@
     "sort_order": 0
   },
   {
-    "id": "45f3cecc-2204-4daf-8eda-05e27996dbfe",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "86f5db24-e494-4661-a94d-6b98bb66a674",
+    "id": "kititem-mesh-tape",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-drywall-tape-kit",
     "material_id": null,
     "name": "Mesh Tape",
     "quantity": 1,
@@ -220,9 +220,9 @@
     "sort_order": 1
   },
   {
-    "id": "3e2fb93d-cbfa-423d-a41c-642d88cbe0ec",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "86f5db24-e494-4661-a94d-6b98bb66a674",
+    "id": "kititem-joint-compound",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-drywall-tape-kit",
     "material_id": null,
     "name": "Joint Compound",
     "quantity": 1,
@@ -230,9 +230,9 @@
     "sort_order": 2
   },
   {
-    "id": "b3f04c8c-3da3-498b-8548-06356627b9f2",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "c33dc5e9-09e3-4af9-9278-9dc2cbc1934b",
+    "id": "kititem-hinges",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-door-hanging-kit",
     "material_id": null,
     "name": "Hinges",
     "quantity": 1,
@@ -240,9 +240,9 @@
     "sort_order": 0
   },
   {
-    "id": "9ff3ab2c-709d-4034-adbe-c01328618d55",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "c33dc5e9-09e3-4af9-9278-9dc2cbc1934b",
+    "id": "kititem-3-screws",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-door-hanging-kit",
     "material_id": null,
     "name": "3\" Screws",
     "quantity": 1,
@@ -250,9 +250,9 @@
     "sort_order": 1
   },
   {
-    "id": "579423d0-5539-47af-abfb-f434de66a671",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "86a89d04-27fb-46f1-8496-e1d98af9f7bf",
+    "id": "kititem-latch-faceplates",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-door-drilling-kit",
     "material_id": null,
     "name": "Latch Faceplates",
     "quantity": 1,
@@ -260,9 +260,9 @@
     "sort_order": 0
   },
   {
-    "id": "4593f675-92fc-4058-96ee-5716011c81ab",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "86a89d04-27fb-46f1-8496-e1d98af9f7bf",
+    "id": "kititem-strike-plates",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-door-drilling-kit",
     "material_id": null,
     "name": "Strike Plates",
     "quantity": 1,
@@ -270,9 +270,9 @@
     "sort_order": 1
   },
   {
-    "id": "ad721c70-6923-4811-a823-0dfd551a1281",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "07e70ee3-0319-4c7e-9d64-89e08b9b6159",
+    "id": "kititem-2x4-studs",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-framing-kit",
     "material_id": null,
     "name": "2x4 Studs",
     "quantity": 1,
@@ -280,9 +280,9 @@
     "sort_order": 0
   },
   {
-    "id": "9a64634f-4c5a-4f66-93ea-20f12b3fc337",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "07e70ee3-0319-4c7e-9d64-89e08b9b6159",
+    "id": "kititem-16d-framing-nails",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-framing-kit",
     "material_id": null,
     "name": "16d Framing Nails",
     "quantity": 1,
@@ -290,9 +290,9 @@
     "sort_order": 1
   },
   {
-    "id": "c89624dc-ebb0-422c-8683-1035fb1ae863",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "7d65dec3-b473-4e67-8c2c-e0639ee1b27c",
+    "id": "kititem-framing-plates",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-framing-plates",
     "material_id": null,
     "name": "Framing Plates",
     "quantity": 1,
@@ -300,9 +300,9 @@
     "sort_order": 0
   },
   {
-    "id": "7af0bc75-3017-4544-853c-e391721301b7",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "7d65dec3-b473-4e67-8c2c-e0639ee1b27c",
+    "id": "kititem-structural-screws",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-framing-plates",
     "material_id": null,
     "name": "Structural Screws",
     "quantity": 1,
@@ -310,9 +310,9 @@
     "sort_order": 1
   },
   {
-    "id": "de528637-5a37-496a-a7b5-af54aca36713",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "93543ef2-5e78-4ba2-aabe-125e480d19ea",
+    "id": "kititem-baseboard",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-finish-carpentry-trim-work",
     "material_id": null,
     "name": "Baseboard",
     "quantity": 1,
@@ -320,9 +320,9 @@
     "sort_order": 0
   },
   {
-    "id": "c7134542-de8b-46d5-a3a7-098ca6f19c13",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "93543ef2-5e78-4ba2-aabe-125e480d19ea",
+    "id": "kititem-casing",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-finish-carpentry-trim-work",
     "material_id": null,
     "name": "Casing",
     "quantity": 1,
@@ -330,9 +330,9 @@
     "sort_order": 1
   },
   {
-    "id": "bb4eed97-74fc-41ad-ae10-a47e456ab8bd",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "93543ef2-5e78-4ba2-aabe-125e480d19ea",
+    "id": "kititem-wood-filler",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-finish-carpentry-trim-work",
     "material_id": null,
     "name": "Wood Filler",
     "quantity": 1,
@@ -340,9 +340,9 @@
     "sort_order": 2
   },
   {
-    "id": "1d8d92df-539f-44a2-9772-723bca42e914",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "fe255c1d-004e-46dd-90cf-f92809fa34bd",
+    "id": "kititem-wood-filler-2",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-wood-touch-up-kit",
     "material_id": null,
     "name": "Wood Filler",
     "quantity": 1,
@@ -350,9 +350,9 @@
     "sort_order": 0
   },
   {
-    "id": "77f2dfc6-5dfe-4559-aaec-34f7a53ec45b",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "fe255c1d-004e-46dd-90cf-f92809fa34bd",
+    "id": "kititem-stain-matching-kit",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-wood-touch-up-kit",
     "material_id": null,
     "name": "Stain Matching Kit",
     "quantity": 1,
@@ -360,9 +360,9 @@
     "sort_order": 1
   },
   {
-    "id": "c06b023d-1512-4b6a-8b1f-f2eef88adc8f",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "9619db3c-a51a-45b3-99d2-c7dc002032ef",
+    "id": "kititem-thinset",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-tile-kit",
     "material_id": null,
     "name": "Thinset",
     "quantity": 1,
@@ -370,9 +370,9 @@
     "sort_order": 0
   },
   {
-    "id": "1348402a-df93-4eb8-bd94-5954e6c9fad9",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "9619db3c-a51a-45b3-99d2-c7dc002032ef",
+    "id": "kititem-grout",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-tile-kit",
     "material_id": null,
     "name": "Grout",
     "quantity": 1,
@@ -380,9 +380,9 @@
     "sort_order": 1
   },
   {
-    "id": "03b35eb5-f406-46a7-bdf9-75d11797a305",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "9619db3c-a51a-45b3-99d2-c7dc002032ef",
+    "id": "kititem-tile-spacers",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-tile-kit",
     "material_id": null,
     "name": "Tile Spacers",
     "quantity": 1,
@@ -390,9 +390,9 @@
     "sort_order": 2
   },
   {
-    "id": "7e67cfbc-e266-48e0-bd24-2c9fefe560b1",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "588b13ca-7f7e-4fb7-878b-3067ba281e8d",
+    "id": "kititem-tack-strip",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-carpet-kit",
     "material_id": null,
     "name": "Tack Strip",
     "quantity": 1,
@@ -400,9 +400,9 @@
     "sort_order": 0
   },
   {
-    "id": "b180c40e-de5c-4225-ab24-05c5ad47b2c9",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "588b13ca-7f7e-4fb7-878b-3067ba281e8d",
+    "id": "kititem-carpet-padding",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-carpet-kit",
     "material_id": null,
     "name": "Carpet Padding",
     "quantity": 1,
@@ -410,9 +410,9 @@
     "sort_order": 1
   },
   {
-    "id": "babb3683-d00f-486d-8535-8033db14a2be",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "588b13ca-7f7e-4fb7-878b-3067ba281e8d",
+    "id": "kititem-seam-tape",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-carpet-kit",
     "material_id": null,
     "name": "Seam Tape",
     "quantity": 1,
@@ -420,9 +420,9 @@
     "sort_order": 2
   },
   {
-    "id": "1cd4b801-c065-4f59-9805-bf42d62469d2",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "ed6b41b6-e0e2-475d-82c1-0b8210783824",
+    "id": "kititem-painter-s-tape",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-tape-off-kit",
     "material_id": null,
     "name": "Painter's Tape",
     "quantity": 1,
@@ -430,9 +430,9 @@
     "sort_order": 0
   },
   {
-    "id": "2e3ede62-5f38-4915-bb4b-9fcaae9c00d1",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "ed6b41b6-e0e2-475d-82c1-0b8210783824",
+    "id": "kititem-masking-paper",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-tape-off-kit",
     "material_id": null,
     "name": "Masking Paper",
     "quantity": 1,
@@ -440,9 +440,9 @@
     "sort_order": 1
   },
   {
-    "id": "37ce2119-a433-4216-9732-2df8be1ccc42",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "ed6b41b6-e0e2-475d-82c1-0b8210783824",
+    "id": "kititem-plastic-sheeting",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-tape-off-kit",
     "material_id": null,
     "name": "Plastic Sheeting",
     "quantity": 1,
@@ -450,9 +450,9 @@
     "sort_order": 2
   },
   {
-    "id": "e1fece3b-f2b9-49d6-9322-083fd33f409e",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "856fb5b6-b9c6-412a-9a27-4567802759b1",
+    "id": "kititem-copper-fittings",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-copper-kit",
     "material_id": null,
     "name": "Copper Fittings",
     "quantity": 1,
@@ -460,9 +460,9 @@
     "sort_order": 0
   },
   {
-    "id": "c2bc7408-2454-4cf4-b3c2-003163392c3f",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "856fb5b6-b9c6-412a-9a27-4567802759b1",
+    "id": "kititem-solder",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-copper-kit",
     "material_id": null,
     "name": "Solder",
     "quantity": 1,
@@ -470,9 +470,9 @@
     "sort_order": 1
   },
   {
-    "id": "2d3ec59c-38cb-4ae8-9d99-00d8f4a38715",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "856fb5b6-b9c6-412a-9a27-4567802759b1",
+    "id": "kititem-flux",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-copper-kit",
     "material_id": null,
     "name": "Flux",
     "quantity": 1,
@@ -480,9 +480,9 @@
     "sort_order": 2
   },
   {
-    "id": "bb57aa1c-2069-480a-889b-caeccb162f75",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "455cde18-249b-4eca-8fe3-9faf08acf21a",
+    "id": "kititem-1-2-pex-tubing",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-pex-b-crimp-1-2-kit",
     "material_id": null,
     "name": "1/2\" PEX Tubing",
     "quantity": 1,
@@ -490,9 +490,9 @@
     "sort_order": 0
   },
   {
-    "id": "87d73dc2-ec84-4e68-8402-add40244e90e",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "455cde18-249b-4eca-8fe3-9faf08acf21a",
+    "id": "kititem-1-2-crimp-rings",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-pex-b-crimp-1-2-kit",
     "material_id": null,
     "name": "1/2\" Crimp Rings",
     "quantity": 1,
@@ -500,9 +500,9 @@
     "sort_order": 1
   },
   {
-    "id": "08928650-79ba-4ff8-9b1f-70021be2af9a",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "ffca0fba-3e04-4601-8ebd-32d42984c48d",
+    "id": "kititem-duplex-outlets",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-outlets-and-switches",
     "material_id": null,
     "name": "Duplex Outlets",
     "quantity": 1,
@@ -510,9 +510,9 @@
     "sort_order": 0
   },
   {
-    "id": "69a99a97-52cc-48b2-bff3-54734485c4f4",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "ffca0fba-3e04-4601-8ebd-32d42984c48d",
+    "id": "kititem-switches",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-outlets-and-switches",
     "material_id": null,
     "name": "Switches",
     "quantity": 1,
@@ -520,9 +520,9 @@
     "sort_order": 1
   },
   {
-    "id": "279693b4-59a4-488c-8df2-bcdd1fb1a6e1",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "ffca0fba-3e04-4601-8ebd-32d42984c48d",
+    "id": "kititem-wire-nuts",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-outlets-and-switches",
     "material_id": null,
     "name": "Wire Nuts",
     "quantity": 1,
@@ -530,9 +530,9 @@
     "sort_order": 2
   },
   {
-    "id": "ed8f6506-1ab8-4286-a764-62ee6ac31488",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "4857a468-a3cc-434c-bd50-d5dfedd19540",
+    "id": "kititem-emt-conduit",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-emt-conduit",
     "material_id": null,
     "name": "EMT Conduit",
     "quantity": 1,
@@ -540,9 +540,9 @@
     "sort_order": 0
   },
   {
-    "id": "495a7f0f-f609-4b04-817b-fb24d9d9af7a",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "4857a468-a3cc-434c-bd50-d5dfedd19540",
+    "id": "kititem-set-screw-connectors",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-emt-conduit",
     "material_id": null,
     "name": "Set Screw Connectors",
     "quantity": 1,
@@ -550,9 +550,9 @@
     "sort_order": 1
   },
   {
-    "id": "f9704a20-2df2-4d5c-912b-2132e2bd7d5c",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "4857a468-a3cc-434c-bd50-d5dfedd19540",
+    "id": "kititem-straps",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-emt-conduit",
     "material_id": null,
     "name": "Straps",
     "quantity": 1,
@@ -560,9 +560,9 @@
     "sort_order": 2
   },
   {
-    "id": "c988071e-72db-4e90-b5e3-0268accaac03",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "8a91d659-2ef4-4f69-aff5-a64e3a0c07a1",
+    "id": "kititem-refrigerant",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-hvac-kit",
     "material_id": null,
     "name": "Refrigerant",
     "quantity": 1,
@@ -570,9 +570,9 @@
     "sort_order": 0
   },
   {
-    "id": "46240c2f-0da5-4907-9f84-806ce1235267",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "8a91d659-2ef4-4f69-aff5-a64e3a0c07a1",
+    "id": "kititem-line-set-insulation",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-hvac-kit",
     "material_id": null,
     "name": "Line Set Insulation",
     "quantity": 1,
@@ -580,9 +580,9 @@
     "sort_order": 1
   },
   {
-    "id": "7bec7799-beb2-435c-acbd-33ff1334d752",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "7d7475f8-b8ff-4c42-99d3-79175352ebd0",
+    "id": "kititem-wax-ring",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-toilet-kit",
     "material_id": null,
     "name": "Wax Ring",
     "quantity": 1,
@@ -590,9 +590,9 @@
     "sort_order": 0
   },
   {
-    "id": "b3cbcd3b-14d6-4585-90b7-fa0f87de8d52",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "7d7475f8-b8ff-4c42-99d3-79175352ebd0",
+    "id": "kititem-closet-bolts",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-toilet-kit",
     "material_id": null,
     "name": "Closet Bolts",
     "quantity": 1,
@@ -600,9 +600,9 @@
     "sort_order": 1
   },
   {
-    "id": "37b0066c-bb7b-4ec9-9e30-99ee952ff18d",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "7d7475f8-b8ff-4c42-99d3-79175352ebd0",
+    "id": "kititem-toilet-tank-kit",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-toilet-kit",
     "material_id": null,
     "name": "Toilet Tank Kit",
     "quantity": 1,
@@ -610,9 +610,9 @@
     "sort_order": 2
   },
   {
-    "id": "3139157b-27af-4441-a1e7-0f7571e23bbc",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "4bdce43d-41a8-46c3-a782-729b4fa6a6af",
+    "id": "kititem-assorted-bolts",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-bolt-kit",
     "material_id": null,
     "name": "Assorted Bolts",
     "quantity": 1,
@@ -620,9 +620,9 @@
     "sort_order": 0
   },
   {
-    "id": "75080be1-4018-43e6-a0dc-bd18272977b6",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "4bdce43d-41a8-46c3-a782-729b4fa6a6af",
+    "id": "kititem-nuts",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-bolt-kit",
     "material_id": null,
     "name": "Nuts",
     "quantity": 1,
@@ -630,9 +630,9 @@
     "sort_order": 1
   },
   {
-    "id": "c332e5ff-d9de-4269-a6fb-bba461ae28a0",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "4bdce43d-41a8-46c3-a782-729b4fa6a6af",
+    "id": "kititem-washers",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-bolt-kit",
     "material_id": null,
     "name": "Washers",
     "quantity": 1,
@@ -640,9 +640,9 @@
     "sort_order": 2
   },
   {
-    "id": "e1f678db-ad21-4fa6-ad67-eb9c20957f7f",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "a99f046d-2700-4cc6-be0a-4b221efb808e",
+    "id": "kititem-wedge-anchors",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-brick-and-block-anchors",
     "material_id": null,
     "name": "Wedge Anchors",
     "quantity": 1,
@@ -650,9 +650,9 @@
     "sort_order": 0
   },
   {
-    "id": "c8abee6e-d48a-4fba-9cd7-168578ff2ea4",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "a99f046d-2700-4cc6-be0a-4b221efb808e",
+    "id": "kititem-sleeve-anchors",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-brick-and-block-anchors",
     "material_id": null,
     "name": "Sleeve Anchors",
     "quantity": 1,
@@ -660,9 +660,9 @@
     "sort_order": 1
   },
   {
-    "id": "641e6669-9d33-4737-b0fa-dc8f3aeaab64",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "b8699f6b-6a79-474e-87a8-a97316b2cc98",
+    "id": "kititem-wood-drill-bit-set",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-wood-drill-bits",
     "material_id": null,
     "name": "Wood Drill Bit Set",
     "quantity": 1,
@@ -670,9 +670,9 @@
     "sort_order": 0
   },
   {
-    "id": "098192eb-38d5-4a24-9284-0aff40d2aac3",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "090e2739-fc57-48cf-8138-19b445868f4c",
+    "id": "kititem-sanding-discs",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-festool-sanders",
     "material_id": null,
     "name": "Sanding Discs",
     "quantity": 1,
@@ -680,9 +680,9 @@
     "sort_order": 0
   },
   {
-    "id": "c06f0643-3bd9-4186-aa1b-2246cb599289",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "7ea28766-41f9-4e27-9ed6-2e7cd936a6fc",
+    "id": "kititem-gloves",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-safety-kit",
     "material_id": null,
     "name": "Gloves",
     "quantity": 1,
@@ -690,9 +690,9 @@
     "sort_order": 0
   },
   {
-    "id": "3ca083dd-6176-4ead-b606-c3a887e1647a",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "7ea28766-41f9-4e27-9ed6-2e7cd936a6fc",
+    "id": "kititem-first-aid-kit",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-safety-kit",
     "material_id": null,
     "name": "First Aid Kit",
     "quantity": 1,
@@ -700,9 +700,9 @@
     "sort_order": 1
   },
   {
-    "id": "ccb9e8b1-50f8-4fd3-866c-353c89a9d7b1",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "a4010abc-e10d-488e-8a88-7f86785c7c41",
+    "id": "kititem-fiberglass-batts",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-insulation-kit",
     "material_id": null,
     "name": "Fiberglass Batts",
     "quantity": 1,
@@ -710,9 +710,9 @@
     "sort_order": 0
   },
   {
-    "id": "3f9f288c-fed3-4c82-9215-6c520d22e8dd",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "a4010abc-e10d-488e-8a88-7f86785c7c41",
+    "id": "kititem-vapor-barrier",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-insulation-kit",
     "material_id": null,
     "name": "Vapor Barrier",
     "quantity": 1,

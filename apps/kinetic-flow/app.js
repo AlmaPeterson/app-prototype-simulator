@@ -17,7 +17,7 @@ const STORAGE_KEY = 'kineticFlow.state';
 // Bump whenever db/*.json seed data or table shapes change: restoreState()
 // discards localStorage DB snapshots from older versions and re-fetches the
 // fresh seeds, so users don't need a manual "Reset Demo Data".
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 // ── App State ──────────────────────────────────────────────────────────────
 const state = {
@@ -46,6 +46,7 @@ const state = {
     currentBidId: null,
     currentDivisionId: null,
     simulateOffsite: false,   // feild-clock GPS simulator: true = pretend the phone is ~2 km from the job site
+    timesheetNote: null,      // draft "Notes for Supervisor" text from review-time.html, kept across visits until submit
 };
 
 // ── Mock DB ──────────────────────────────────────────────────────────────
@@ -76,6 +77,15 @@ let _nextIdSeq = 1;
 function genId() {
     // Not a real uuid — just unique and visibly distinct from seeded uuids.
     return 'local-' + Date.now().toString(36) + '-' + (_nextIdSeq++).toString(36);
+}
+
+// User-created names (jobs, companies, kits, customers…) get concatenated
+// into innerHTML strings all over the pages — escape them so an apostrophe
+// or angle bracket in a name can't break markup or an onclick attribute.
+function esc(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 const DB = {
@@ -116,6 +126,7 @@ const DB = {
 };
 
 function resetDemoData() {
+    if (!confirm('Reset demo data? Every change you\'ve made — jobs, bids, time entries, everything — will be discarded and the original seed data reloaded.')) return;
     // DB.reset() alone isn't enough: session fields (currentUserId, signedIn,
     // etc.) would still point at pre-reset data, and the beforeunload
     // listener's saveState() fires during location.reload() and would
@@ -128,7 +139,7 @@ function resetDemoData() {
             signedIn: false, currentPage: '', currentJob: null, currentJobId: null, currentCompany: null,
             currentBranch: null, clockInTask: null, scorecardWorkerId: null, scorecardReturnTo: null,
             currentUserId: null, currentUser: null, currentCompanyId: null, currentBranchId: null,
-            currentBidId: null, currentDivisionId: null, simulateOffsite: false,
+            currentBidId: null, currentDivisionId: null, simulateOffsite: false, timesheetNote: null,
         });
         clockedIn = false;
         clockStartedAt = null;
@@ -307,7 +318,7 @@ function setRole(role) {
 // carries the signed-in user's real identity/company/branch from here on;
 // an email that doesn't match any seeded user falls back to a fixed demo
 // identity rather than dead-ending the flow.
-const DEFAULT_DEMO_EMAIL = 'j.smith@kineticsolutions.com';
+const DEFAULT_DEMO_EMAIL = 'master@kineticflow.com';
 
 function signIn() {
     if (state.accountType === 'new') {
@@ -368,9 +379,9 @@ function filterAccountSearch() {
             || accountPositionLabel(u).toLowerCase().indexOf(q) !== -1;
     });
     list.innerHTML = matches.length ? matches.map(function (u) {
-        return `<div class="account-search-item" onmousedown="pickAccount('${u.email}')">
-            <div class="account-search-name">${u.full_name}<span class="account-search-position">${accountPositionLabel(u)}</span></div>
-            <div class="account-search-email">${u.email}</div>
+        return `<div class="account-search-item" onmousedown="pickAccount('${esc(u.email)}')">
+            <div class="account-search-name">${esc(u.full_name)}<span class="account-search-position">${esc(accountPositionLabel(u))}</span></div>
+            <div class="account-search-email">${esc(u.email)}</div>
         </div>`;
     }).join('') : '<div class="account-search-empty">No matching accounts</div>';
     list.classList.add('open');
@@ -438,7 +449,7 @@ function val(id) {
     return el ? el.value.trim() : '';
 }
 
-const KINETIC_SOLUTIONS_ID = '22e15616-ddab-463d-8c8e-cd89d0fbcf33';
+const KINETIC_SOLUTIONS_ID = 'company-kineticflow';
 
 function submitAccount() {
     const company = DB.findOne('companies', function (c) {
@@ -779,6 +790,24 @@ function openBid() {
     loadPage('bid');
 }
 function submitBid() { loadPage('job-detail'); }
+
+// Real send path for bid-proposal.html's "Send to Customer" — the bids table
+// already models the draft → sent → signed lifecycle (status/sent_at), so
+// sending is just moving the row forward. No actual delivery happens in the
+// prototype; the customer pages read the same bids row directly.
+function sendBidToCustomer() {
+    if (!state.currentBidId) return;
+    const bid = DB.getById('bids', state.currentBidId);
+    if (!bid) return;
+    const resend = bid.status === 'sent' || bid.status === 'signed';
+    DB.update('bids', bid.id, {
+        status: bid.status === 'signed' ? 'signed' : 'sent',
+        sent_at: new Date().toISOString(),
+    });
+    loadPage('job-detail');
+    showToast(resend ? 'Proposal Re-Sent' : 'Proposal Sent',
+        ['The customer can now view this bid. (Demo — no real email/text goes out.)'], '#1e40af');
+}
 
 // Recomputes a bid's total_labor/total_materials/total_cost from its
 // non-deleted bid_divisions rows and writes the rollup back to the bids row.
@@ -1132,7 +1161,7 @@ function openTaskSelect() {
         return '<div class="card" onclick="selectClockInTask(\'' + m.id + '\', \'' + level + '\', ' + (m.is_high_hazard ? 'true' : 'false') + ')">' +
             '<div class="card-row">' +
                 '<div class="card-body">' +
-                    '<div class="card-title">' + m.task_name + '</div>' +
+                    '<div class="card-title">' + esc(m.task_name) + '</div>' +
                     '<div class="card-subtitle">' + subtitle + '</div>' +
                 '</div>' +
                 '<span class="badge badge-gray">' + levelName + '</span>' +
@@ -1376,6 +1405,15 @@ function toggleClock() {
     const status = document.getElementById('clock-status');
     if (!btn) return;
 
+    if (!clockedIn && !state.currentJobId) {
+        // A punch with no job would insert job_id: null — "Unknown Job" on
+        // the timesheet and no geofence to check. Send them to pick one; the
+        // job context then sticks for the rest of the day (see job-home).
+        alert('Select a job first so this shift is recorded against it.');
+        loadPage('jobs');
+        return;
+    }
+
     if (clockedIn) {
         // About to clock OUT — require the pre-clock-out checklist first.
         const gateOk = document.getElementById('gate-materials').checked
@@ -1519,10 +1557,11 @@ function syncClockUI() {
             entry.className = 'list-item';
             entry.innerHTML = `
                 <div class="list-item-body">
-                    <div class="list-item-title">${active.label || type.charAt(0).toUpperCase() + type.slice(1)}</div>
+                    <div class="list-item-title">${esc(active.label) || type.charAt(0).toUpperCase() + type.slice(1)}</div>
                     <div class="list-item-sub">${formatClockTime(active.startMs)} &ndash; ongoing</div>
                 </div>
                 <span class="badge badge-gray">Active</span>`;
+            removeActivityEmptyState();
             log.prepend(entry);
             active.entry = entry;
         });
@@ -1540,6 +1579,13 @@ const activeActivities = {}; // type -> { startMs, label, entry (DOM node in #ac
 
 function formatClockTime(ms) {
     return new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// feild-clock.html renders a "No activity recorded yet" row when today's log
+// is empty — drop it the moment anything real lands in the log.
+function removeActivityEmptyState() {
+    const empty = document.getElementById('activity-empty');
+    if (empty) empty.remove();
 }
 
 function formatDuration(ms) {
@@ -1573,10 +1619,11 @@ function startActivity(type, label) {
     entry.className = 'list-item';
     entry.innerHTML = `
         <div class="list-item-body">
-            <div class="list-item-title">${label}</div>
+            <div class="list-item-title">${esc(label)}</div>
             <div class="list-item-sub">${formatClockTime(startMs)} &ndash; ongoing</div>
         </div>
         <span class="badge badge-gray">Active</span>`;
+    removeActivityEmptyState();
     log.prepend(entry);
     activeActivities[type] = { startMs: startMs, label: label, entry: entry };
     syncActivityButtons();
@@ -1593,11 +1640,12 @@ function endActivity(type) {
     if (!log.contains(entry)) {
         entry = document.createElement('div');
         entry.className = 'list-item';
+        removeActivityEmptyState();
         log.prepend(entry);
     }
     entry.innerHTML = `
         <div class="list-item-body">
-            <div class="list-item-title">${active.label}</div>
+            <div class="list-item-title">${esc(active.label)}</div>
             <div class="list-item-sub">${formatClockTime(active.startMs)} &ndash; ${formatClockTime(endMs)} &bull; ${formatDuration(endMs - active.startMs)}</div>
         </div>`;
     // Ending a recorded task also closes its phase log.
@@ -1688,11 +1736,11 @@ function openMaterialLog() {
             '<div class="page-title-sm mb-2">Log Material Used</div>' +
             '<div class="page-subtitle mb-4">Select from kits checked out for this job and enter how much was used.</div>' +
             (kits.length ? kits.map(function (kit, ki) {
-                return '<div class="section-header" style="margin-top:10px;"><span class="section-title">' + kit.name + '</span></div>' +
+                return '<div class="section-header" style="margin-top:10px;"><span class="section-title">' + esc(kit.name) + '</span></div>' +
                     '<div class="card" style="cursor:default;">' +
                     kit.materials.map(function (mat, mi) {
                         return '<div class="list-item" style="padding:8px 0;">' +
-                            '<div class="list-item-body"><div class="list-item-title">' + mat.name + '</div></div>' +
+                            '<div class="list-item-body"><div class="list-item-title">' + esc(mat.name) + '</div></div>' +
                             '<input type="number" min="0" step="1" placeholder="0" class="material-qty-input" data-kit="' + ki + '" data-item="' + mi + '" style="width:56px; padding:8px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:0.85rem; text-align:center;">' +
                             '</div>';
                     }).join('') +
@@ -1727,9 +1775,10 @@ function saveMaterialLog() {
             entry.className = 'list-item';
             entry.innerHTML =
                 '<div class="list-item-body">' +
-                    '<div class="list-item-title">' + qty + '&times; ' + material.name + '</div>' +
-                    '<div class="list-item-sub">' + kit.name + ' &bull; Logged at ' + time + '</div>' +
+                    '<div class="list-item-title">' + qty + '&times; ' + esc(material.name) + '</div>' +
+                    '<div class="list-item-sub">' + esc(kit.name) + ' &bull; Logged at ' + time + '</div>' +
                 '</div>';
+            removeActivityEmptyState();
             log.prepend(entry);
         }
         DB.insert('task_materials', {
@@ -1755,6 +1804,17 @@ function saveMaterialLog() {
 // A scorecard for today's shift is required before the timesheet can go to
 // the supervisor. If none exists yet, send the worker to fill one out and
 // have submitScorecard() route back here to finish the submission.
+// The "Notes for Supervisor" textarea on review-time.html: Save Draft keeps
+// the text in state (restored next visit), Submit stamps it onto the entries
+// going to the manager — either way the worker's note is never silently lost.
+function saveTimesheetDraft() {
+    const notes = val('rt-notes');
+    state.timesheetNote = notes || null;
+    saveState();
+    loadPage('feild-clock');
+    if (notes) showToast('Draft Saved', ['Your note will be here when you come back.'], '#1e40af');
+}
+
 function submitTimeSheet() {
     const today = new Date().toISOString().slice(0, 10);
     const hasScorecard = DB.find('scorecard_entries', function (s) {
@@ -1762,6 +1822,8 @@ function submitTimeSheet() {
     }).length > 0;
     if (!hasScorecard) {
         alert("A scorecard for today's shift is required before submitting your timesheet. Please complete it now.");
+        // Stash the note so the scorecard detour doesn't wipe the textarea.
+        state.timesheetNote = val('rt-notes') || state.timesheetNote || null;
         state.scorecardReturnTo = 'review-time';
         openScorecard(state.currentUserId);
         return;
@@ -1769,6 +1831,7 @@ function submitTimeSheet() {
     // Stamp the worker's un-submitted entries so they show up on their
     // manager's Team Timesheets page (team-time.html) for QuickBooks export.
     const now = new Date().toISOString();
+    const workerNote = val('rt-notes') || state.timesheetNote || null;
     DB.find('time_entries', function (t) {
         return t.user_id === state.currentUserId && !t.submitted_at;
     }).forEach(function (t) {
@@ -1776,8 +1839,10 @@ function submitTimeSheet() {
         DB.update('time_entries', t.id, {
             status: t.status === 'flagged' ? 'flagged' : 'submitted',
             submitted_at: now,
+            worker_note: workerNote,
         });
     });
+    state.timesheetNote = null;
     loadPage('scoreboard');
 }
 
@@ -1831,7 +1896,7 @@ function openCustomerHome() { loadPage('customer-home'); }
 // customer-facing pages (customer-home/customer-bid/customer-invoice) to this
 // one seeded job so Home/Bid/Invoice describe one consistent property visit
 // instead of each page guessing independently.
-const CUSTOMER_DEMO_JOB_ID = 'c229964f-71e9-4d66-af48-fdb1db4c7404';
+const CUSTOMER_DEMO_JOB_ID = 'job-riverside-hvac';
 
 // There's no real `invoices` table (confirmed schema gap — out of scope to
 // build in this phase), so finance.html's "Outstanding Invoices" tile and
@@ -1970,18 +2035,18 @@ window.addEventListener('beforeunload', saveState);
 // *this* app's implementation, not some other installed app's same-named one.
 function activate() {
     Object.assign(window, {
-        state, DB, resetDemoData,
+        state, DB, resetDemoData, esc,
         loadPage, navTo, goBack,
         setAccountType, setRole,
         signIn, afterSignIn, signOut, showSignUp, closeSignUp, submitAccount, goToSignIn,
-        showAccountSearch, hideAccountSearch, filterAccountSearch, pickAccount,
+        showAccountSearch, hideAccountSearch, filterAccountSearch, pickAccount, accountPositionLabel,
         showSabbathLock, hideSabbathLock,
         joinCompany, createCompany, submitJoinRequest, submitNewCompany, continueFromSetup, openBranch,
         selectCompany, manageCompany, companyMemberUsers,
         DIVISIONS, LEVELS, COMPETENCY_LEVELS,
         openCompanyDivisions,
         openJob, createJob, submitJob,
-        openBid, submitBid, recalcBidTotals,
+        openBid, submitBid, recalcBidTotals, sendBidToCustomer,
         openDivision, saveDivision, previewProposal,
         openSchedule, openTimeSheet, openKits, openLabelGenerator, openFieldClock, openInventory,
         openScorecard, openMyScorecard, submitScorecard, isManagerOrAdmin, pendingSelfScorecard,
@@ -1990,7 +2055,7 @@ function activate() {
         recordPpeVideo, ppeVideoComplete,
         toggleClock, addActivity,
         openMaterialLog, closeMaterialModal, saveMaterialLog,
-        submitTimeSheet,
+        submitTimeSheet, saveTimesheetDraft,
         openTeamTime, managedWorkers, submitTeamTimeToQuickBooks,
         openScoreboard, openStats, openFinance, openCustomerHome, openMore,
         switchTab, toggleChip,

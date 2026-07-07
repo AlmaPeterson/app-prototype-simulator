@@ -1,589 +1,589 @@
 [
   {
-    "id": "3f090437-284b-4715-8379-b3d88974527a",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "e461a5c7-091f-4987-a65d-d25636f98467",
+    "id": "kittool-wire-strippers",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-basic-electrical-kit",
     "name": "Wire Strippers",
     "sort_order": 0
   },
   {
-    "id": "6ea823ad-dcc8-4267-84d7-2387a2d0553c",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "e461a5c7-091f-4987-a65d-d25636f98467",
+    "id": "kittool-voltage-tester",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-basic-electrical-kit",
     "name": "Voltage Tester",
     "sort_order": 1
   },
   {
-    "id": "66783fe4-a88e-4eb0-9ab4-7bda7d4c8062",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "e461a5c7-091f-4987-a65d-d25636f98467",
+    "id": "kittool-screwdriver-set",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-basic-electrical-kit",
     "name": "Screwdriver Set",
     "sort_order": 2
   },
   {
-    "id": "1bb2e952-6712-400b-8465-11c65869fad0",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "2623935c-c752-4d9d-95d2-02c72a049e40",
+    "id": "kittool-tubing-cutter",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-basic-plumbing-kit",
     "name": "Tubing Cutter",
     "sort_order": 0
   },
   {
-    "id": "6cd5198d-2b29-4184-926e-da00862cc027",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "2623935c-c752-4d9d-95d2-02c72a049e40",
+    "id": "kittool-pipe-wrench",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-basic-plumbing-kit",
     "name": "Pipe Wrench",
     "sort_order": 1
   },
   {
-    "id": "7a0a8007-c6f1-424a-8755-54028e5629db",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "2623935c-c752-4d9d-95d2-02c72a049e40",
+    "id": "kittool-propane-torch",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-basic-plumbing-kit",
     "name": "Propane Torch",
     "sort_order": 2
   },
   {
-    "id": "7d0913ff-ac3c-4371-be81-5716e2a4a749",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "1cd01261-e7ff-4b53-b20e-11318262b050",
+    "id": "kittool-manifold-gauges",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-hvac-install-kit",
     "name": "Manifold Gauges",
     "sort_order": 0
   },
   {
-    "id": "1dc6a09a-3fe9-4ecb-ad96-cdb55996a59e",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "1cd01261-e7ff-4b53-b20e-11318262b050",
+    "id": "kittool-vacuum-pump",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-hvac-install-kit",
     "name": "Vacuum Pump",
     "sort_order": 1
   },
   {
-    "id": "063474cd-fc08-405d-b576-9fab79a7b0ce",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "1cd01261-e7ff-4b53-b20e-11318262b050",
+    "id": "kittool-tin-snips",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-hvac-install-kit",
     "name": "Tin Snips",
     "sort_order": 2
   },
   {
-    "id": "923f1f80-0a5a-4227-badc-e82b8b82e79f",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "3b3df85e-7372-401d-9419-da59dfa1624a",
+    "id": "kittool-6-taping-knife",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-drywall-finishing-kit",
     "name": "6\" Taping Knife",
     "sort_order": 0
   },
   {
-    "id": "27c4de8e-4907-4aa7-82e5-be5823c1cad5",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "3b3df85e-7372-401d-9419-da59dfa1624a",
+    "id": "kittool-mud-pan",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-drywall-finishing-kit",
     "name": "Mud Pan",
     "sort_order": 1
   },
   {
-    "id": "da84393e-f888-4126-8bd4-8050aaac8159",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "3b3df85e-7372-401d-9419-da59dfa1624a",
+    "id": "kittool-pole-sander",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-drywall-finishing-kit",
     "name": "Pole Sander",
     "sort_order": 2
   },
   {
-    "id": "6c4b251b-8d73-4bf8-bd40-3e722ef7cac7",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "af9cbabe-d7a2-4f02-8545-25af5c84d87c",
+    "id": "kittool-finish-nailer",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-finish-carpentry-kit",
     "name": "Finish Nailer",
     "sort_order": 0
   },
   {
-    "id": "09555527-009c-4a0f-83bd-8e42028c0d77",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "af9cbabe-d7a2-4f02-8545-25af5c84d87c",
+    "id": "kittool-miter-saw",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-finish-carpentry-kit",
     "name": "Miter Saw",
     "sort_order": 1
   },
   {
-    "id": "1041df33-5fc5-4c2e-be77-67e994bbd2f4",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "af9cbabe-d7a2-4f02-8545-25af5c84d87c",
+    "id": "kittool-coping-saw",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-finish-carpentry-kit",
     "name": "Coping Saw",
     "sort_order": 2
   },
   {
-    "id": "e1e6301b-3749-46ad-a3e0-b3a1c95ce299",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "4835accd-ace4-4f96-ba0b-9a672e2a7130",
+    "id": "kittool-roller-frame",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-interior-painting-kit",
     "name": "Roller Frame",
     "sort_order": 0
   },
   {
-    "id": "ae5be38c-95f4-42fa-8784-c29c3108c7a9",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "4835accd-ace4-4f96-ba0b-9a672e2a7130",
+    "id": "kittool-paint-tray",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-interior-painting-kit",
     "name": "Paint Tray",
     "sort_order": 1
   },
   {
-    "id": "1975e511-5009-4c46-8e2e-7e15c353e72a",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "4835accd-ace4-4f96-ba0b-9a672e2a7130",
+    "id": "kittool-angled-sash-brush",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-interior-painting-kit",
     "name": "Angled Sash Brush",
     "sort_order": 2
   },
   {
-    "id": "5f7c2ed8-c15e-4220-beca-b2efa924da0d",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "c662d90a-8e69-4b87-9a65-08296de71e59",
+    "id": "kittool-shop-vacuum",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-safety-cleanup-kit",
     "name": "Shop Vacuum",
     "sort_order": 0
   },
   {
-    "id": "f04e89d3-da4b-4b46-955b-aca1b2f4010e",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "c662d90a-8e69-4b87-9a65-08296de71e59",
+    "id": "kittool-broom",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-safety-cleanup-kit",
     "name": "Broom",
     "sort_order": 1
   },
   {
-    "id": "ede00bd6-5f40-4193-995e-20c69309c50f",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "c662d90a-8e69-4b87-9a65-08296de71e59",
+    "id": "kittool-dustpan",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-safety-cleanup-kit",
     "name": "Dustpan",
     "sort_order": 2
   },
   {
-    "id": "618a2d86-fcc5-462c-a5a7-de1da9abdb42",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "44201d3c-c217-4ff8-9a03-f9aa9622a854",
+    "id": "kittool-drywall-screw-gun",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-drywall-hanging-kit",
     "name": "Drywall Screw Gun",
     "sort_order": 0
   },
   {
-    "id": "47d8c249-a2c0-439f-a646-d034e54b7543",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "44201d3c-c217-4ff8-9a03-f9aa9622a854",
+    "id": "kittool-t-square",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-drywall-hanging-kit",
     "name": "T-Square",
     "sort_order": 1
   },
   {
-    "id": "389cbdd8-1cad-4cd1-84fe-801df07e3d9a",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "44201d3c-c217-4ff8-9a03-f9aa9622a854",
+    "id": "kittool-panel-lift",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-drywall-hanging-kit",
     "name": "Panel Lift",
     "sort_order": 2
   },
   {
-    "id": "96a8d5ec-978c-4081-8168-cc2959bf8776",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "44201d3c-c217-4ff8-9a03-f9aa9622a854",
+    "id": "kittool-utility-knife",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-drywall-hanging-kit",
     "name": "Utility Knife",
     "sort_order": 3
   },
   {
-    "id": "d2ca085a-0640-4e0e-b33e-296f34caf260",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "86f5db24-e494-4661-a94d-6b98bb66a674",
+    "id": "kittool-6-taping-knife-2",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-drywall-tape-kit",
     "name": "6\" Taping Knife",
     "sort_order": 0
   },
   {
-    "id": "ba500f48-87f5-435f-95a1-1b75ba6ee3ef",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "86f5db24-e494-4661-a94d-6b98bb66a674",
+    "id": "kittool-banjo-taper",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-drywall-tape-kit",
     "name": "Banjo Taper",
     "sort_order": 1
   },
   {
-    "id": "ae441f78-bd7c-4dfd-9001-08269698fef0",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "c33dc5e9-09e3-4af9-9278-9dc2cbc1934b",
+    "id": "kittool-door-shims",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-door-hanging-kit",
     "name": "Door Shims",
     "sort_order": 0
   },
   {
-    "id": "54056655-8331-4efc-b0f1-e18ad1147123",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "c33dc5e9-09e3-4af9-9278-9dc2cbc1934b",
+    "id": "kittool-hinge-chisel",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-door-hanging-kit",
     "name": "Hinge Chisel",
     "sort_order": 1
   },
   {
-    "id": "30352e0b-de1b-4821-b47e-cc7d63c41d42",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "c33dc5e9-09e3-4af9-9278-9dc2cbc1934b",
+    "id": "kittool-level",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-door-hanging-kit",
     "name": "Level",
     "sort_order": 2
   },
   {
-    "id": "790010d5-1450-462d-bde8-3dda24f8dac5",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "86a89d04-27fb-46f1-8496-e1d98af9f7bf",
+    "id": "kittool-door-lock-installation-jig",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-door-drilling-kit",
     "name": "Door Lock Installation Jig",
     "sort_order": 0
   },
   {
-    "id": "854d2311-f910-47a9-8994-d23338238c92",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "86a89d04-27fb-46f1-8496-e1d98af9f7bf",
+    "id": "kittool-2-1-8-hole-saw",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-door-drilling-kit",
     "name": "2-1/8\" Hole Saw",
     "sort_order": 1
   },
   {
-    "id": "0fdaea74-7570-4a25-b294-7ef7d876bba3",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "86a89d04-27fb-46f1-8496-e1d98af9f7bf",
+    "id": "kittool-spade-bit",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-door-drilling-kit",
     "name": "Spade Bit",
     "sort_order": 2
   },
   {
-    "id": "4ff59afe-4263-495d-baaa-7ce01083a12f",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "07e70ee3-0319-4c7e-9d64-89e08b9b6159",
+    "id": "kittool-framing-hammer",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-framing-kit",
     "name": "Framing Hammer",
     "sort_order": 0
   },
   {
-    "id": "96a5faa9-ab73-4791-bc91-19b2a49a4760",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "07e70ee3-0319-4c7e-9d64-89e08b9b6159",
+    "id": "kittool-speed-square",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-framing-kit",
     "name": "Speed Square",
     "sort_order": 1
   },
   {
-    "id": "943d2d30-a405-4200-b254-8d4821649d40",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "07e70ee3-0319-4c7e-9d64-89e08b9b6159",
+    "id": "kittool-circular-saw",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-framing-kit",
     "name": "Circular Saw",
     "sort_order": 2
   },
   {
-    "id": "1772440b-2855-4fc4-8bb1-1f68a1986afe",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "07e70ee3-0319-4c7e-9d64-89e08b9b6159",
+    "id": "kittool-chalk-line",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-framing-kit",
     "name": "Chalk Line",
     "sort_order": 3
   },
   {
-    "id": "aca3f8b8-22de-49e0-9e54-f4a040a1ad3f",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "7d65dec3-b473-4e67-8c2c-e0639ee1b27c",
+    "id": "kittool-cordless-drill",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-framing-plates",
     "name": "Cordless Drill",
     "sort_order": 0
   },
   {
-    "id": "3ba109e3-9b93-40fa-ae65-cb28e8e57e95",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "7d65dec3-b473-4e67-8c2c-e0639ee1b27c",
+    "id": "kittool-hammer",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-framing-plates",
     "name": "Hammer",
     "sort_order": 1
   },
   {
-    "id": "d18cc94d-6c0f-4254-bda2-efc8984f0ce3",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "93543ef2-5e78-4ba2-aabe-125e480d19ea",
+    "id": "kittool-miter-saw-2",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-finish-carpentry-trim-work",
     "name": "Miter Saw",
     "sort_order": 0
   },
   {
-    "id": "a552dd2b-60e5-4abf-a5d9-1a9e7b021e5d",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "93543ef2-5e78-4ba2-aabe-125e480d19ea",
+    "id": "kittool-finish-nailer-2",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-finish-carpentry-trim-work",
     "name": "Finish Nailer",
     "sort_order": 1
   },
   {
-    "id": "6f089f37-f6a5-4da2-a21f-39d2cd85cb92",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "93543ef2-5e78-4ba2-aabe-125e480d19ea",
+    "id": "kittool-coping-saw-2",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-finish-carpentry-trim-work",
     "name": "Coping Saw",
     "sort_order": 2
   },
   {
-    "id": "c8a8a393-9eb8-4b27-aff0-06a998ea0794",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "fe255c1d-004e-46dd-90cf-f92809fa34bd",
+    "id": "kittool-touch-up-markers",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-wood-touch-up-kit",
     "name": "Touch-Up Markers",
     "sort_order": 0
   },
   {
-    "id": "cbf6dee5-9990-4f1c-869d-2472c42c203f",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "fe255c1d-004e-46dd-90cf-f92809fa34bd",
+    "id": "kittool-burn-in-knife",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-wood-touch-up-kit",
     "name": "Burn-In Knife",
     "sort_order": 1
   },
   {
-    "id": "0507830a-f050-488f-9f98-c79e81fc43a6",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "9619db3c-a51a-45b3-99d2-c7dc002032ef",
+    "id": "kittool-tile-cutter",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-tile-kit",
     "name": "Tile Cutter",
     "sort_order": 0
   },
   {
-    "id": "ca86d9e1-f163-4099-9438-b11fc8d8152d",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "9619db3c-a51a-45b3-99d2-c7dc002032ef",
+    "id": "kittool-notched-trowel",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-tile-kit",
     "name": "Notched Trowel",
     "sort_order": 1
   },
   {
-    "id": "38f91b75-31de-4400-9abd-f0b124f733e9",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "9619db3c-a51a-45b3-99d2-c7dc002032ef",
+    "id": "kittool-grout-float",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-tile-kit",
     "name": "Grout Float",
     "sort_order": 2
   },
   {
-    "id": "478eea4e-d6ad-4cce-b152-f7e564a67833",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "588b13ca-7f7e-4fb7-878b-3067ba281e8d",
+    "id": "kittool-knee-kicker",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-carpet-kit",
     "name": "Knee Kicker",
     "sort_order": 0
   },
   {
-    "id": "5c442429-80d7-4b65-8d3b-aa53d9b259b8",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "588b13ca-7f7e-4fb7-878b-3067ba281e8d",
+    "id": "kittool-carpet-stretcher",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-carpet-kit",
     "name": "Carpet Stretcher",
     "sort_order": 1
   },
   {
-    "id": "571a4834-a60b-43e1-b722-fb6f3e79f7e5",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "588b13ca-7f7e-4fb7-878b-3067ba281e8d",
+    "id": "kittool-stair-tool",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-carpet-kit",
     "name": "Stair Tool",
     "sort_order": 2
   },
   {
-    "id": "a2a58c7a-a321-4d78-84db-76995985ce6d",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "f3a7c0d8-55a1-4ad7-b272-92a894992528",
+    "id": "kittool-airless-sprayer",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-paint-spraying",
     "name": "Airless Sprayer",
     "sort_order": 0
   },
   {
-    "id": "740cdf6b-9b14-422c-8415-3291bf75851c",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "f3a7c0d8-55a1-4ad7-b272-92a894992528",
+    "id": "kittool-extension-pole",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-paint-spraying",
     "name": "Extension Pole",
     "sort_order": 1
   },
   {
-    "id": "46ed1cb9-a23a-4a32-bf96-4871193f51df",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "ed6b41b6-e0e2-475d-82c1-0b8210783824",
+    "id": "kittool-tape-dispenser-tool",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-tape-off-kit",
     "name": "Tape Dispenser Tool",
     "sort_order": 0
   },
   {
-    "id": "309213d9-4207-4d41-8352-f0db5fb78e6c",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "856fb5b6-b9c6-412a-9a27-4567802759b1",
+    "id": "kittool-tubing-cutter-2",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-copper-kit",
     "name": "Tubing Cutter",
     "sort_order": 0
   },
   {
-    "id": "9c017975-b3dd-44c6-a8f1-f36a5fc0ca09",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "856fb5b6-b9c6-412a-9a27-4567802759b1",
+    "id": "kittool-propane-torch-2",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-copper-kit",
     "name": "Propane Torch",
     "sort_order": 1
   },
   {
-    "id": "d729566b-fa88-4113-b6a0-f9bfa74ee52a",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "856fb5b6-b9c6-412a-9a27-4567802759b1",
+    "id": "kittool-deburring-tool",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-copper-kit",
     "name": "Deburring Tool",
     "sort_order": 2
   },
   {
-    "id": "429d6075-901d-4ced-a1ae-694510b9e0fa",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "455cde18-249b-4eca-8fe3-9faf08acf21a",
+    "id": "kittool-1-2-crimp-tool",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-pex-b-crimp-1-2-kit",
     "name": "1/2\" Crimp Tool",
     "sort_order": 0
   },
   {
-    "id": "309e4a12-5dd2-47a1-8801-05643a58dce8",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "455cde18-249b-4eca-8fe3-9faf08acf21a",
+    "id": "kittool-go-no-go-gauge",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-pex-b-crimp-1-2-kit",
     "name": "Go/No-Go Gauge",
     "sort_order": 1
   },
   {
-    "id": "8ecd735e-2421-405a-9510-79b324920543",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "ffca0fba-3e04-4601-8ebd-32d42984c48d",
+    "id": "kittool-wire-strippers-2",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-outlets-and-switches",
     "name": "Wire Strippers",
     "sort_order": 0
   },
   {
-    "id": "d43aa5b8-cc44-4750-8691-b56299b9f7df",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "ffca0fba-3e04-4601-8ebd-32d42984c48d",
+    "id": "kittool-screwdriver",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-outlets-and-switches",
     "name": "Screwdriver",
     "sort_order": 1
   },
   {
-    "id": "02c15f6f-041b-4de8-b23a-40898c74622b",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "ffca0fba-3e04-4601-8ebd-32d42984c48d",
+    "id": "kittool-voltage-tester-2",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-outlets-and-switches",
     "name": "Voltage Tester",
     "sort_order": 2
   },
   {
-    "id": "11db28fa-8912-4302-9b39-4d3cbee8a916",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "4857a468-a3cc-434c-bd50-d5dfedd19540",
+    "id": "kittool-conduit-bender",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-emt-conduit",
     "name": "Conduit Bender",
     "sort_order": 0
   },
   {
-    "id": "d62e5230-b140-4dd8-a3cb-65175fb102f8",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "4857a468-a3cc-434c-bd50-d5dfedd19540",
+    "id": "kittool-hacksaw",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-emt-conduit",
     "name": "Hacksaw",
     "sort_order": 1
   },
   {
-    "id": "aaa3af6c-f3ca-4369-a0f0-c9572ccb4830",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "8a91d659-2ef4-4f69-aff5-a64e3a0c07a1",
+    "id": "kittool-manifold-gauges-2",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-hvac-kit",
     "name": "Manifold Gauges",
     "sort_order": 0
   },
   {
-    "id": "f1480aa8-5796-4fba-b049-aee24445882b",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "8a91d659-2ef4-4f69-aff5-a64e3a0c07a1",
+    "id": "kittool-vacuum-pump-2",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-hvac-kit",
     "name": "Vacuum Pump",
     "sort_order": 1
   },
   {
-    "id": "e98b9b99-7bbd-4715-b3ba-6248173e4bb1",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "8a91d659-2ef4-4f69-aff5-a64e3a0c07a1",
+    "id": "kittool-refrigerant-scale",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-hvac-kit",
     "name": "Refrigerant Scale",
     "sort_order": 2
   },
   {
-    "id": "985ef177-5193-4c3f-8a57-3ae89149469f",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "7d7475f8-b8ff-4c42-99d3-79175352ebd0",
+    "id": "kittool-wax-ring-tool",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-toilet-kit",
     "name": "Wax Ring Tool",
     "sort_order": 0
   },
   {
-    "id": "03ee351f-fb0f-4c3a-b74f-3d46edd9c3a7",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "7d7475f8-b8ff-4c42-99d3-79175352ebd0",
+    "id": "kittool-adjustable-wrench",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-toilet-kit",
     "name": "Adjustable Wrench",
     "sort_order": 1
   },
   {
-    "id": "f3c78eb9-09cc-4d28-a3b8-1c3f5f31c9f0",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "4bdce43d-41a8-46c3-a782-729b4fa6a6af",
+    "id": "kittool-ratchet-set",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-bolt-kit",
     "name": "Ratchet Set",
     "sort_order": 0
   },
   {
-    "id": "3e1b02fe-993e-4bbe-9fab-319809ed7e91",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "a99f046d-2700-4cc6-be0a-4b221efb808e",
+    "id": "kittool-hammer-drill",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-brick-and-block-anchors",
     "name": "Hammer Drill",
     "sort_order": 0
   },
   {
-    "id": "ce32eda9-28a5-450a-b957-98bad279c693",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "a99f046d-2700-4cc6-be0a-4b221efb808e",
+    "id": "kittool-masonry-bit",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-brick-and-block-anchors",
     "name": "Masonry Bit",
     "sort_order": 1
   },
   {
-    "id": "63cba3f3-2035-449c-9346-d948eb132446",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "f94e0203-7dcb-4e87-9f08-4af96d71abbe",
+    "id": "kittool-demo-hammer",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-demolition-kit",
     "name": "Demo Hammer",
     "sort_order": 0
   },
   {
-    "id": "c059a272-e707-4913-bfea-0840da9cbb8f",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "f94e0203-7dcb-4e87-9f08-4af96d71abbe",
+    "id": "kittool-pry-bar",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-demolition-kit",
     "name": "Pry Bar",
     "sort_order": 1
   },
   {
-    "id": "9baa19a7-f02b-432c-8692-2b7daccd3758",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "f94e0203-7dcb-4e87-9f08-4af96d71abbe",
+    "id": "kittool-sledgehammer",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-demolition-kit",
     "name": "Sledgehammer",
     "sort_order": 2
   },
   {
-    "id": "238c36fc-7cf6-4e44-a9fe-a994125641f0",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "d0cc98dc-08fa-4018-8291-25f4925251e6",
+    "id": "kittool-rotary-hammer",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-rotary-hammer",
     "name": "Rotary Hammer",
     "sort_order": 0
   },
   {
-    "id": "6d7a302c-fe38-421a-99be-e16f3a9e66b2",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "d0cc98dc-08fa-4018-8291-25f4925251e6",
+    "id": "kittool-sds-bit-set",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-rotary-hammer",
     "name": "SDS Bit Set",
     "sort_order": 1
   },
   {
-    "id": "d5166d2d-dae3-46b3-a738-5292d481b6ae",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "b8699f6b-6a79-474e-87a8-a97316b2cc98",
+    "id": "kittool-cordless-drill-2",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-wood-drill-bits",
     "name": "Cordless Drill",
     "sort_order": 0
   },
   {
-    "id": "17b703ed-6334-4fa9-930a-5f509e8608aa",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "090e2739-fc57-48cf-8138-19b445868f4c",
+    "id": "kittool-festool-ets-sander",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-festool-sanders",
     "name": "Festool ETS Sander",
     "sort_order": 0
   },
   {
-    "id": "3574886f-a9c5-4d3a-bac1-448125c1f1c2",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "090e2739-fc57-48cf-8138-19b445868f4c",
+    "id": "kittool-festool-dust-extractor",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-festool-sanders",
     "name": "Festool Dust Extractor",
     "sort_order": 1
   },
   {
-    "id": "2bb411e1-3442-41c4-9bdb-b2ecfa05dfb6",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "7ea28766-41f9-4e27-9ed6-2e7cd936a6fc",
+    "id": "kittool-safety-glasses",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-safety-kit",
     "name": "Safety Glasses",
     "sort_order": 0
   },
   {
-    "id": "98eb2870-7d10-456e-b367-58f07c9f7bf6",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "7ea28766-41f9-4e27-9ed6-2e7cd936a6fc",
+    "id": "kittool-ear-protection",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-safety-kit",
     "name": "Ear Protection",
     "sort_order": 1
   },
   {
-    "id": "e161adff-f5cf-4ae8-8067-d07f9eae62bd",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "7ea28766-41f9-4e27-9ed6-2e7cd936a6fc",
+    "id": "kittool-respirator",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-safety-kit",
     "name": "Respirator",
     "sort_order": 2
   },
   {
-    "id": "750b2f4b-f514-4aea-bc8e-3175b2a3530b",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "a4010abc-e10d-488e-8a88-7f86785c7c41",
+    "id": "kittool-insulation-knife",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-insulation-kit",
     "name": "Insulation Knife",
     "sort_order": 0
   },
   {
-    "id": "4b8afbd6-9f6b-4d88-b827-b948a6090042",
-    "company_id": "22e15616-ddab-463d-8c8e-cd89d0fbcf33",
-    "kit_id": "a4010abc-e10d-488e-8a88-7f86785c7c41",
+    "id": "kittool-staple-gun",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-insulation-kit",
     "name": "Staple Gun",
     "sort_order": 1
   }
