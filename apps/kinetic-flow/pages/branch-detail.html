@@ -31,9 +31,12 @@
     </div>
 
     <div class="form-group" style="margin-bottom:8px;">
-        <input type="text" id="bd-member-search" placeholder="Search company users to add..." oninput="filterBranchUsers()">
+        <div class="account-search">
+            <input type="text" id="bd-member-search" placeholder="Search company users to add..." autocomplete="off"
+                onfocus="filterBranchUsers()" oninput="filterBranchUsers()" onblur="hideBranchUserSearch()">
+            <div class="account-search-list" id="bd-search-results"></div>
+        </div>
     </div>
-    <div id="bd-search-results" style="margin-bottom:8px;"></div>
 
     <div class="card" id="bd-member-list" style="cursor:default; margin-bottom:16px;"></div>
 
@@ -87,30 +90,39 @@
     renderHeader();
     renderMembers();
 
+    // Same focus-opens / type-to-filter / mousedown-to-pick dropdown as the
+    // sign-in email account picker (reuses its .account-search styles).
     window.filterBranchUsers = function () {
         var q = (document.getElementById('bd-member-search').value || '').trim().toLowerCase();
-        var box = document.getElementById('bd-search-results');
-        if (!q) { box.innerHTML = ''; return; }
+        var list = document.getElementById('bd-search-results');
         var candidates = companyMemberUsers(branch.company_id).filter(function (u) {
-            return u.branch_id !== branch.id && u.full_name.toLowerCase().indexOf(q) !== -1;
+            if (u.branch_id === branch.id) return false;
+            return !q || u.full_name.toLowerCase().indexOf(q) !== -1
+                || (u.email || '').toLowerCase().indexOf(q) !== -1;
         });
-        box.innerHTML = candidates.map(function (u) {
-            return '<div class="card" style="margin-bottom:6px; padding:10px 14px;" onclick="addBranchMember(\'' + u.id + '\')">' +
-                '<div class="flex-between">' +
-                    '<div>' +
-                        '<div class="card-title" style="margin:0; font-size:0.85rem;">' + u.full_name + '</div>' +
-                        '<div class="card-subtitle">' + (u.email || '') + '</div>' +
-                    '</div>' +
-                    '<span style="font-size:0.78rem; color:#2563eb;">+ Add</span>' +
-                '</div>' +
+        list.innerHTML = candidates.length ? candidates.map(function (u) {
+            return '<div class="account-search-item" onmousedown="addBranchMember(\'' + u.id + '\')">' +
+                '<div class="account-search-name">' + u.full_name + '<span class="account-search-position">+ Add</span></div>' +
+                '<div class="account-search-email">' + (u.email || '') + '</div>' +
             '</div>';
-        }).join('') || '<div class="page-subtitle" style="font-size:0.78rem;">No matching users.</div>';
+        }).join('') : '<div class="account-search-empty">No matching users</div>';
+        list.classList.add('open');
+    };
+
+    window.hideBranchUserSearch = function () {
+        // Delay so an item's onmousedown selection lands before the list closes.
+        setTimeout(function () {
+            var list = document.getElementById('bd-search-results');
+            if (list) list.classList.remove('open');
+        }, 150);
     };
 
     window.addBranchMember = function (userId) {
         DB.update('users', userId, { branch_id: branch.id });
         document.getElementById('bd-member-search').value = '';
-        document.getElementById('bd-search-results').innerHTML = '';
+        var list = document.getElementById('bd-search-results');
+        list.innerHTML = '';
+        list.classList.remove('open');
         renderMembers();
     };
 
