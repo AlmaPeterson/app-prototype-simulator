@@ -110,3 +110,69 @@ When I try to open another app and go back to kinetic flow, it brings me back to
 
 ---
 
+## 2026-07-07T15:07:00.424Z
+
+- Screen: kinetic-flow — customer-home
+- Role: customer
+- Account: Existing Account
+- Phone size: 390 × 720
+
+When a bit is created and it should create a PDF of the bid the invoice the schedule and everything The customer needs to see. That PDF will be sent to the customer.  The only time that the customer will use the app is when they scan a QR code to see the floor plan or what paints or trim or other things were used for the  Building.
+
+---
+
+## 2026-07-07T15:08:35.815Z
+
+- Screen: kinetic-flow — customer-home
+- Role: customer
+- Account: Existing Account
+- Phone size: 390 × 720
+
+And actually the customer will not use the app they will be using a website when they scan the QR Code to see the floor plan and details of the building.  We just need to make sure that the managers or workers can edit the or add a floor plan and add Do the building of the job or customer that they're working for.
+
+---
+
+## 2026-07-07T15:10:42.811Z
+
+- Screen: kinetic-flow — sign-in
+- Role: supplier
+- Account: Existing Account
+- Phone size: 390 × 720
+
+Let's create a supplier account for supplying materials and tools for companies. It will not be a different type of account but it will have different permissions  And rolls in the companies. Is a user has a role in a company as the supplier then they should not see the jobs in that company.
+
+---
+
+## 2026-07-07T15:14:10.230Z
+
+- Screen: kinetic-flow — inventory
+- Role: supplier
+- Account: Existing Account
+- Phone size: 390 × 720
+
+There should not be A different type of account for suppliers. before I said Suppliers do not need to see the jobs but maybe you would have them see the jobs so they can get the x German materials for specific jobs and they'd be able to see the schedule to know when to order or ship the materials.
+
+---
+
+## 2026-07-07T15:16:37.649Z
+
+- Screen: OS home
+- Role: Worker
+- Account: Existing Account
+- Phone size: 390 × 720
+
+When you switch between customer and worker or supplier in the header controls then it should log the previous user out so it doesn't Show the wrong page.
+
+---
+
+## 2026-07-07T15:22:23.156Z
+
+- Screen: kinetic-flow — schedule
+- Role: worker
+- Account: Existing Account
+- Phone size: 390 × 720
+
+The schedule should only have work days.   You will not be able to complete tasks on Sunday.
+
+---
+
