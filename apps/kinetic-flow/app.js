@@ -43,6 +43,7 @@ const state = {
     currentDivisionId: null,
     simulateOffsite: false,   // field-clock GPS simulator: true = pretend the phone is ~2 km from the job site
     timesheetNote: null,      // draft "Notes for Supervisor" text from review-time.html, kept across visits until submit
+    customerJobId: null,      // customer mode: the property (job) opened from the customer-links picker
 };
 
 // ── Mock DB ──────────────────────────────────────────────────────────────
@@ -143,6 +144,7 @@ function resetDemoData() {
             clockInTask: null, scorecardWorkerId: null, scorecardReturnTo: null,
             currentUserId: null, currentUser: null, currentCompanyId: null, currentBranchId: null,
             currentBidId: null, currentDivisionId: null, simulateOffsite: false, timesheetNote: null,
+            customerJobId: null,
         });
         clockedIn = false;
         clockStartedAt = null;
@@ -180,12 +182,10 @@ const workerNav = [
     { icon: NAV_ICONS.more,     label: 'More',     page: 'more' },
 ];
 
-const customerNav = [
-    { icon: NAV_ICONS.home,     label: 'Home',     page: 'customer-home' },
-    { icon: NAV_ICONS.file,     label: 'Bid',      page: 'customer-bid' },
-    { icon: NAV_ICONS.dollar,   label: 'Invoice',  page: 'customer-invoice' },
-    { icon: NAV_ICONS.calendar, label: 'Schedule', page: 'schedule' },
-];
+// Customers get no bottom nav: their whole surface is the property-link
+// picker plus one read-only property page (simulating the QR-linked website
+// — see the Customer Pages section of docs/kinetic-flow-pages.md). Bid and
+// invoice details reach customers as a PDF (sendBidToCustomer), not an app.
 
 const supplierNav = [
     { icon: NAV_ICONS.archive,  label: 'Inventory', page: 'inventory' },
@@ -197,7 +197,7 @@ const supplierNav = [
 // Pages that show the bottom nav
 const mainAppPages = [
     'schedule', 'field-clock', 'kits', 'label-generator', 'more', 'message-templates',
-    'inventory', 'stats', 'finance', 'customer-home', 'customer-bid', 'customer-invoice', 'scoreboard',
+    'inventory', 'stats', 'finance', 'customer-home', 'scoreboard',
     'job-home', 'job-detail', 'job-detail-nobid', 'create-job',
 ];
 
@@ -272,12 +272,11 @@ function loadPage(name) {
 
 function updateBottomNav() {
     const nav = document.getElementById('bottom-nav');
-    const showNav = mainAppPages.includes(state.currentPage);
+    // Customers never get tabs — their surface is the property page only.
+    const showNav = mainAppPages.includes(state.currentPage) && state.role !== 'customer';
     if (!showNav) { nav.innerHTML = ''; return; }
 
-    const tabs = state.role === 'worker' ? workerNav
-               : state.role === 'customer' ? customerNav
-               : supplierNav;
+    const tabs = state.role === 'worker' ? workerNav : supplierNav;
 
     const jobPages = ['job-home', 'job-detail', 'job-detail-nobid', 'bid', 'bid-division', 'bid-proposal', 'create-job'];
     nav.innerHTML = tabs.map(t => {
@@ -326,11 +325,22 @@ function setAccountType(type) {
     loadPage('sign-in');
 }
 
+// Switching Worker ↔ Customer ends the previous session outright (QA note:
+// the wrong user's page must never show through). Worker mode reboots to
+// sign-in; customer mode reboots to the property-link picker.
 function setRole(role) {
     state.role = role;
+    state.signedIn = false;
+    state.currentPage = '';
+    state.currentUserId = null;
+    state.currentUser = null;
+    state.currentCompanyId = null;
+    state.currentBranchId = null;
+    state.currentJobId = null;
+    state.customerJobId = null;
+    pageHistory = [];
     document.getElementById('btn-worker').classList.toggle('active', role === 'worker');
     document.getElementById('btn-customer').classList.toggle('active', role === 'customer');
-    document.getElementById('btn-supplier').classList.toggle('active', role === 'supplier');
     saveState();
     bootPhone();
 }
@@ -881,14 +891,93 @@ function openBid() {
 }
 function submitBid() { loadPage('job-detail'); }
 
-// Real send path for bid-proposal.html's "Send to Customer" — the bids table
-// already models the draft → sent → signed lifecycle (status/sent_at), so
-// sending is just moving the row forward. No actual delivery happens in the
-// prototype; the customer pages read the same bids row directly.
+// The customer never sees the app (QA note): everything they need — bid,
+// schedule, payment plan — leaves as one generated PDF. Mirrors
+// bid-proposal.html's math (10% contingency per division, auto-summed
+// on-site days, 50/20/20/10 payments). Returns false if jsPDF (loaded by the
+// shell's index.html) isn't available.
+function generateBidPdf(bid) {
+    if (!window.jspdf) return false;
+    const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'letter' });
+    const company = DB.getById('companies', bid.company_id);
+    const customer = bid.customer_id ? DB.getById('customers', bid.customer_id) : null;
+    const address = bid.address_id ? DB.getById('addresses', bid.address_id) : null;
+    const divisions = DB.find('bid_divisions', function (d) { return d.bid_id === bid.id && !d.deleted_at; });
+
+    function money(n) { return '$' + (n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function divTotal(row) {
+        const labor = row.labor_cost || 0, mat = row.material_cost || 0;
+        return labor + mat + labor * 0.10 + mat * 0.10;
+    }
+    const grandTotal = divisions.reduce(function (s, d) { return s + divTotal(d); }, 0);
+    const totalDays = bid.construction_days || divisions.reduce(function (sum, row) {
+        const hours = DB.find('bid_line_items', function (li) {
+            return li.bid_division_id === row.id && !li.deleted_at && li.type === 'labor' && li.task_included !== false;
+        }).reduce(function (s, li) { return s + (li.quantity || 0); }, 0);
+        const guys = (row.form_data && row.form_data.guys) || 1;
+        return sum + Math.ceil(hours / (8 * guys));
+    }, 0);
+
+    const left = 54, right = 558;
+    let y = 60;
+    function line(label, value, bold) {
+        doc.setFont(undefined, bold ? 'bold' : 'normal');
+        doc.text(label, left, y);
+        if (value != null) doc.text(String(value), right, y, { align: 'right' });
+        y += 16;
+        if (y > 740) { doc.addPage(); y = 60; }
+    }
+    function heading(text) {
+        y += 10;
+        doc.setFontSize(12);
+        line(text, null, true);
+        doc.setFontSize(10);
+    }
+
+    doc.setFontSize(16);
+    doc.setFont(undefined, 'bold');
+    doc.text(((company && company.name) || 'Bid Proposal').toUpperCase(), left, y);
+    y += 24;
+    doc.setFontSize(10);
+    line('BID PROPOSAL' + (bid.bid_number ? ' — ' + bid.bid_number : ''), null, true);
+    line('Project', (bid.title || '').replace(/ — Bid$/, ''));
+    line('Customer', customer ? customer.full_name : '—');
+    line('Site Address', bid.site_address_override != null ? bid.site_address_override
+        : (address ? address.street + ', ' + address.city + ', ' + address.state : '—'));
+    line('Date', (bid.created_at || '').slice(0, 10));
+    if (bid.expires_at) line('Expires', bid.expires_at.slice(0, 10));
+
+    heading('Construction Sequence of Divisions');
+    divisions.forEach(function (d, i) {
+        line((i + 1) + '. ' + d.division_name, money(divTotal(d)));
+    });
+    line('Grand Total', money(grandTotal), true);
+
+    heading('Project Schedule');
+    line('Estimated Start', bid.start_date || '—');
+    line('Material Procurement', '~' + (bid.procurement_days || 10) + ' business days from deposit');
+    line('On-Site Duration', '~' + (totalDays || '—') + ' business days');
+    line('Est. Completion', bid.completion_date || '—');
+
+    heading('Schedule of Payments');
+    line('Deposit — 50% (due on acceptance)', money(grandTotal * 0.50));
+    line('Progress Draw 1 — 20%' + (bid.milestone_1 ? ' (' + bid.milestone_1 + ')' : ''), money(grandTotal * 0.20));
+    line('Progress Draw 2 — 20%' + (bid.milestone_2 ? ' (' + bid.milestone_2 + ')' : ''), money(grandTotal * 0.20));
+    line('Final Balance — 10% (on punch-list completion)', money(grandTotal * 0.10));
+
+    const slug = ((bid.title || 'bid').replace(/ — Bid$/, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')) || 'bid';
+    doc.save(slug + '-proposal.pdf');
+    return true;
+}
+
+// "Send to Customer" on bid-proposal.html: generate the customer-facing PDF
+// and move the bids row forward (draft → sent, stamping sent_at). No real
+// delivery happens — the downloaded PDF is what would be emailed/texted.
 function sendBidToCustomer() {
     if (!state.currentBidId) return;
     const bid = DB.getById('bids', state.currentBidId);
     if (!bid) return;
+    const gotPdf = generateBidPdf(bid);
     const resend = bid.status === 'sent' || bid.status === 'signed';
     DB.update('bids', bid.id, {
         status: bid.status === 'signed' ? 'signed' : 'sent',
@@ -896,7 +985,9 @@ function sendBidToCustomer() {
     });
     loadPage('job-detail');
     showToast(resend ? 'Proposal Re-Sent' : 'Proposal Sent',
-        ['The customer can now view this bid. (Demo — no real email/text goes out.)'], '#1e40af');
+        [gotPdf ? 'PDF downloaded — that document is what the customer receives. (Demo — no real email/text goes out.)'
+                : 'Marked sent, but the PDF library didn\'t load — check your connection and re-send for the document.'],
+        '#1e40af');
 }
 
 // Recomputes a bid's total_labor/total_materials/total_cost from its
@@ -2024,20 +2115,23 @@ function openStats() { loadPage('stats'); }
 function openFinance() { loadPage('finance'); }
 function openCustomerHome() { loadPage('customer-home'); }
 
-// Customers have no real session — the customer role skips sign-in entirely
-// (see start()'s comment below on simulating a tokenized property-record
-// link), so state.currentJobId is never populated for them. Anchor all three
-// customer-facing pages (customer-home/customer-bid/customer-invoice) to this
-// one seeded job so Home/Bid/Invoice describe one consistent property visit
-// instead of each page guessing independently.
+// Customers have no real session — customer mode is the customer-links
+// picker (simulated QR/tokenized property links) plus one read-only property
+// page. This seeded job is only the fallback when no link has been picked
+// yet (e.g. a worker opening customer-home with no job selected).
 const CUSTOMER_DEMO_JOB_ID = 'job-riverside-hvac';
 
+// Customer picker (customer-links.html) → the chosen property's page.
+function openCustomerProperty(jobId) {
+    state.customerJobId = jobId;
+    loadPage('customer-home');
+}
+
 // There's no real `invoices` table (confirmed schema gap — out of scope to
-// build in this phase), so finance.html's "Outstanding Invoices" tile and
-// customer-bid.html/customer-invoice.html's "Schedule of Payments" all derive
-// a synthetic 50/20/20/10 deposit/draw/draw/final split from a bid's
-// total_cost. Kept as one shared helper so the math isn't copy-pasted three
-// times and so all three pages agree on the same numbers for the same bid.
+// build in this phase), so finance.html's "Outstanding Invoices" tile
+// derives a synthetic 50/20/20/10 deposit/draw/draw/final split from a bid's
+// total_cost. (The old customer-bid/customer-invoice pages shared this
+// helper before the customer surface moved to the PDF + property page.)
 function round2(n) { return Math.round((n || 0) * 100) / 100; }
 function computeSyntheticPaymentSchedule(totalCost) {
     const cost = totalCost || 0;
@@ -2159,12 +2253,13 @@ function restoreState() {
     const newBtn = document.getElementById('btn-new');
     if (existingBtn) existingBtn.classList.toggle('active', state.accountType === 'existing');
     if (newBtn) newBtn.classList.toggle('active', state.accountType === 'new');
+    // 'supplier' stopped being a header role (it's a company role now) — a
+    // session saved before that change lands in worker mode.
+    if (state.role === 'supplier') state.role = 'worker';
     const workerBtn = document.getElementById('btn-worker');
     const customerBtn = document.getElementById('btn-customer');
-    const supplierBtn = document.getElementById('btn-supplier');
     if (workerBtn) workerBtn.classList.toggle('active', state.role === 'worker');
     if (customerBtn) customerBtn.classList.toggle('active', state.role === 'customer');
-    if (supplierBtn) supplierBtn.classList.toggle('active', state.role === 'supplier');
 }
 
 // The admin account is seeded in db/users.json, but sessions that restored an
@@ -2226,7 +2321,7 @@ function activate() {
         openTeamTime, managedWorkers, submitTeamTimeToQuickBooks,
         openScoreboard, openStats, openFinance, openCustomerHome, openMore, showToast,
         switchTab, toggleChip,
-        CUSTOMER_DEMO_JOB_ID, computeSyntheticPaymentSchedule,
+        CUSTOMER_DEMO_JOB_ID, computeSyntheticPaymentSchedule, openCustomerProperty,
     });
 }
 
@@ -2246,6 +2341,9 @@ window.Apps['kinetic-flow'] = {
         // field-clock now), and feild-clock.html was renamed to fix the typo
         // — a session saved on either shouldn't resume onto a 404.
         if (state.currentPage === 'task-select' || state.currentPage === 'feild-clock') state.currentPage = 'field-clock';
+        // customer-bid/customer-invoice were retired (customers get a PDF +
+        // the QR property page instead) — resume onto the picker, not a 404.
+        if (state.currentPage === 'customer-bid' || state.currentPage === 'customer-invoice') state.currentPage = 'customer-links';
         // First open fetches 41 db/*.json seeds — show something meanwhile,
         // and surface a fetch failure instead of leaving a silent blank screen.
         const main = document.getElementById('main');
@@ -2255,7 +2353,9 @@ window.Apps['kinetic-flow'] = {
         (DB.isLoaded() ? Promise.resolve() : DB.load()).then(function () {
             ensurePlatformAdmin();
             if (state.role === 'customer') {
-                loadPage('customer-home');
+                // Customers have no login: the picker stands in for "opened
+                // a property's QR link" (each row is a tokenized URL).
+                loadPage(state.customerJobId ? 'customer-home' : 'customer-links');
             } else if (state.signedIn && state.currentPage) {
                 loadPage(state.currentPage);
             } else {

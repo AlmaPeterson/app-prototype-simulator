@@ -1,0 +1,36 @@
+<div class="page" style="justify-content:center; padding-top:30px;">
+    <div class="text-center mb-6">
+        <div class="page-title">Kinetic Flow</div>
+        <div class="page-subtitle">Property Records</div>
+    </div>
+
+    <div class="alert mb-4">
+        Customers don't sign in — they scan a QR code at the property that opens
+        a link like the ones below. Pick one to simulate scanning it.
+    </div>
+
+    <div id="cl-list"></div>
+</div>
+
+<script>
+(function () {
+    // One row per property record (a QR link only exists once a record does),
+    // joined to its job/address for a recognizable label.
+    var records = DB.find('property_records', function (p) { return !p.deleted_at; });
+    document.getElementById('cl-list').innerHTML = records.length ? records.map(function (p) {
+        var job = p.job_id ? DB.getById('jobs', p.job_id) : null;
+        var addr = p.address_id ? DB.getById('addresses', p.address_id) : (job && job.address_id ? DB.getById('addresses', job.address_id) : null);
+        var token = (p.access_token || '').slice(0, 10);
+        return '<div class="card" onclick="openCustomerProperty(\'' + jsArg(p.job_id) + '\')">' +
+            '<div class="card-row">' +
+                '<div class="card-body">' +
+                    '<div class="card-title">' + esc(job ? job.name : 'Property') + '</div>' +
+                    '<div class="card-subtitle">' + esc(addr ? addr.street + ', ' + addr.city : '') + '</div>' +
+                    '<div style="font-size:0.72rem; color:#2563eb; margin-top:4px; font-family:monospace;">kineticflow.app/p/' + esc(token) + '&hellip;</div>' +
+                '</div>' +
+                '<span class="card-arrow">&#8250;</span>' +
+            '</div>' +
+        '</div>';
+    }).join('') : '<div class="alert">No property records yet — a worker adds one from Customer Home Details.</div>';
+})();
+</script>

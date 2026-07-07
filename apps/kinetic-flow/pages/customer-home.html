@@ -29,11 +29,13 @@
     }
 
     // Workers arrive here from a job context (More menu / job pages) and see
-    // the *selected* job's customer record, editable. The customer role has
-    // no session, so it stays anchored to the seeded demo job (simulating an
-    // already-opened tokenized property link) and stays read-only.
+    // the *selected* job's customer record, editable. Customers arrive from
+    // the customer-links picker (simulating the property's QR link) and see
+    // that property read-only — this page stands in for the QR website.
     var isWorker = state.role === 'worker';
-    var jobId = (isWorker && state.currentJobId) ? state.currentJobId : CUSTOMER_DEMO_JOB_ID;
+    var jobId = isWorker
+        ? (state.currentJobId || CUSTOMER_DEMO_JOB_ID)
+        : (state.customerJobId || CUSTOMER_DEMO_JOB_ID);
 
     var job = DB.getById('jobs', jobId);
     var customer = job ? DB.getById('customers', job.customer_id) : null;
@@ -85,8 +87,11 @@
         renderKeyValueList('ch-materials', 'materials_used', 'No materials recorded yet.');
     }
 
+    // Back is useful to everyone now: workers return to where they came
+    // from, customers return to the property-link picker. Editing stays
+    // worker-only — the customer's QR view is read-only.
+    document.getElementById('ch-back').style.display = 'inline-block';
     if (isWorker) {
-        document.getElementById('ch-back').style.display = 'inline-block';
         document.querySelectorAll('.ch-edit').forEach(function (b) { b.style.display = 'inline-block'; });
     }
     render();
