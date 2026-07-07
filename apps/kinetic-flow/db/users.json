@@ -108,6 +108,24 @@
     "sync_status": "synced"
   },
   {
+    "id": "user-supplier",
+    "company_id": "company-kineticflow",
+    "branch_id": "branch-slc",
+    "email": "supplier@kineticflow.com",
+    "password_hash": "$2b$12$3605d182202145488404b4",
+    "phone": null,
+    "full_name": "Sam Supplier",
+    "avatar_url": null,
+    "push_token": null,
+    "global_level": null,
+    "hourly_rate": 48,
+    "is_active": true,
+    "created_at": "2026-04-01T12:00:00Z",
+    "updated_at": "2026-07-02T12:00:00Z",
+    "deleted_at": null,
+    "sync_status": "synced"
+  },
+  {
     "id": "user-other-master",
     "company_id": "company-other",
     "branch_id": "branch-denver",

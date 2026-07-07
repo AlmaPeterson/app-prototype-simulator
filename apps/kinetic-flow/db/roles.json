@@ -30,6 +30,16 @@
     }
   },
   {
+    "id": "role-kf-supplier",
+    "company_id": "company-kineticflow",
+    "name": "supplier",
+    "permissions": {
+      "finance": "none",
+      "manage_users": false,
+      "manage_bids": false
+    }
+  },
+  {
     "id": "role-oc-admin",
     "company_id": "company-other",
     "name": "admin",
@@ -55,6 +65,16 @@
     "name": "employee",
     "permissions": {
       "finance": "job",
+      "manage_users": false,
+      "manage_bids": false
+    }
+  },
+  {
+    "id": "role-oc-supplier",
+    "company_id": "company-other",
+    "name": "supplier",
+    "permissions": {
+      "finance": "none",
       "manage_users": false,
       "manage_bids": false
     }

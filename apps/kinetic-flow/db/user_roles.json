@@ -54,5 +54,12 @@
     "role_id": "role-oc-employee",
     "assigned_at": "2025-09-05T12:00:00Z",
     "status": "active"
+  },
+  {
+    "id": "userrole-supplier",
+    "user_id": "user-supplier",
+    "role_id": "role-kf-supplier",
+    "assigned_at": "2026-02-18T12:00:00Z",
+    "status": "active"
   }
 ]

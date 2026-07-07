@@ -17,7 +17,7 @@ const STORAGE_KEY = 'kineticFlow.state';
 // Bump whenever db/*.json seed data or table shapes change: restoreState()
 // discards localStorage DB snapshots from older versions and re-fetches the
 // fresh seeds, so users don't need a manual "Reset Demo Data".
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 // ── App State ──────────────────────────────────────────────────────────────
 const state = {
@@ -187,11 +187,15 @@ const workerNav = [
 // — see the Customer Pages section of docs/kinetic-flow-pages.md). Bid and
 // invoice details reach customers as a PDF (sendBidToCustomer), not an app.
 
+// Users whose company role is 'supplier' (see userIsSupplier). They see jobs
+// and the schedule — that's how they know what materials each job needs and
+// when to order/ship — but no Field tab: suppliers don't clock into sites.
 const supplierNav = [
     { icon: NAV_ICONS.archive,  label: 'Inventory', page: 'inventory' },
+    { icon: NAV_ICONS.home,     label: 'Jobs',      page: 'jobs' },
+    { icon: NAV_ICONS.calendar, label: 'Schedule',  page: 'schedule' },
     { icon: NAV_ICONS.box,      label: 'Kits',      page: 'kits' },
-    { icon: NAV_ICONS.chart,    label: 'Stats',     page: 'stats' },
-    { icon: NAV_ICONS.dollar,   label: 'Finance',   page: 'finance' },
+    { icon: NAV_ICONS.more,     label: 'More',      page: 'more' },
 ];
 
 // Pages that show the bottom nav
@@ -276,7 +280,7 @@ function updateBottomNav() {
     const showNav = mainAppPages.includes(state.currentPage) && state.role !== 'customer';
     if (!showNav) { nav.innerHTML = ''; return; }
 
-    const tabs = state.role === 'worker' ? workerNav : supplierNav;
+    const tabs = userIsSupplier() ? supplierNav : workerNav;
 
     const jobPages = ['job-home', 'job-detail', 'job-detail-nobid', 'bid', 'bid-division', 'bid-proposal', 'create-job'];
     nav.innerHTML = tabs.map(t => {
@@ -488,13 +492,10 @@ function afterSignIn(user) {
         loadPage('admin-approvals');
         return;
     }
-    if (state.role === 'worker') {
-        loadPage('companies');
-    } else if (state.role === 'customer') {
-        loadPage('customer-home');
-    } else {
-        loadPage('inventory');
-    }
+    // Everyone who signs in (workers and supplier-role users alike — customer
+    // mode never reaches sign-in) picks a company first; selectCompany()
+    // routes suppliers to inventory and everyone else to jobs from there.
+    loadPage('companies');
 }
 
 function signOut() {
@@ -624,6 +625,10 @@ const DEFAULT_ROLES = [
     { name: 'admin', permissions: { finance: 'nationwide', manage_users: true, manage_bids: true } },
     { name: 'manager', permissions: { finance: 'branch', manage_users: true, manage_bids: true } },
     { name: 'employee', permissions: { finance: 'job', manage_users: false, manage_bids: false } },
+    // Suppliers are members too (QA note: a role, not an account type) —
+    // they see jobs and the schedule to time material orders, but no
+    // finance and no field-clock work.
+    { name: 'supplier', permissions: { finance: 'none', manage_users: false, manage_bids: false } },
 ];
 
 // Real insert path for new-company.html — creates the companies row plus the
@@ -702,6 +707,21 @@ function companyMemberUsers(companyId) {
     return rows;
 }
 
+// True when the signed-in user's only active role in the current company is
+// 'supplier' — a supplier-role membership drives the supplier nav and hides
+// worker-only actions (clock-in, create-job). Someone who is also an
+// employee/manager keeps the full worker experience.
+function userIsSupplier() {
+    if (!state.currentUserId || !state.currentCompanyId) return false;
+    const names = [];
+    DB.get('user_roles').forEach(function (ur) {
+        if (ur.user_id !== state.currentUserId || ur.deleted_at || ur.status !== 'active') return;
+        const role = DB.getById('roles', ur.role_id);
+        if (role && role.company_id === state.currentCompanyId) names.push(role.name);
+    });
+    return names.length > 0 && names.every(function (n) { return n === 'supplier'; });
+}
+
 function selectCompany(companyId) {
     state.currentCompanyId = companyId;
     // Re-derive branch context for this company (jobs.html filters by it):
@@ -711,7 +731,8 @@ function selectCompany(companyId) {
     const user = state.currentUserId ? DB.getById('users', state.currentUserId) : null;
     const userBranch = user && user.branch_id ? DB.getById('branches', user.branch_id) : null;
     state.currentBranchId = (userBranch && userBranch.company_id === companyId) ? userBranch.id : null;
-    loadPage('jobs');
+    // Suppliers land on their inventory; everyone else on the job list.
+    loadPage(userIsSupplier() ? 'inventory' : 'jobs');
 }
 
 function manageCompany(companyId) {
@@ -2304,7 +2325,7 @@ function activate() {
         showAccountSearch, hideAccountSearch, filterAccountSearch, pickAccount, accountPositionLabel,
         showSabbathLock, hideSabbathLock,
         joinCompany, createCompany, submitJoinRequest, submitNewCompany, continueFromSetup, openBranch,
-        selectCompany, manageCompany, companyMemberUsers,
+        selectCompany, manageCompany, companyMemberUsers, userIsSupplier,
         LEVELS, COMPETENCY_LEVELS, companyDivisions,
         openCompanyDivisions,
         openJob, createJob, submitJob,

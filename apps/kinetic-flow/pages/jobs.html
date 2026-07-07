@@ -5,7 +5,7 @@
             <div class="page-title">Jobs</div>
             <div class="page-subtitle" id="jobs-subtitle"></div>
         </div>
-        <button class="fab" style="position:static; margin:0;" onclick="createJob()">+</button>
+        <button class="fab" id="jobs-create-fab" style="position:static; margin:0;" onclick="createJob()">+</button>
     </div>
 
     <input class="search-bar" type="text" id="jobs-search" placeholder="Search jobs..." oninput="filterJobs(this.value)">
@@ -22,6 +22,10 @@
         if (j.company_id !== state.currentCompanyId || j.deleted_at) return false;
         return !state.currentBranchId || j.branch_id === state.currentBranchId;
     });
+    // Suppliers browse jobs to see what materials are needed where — they
+    // don't create jobs.
+    if (userIsSupplier()) document.getElementById('jobs-create-fab').style.display = 'none';
+
     var company = state.currentCompanyId ? DB.getById('companies', state.currentCompanyId) : null;
     var branch = state.currentBranchId ? DB.getById('branches', state.currentBranchId) : null;
     document.getElementById('jobs-subtitle').textContent =

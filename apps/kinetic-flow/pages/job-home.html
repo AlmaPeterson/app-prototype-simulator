@@ -6,7 +6,7 @@
          tapping just opens the jobs list — only picking another job changes it. -->
     <div class="page-subtitle mb-4" id="job-home-subtitle" onclick="loadPage('jobs')" style="cursor:pointer;">&nbsp;</div>
 
-    <button class="btn btn-primary mb-4" onclick="openFieldClock()">Clock In / Out</button>
+    <button class="btn btn-primary mb-4" id="job-home-clock-btn" onclick="openFieldClock()">Clock In / Out</button>
 
     <div class="section-header">
         <span class="section-title">Quick Actions</span>
@@ -37,6 +37,9 @@
     var titleEl = document.getElementById('job-home-title');
     var subEl = document.getElementById('job-home-subtitle');
     var bidBtn = document.getElementById('job-home-bid-btn');
+
+    // Suppliers view jobs for material planning; they don't clock in.
+    if (userIsSupplier()) document.getElementById('job-home-clock-btn').style.display = 'none';
 
     if (titleEl) titleEl.textContent = job ? job.name : 'No Job Selected';
     if (subEl) subEl.innerHTML = (isNoBid ? 'No Bid Yet' : 'Active')
