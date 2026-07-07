@@ -29,3 +29,13 @@ Hours should around to the nearest quarter of an hour or 15 minutes.
 
 ---
 
+## 2026-07-07T18:12:50.728Z
+
+- Screen: kinetic-flow — bid-division
+- Role: worker
+- Phone size: 390 × 720
+
+When an input is selected in the phone keyboard opens the whole screen should move up so you can see what you're typing.
+
+---
+
