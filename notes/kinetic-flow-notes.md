@@ -143,3 +143,14 @@ Let's create a supplier account for supplying materials and tools for companies.
 
 ---
 
+## 2026-07-07T15:14:10.230Z
+
+- Screen: kinetic-flow — inventory
+- Role: supplier
+- Account: Existing Account
+- Phone size: 390 × 720
+
+There should not be A different type of account for suppliers. before I said Suppliers do not need to see the jobs but maybe you would have them see the jobs so they can get the x German materials for specific jobs and they'd be able to see the schedule to know when to order or ship the materials.
+
+---
+
