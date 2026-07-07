@@ -12,8 +12,8 @@ sense — nothing hits a server.
 
 ### sign-in.html
 - **See:** App title, email + password fields, "Forgot password?" link, Sign In button, "Continue with Google" button, "Request Access" link. Focusing the email field opens an account-picker dropdown listing every existing account (name, a role · guild-level pill, email); typing filters by name, email, or position.
-- **Edit:** Email (type it or pick an account from the dropdown, which just fills the field; Enter in the field submits) and password (password is not checked; email should match a user — demo accounts are role-named: `master@kineticflow.com`, `supplier@kineticflow.com`, etc.).
-- **Do:** Sign In / Google (both call `signIn()`; a pending-approval email routes to account-pending, an unknown email falls back to the master demo account). "Request Access" opens the sign-up sheet.
+- **Edit:** Email (type it or pick an account from the dropdown, which just fills the field; Enter in the field submits) and password (password is not checked; the email must match a real account — demo accounts are role-named: `master@kineticflow.com`, `supplier@kineticflow.com`, etc.).
+- **Do:** Sign In / Google (both call `signIn()`; a pending-approval email routes to account-pending; an empty or unknown email shows an inline error and does **not** sign in — no demo fallback). "Request Access" opens the sign-up sheet (the only path to a new account — the old header Existing/New Account toggle is gone).
 
 ### sign-up.html (bottom-sheet modal over sign-in)
 - **See:** "Request an Account" form and a note that requests are reviewed.

@@ -21,8 +21,7 @@ const DB_VERSION = 4;
 
 // ── App State ──────────────────────────────────────────────────────────────
 const state = {
-    accountType: 'existing',  // 'existing' | 'new'
-    role: 'worker',           // 'worker' | 'customer' | 'supplier'
+    role: 'worker',           // 'worker' | 'customer'
     signedIn: false,
     currentPage: '',
     currentJobId: null,
@@ -321,13 +320,8 @@ function goBack() {
 }
 
 // ── Header Controls ─────────────────────────────────────────────────────────
-function setAccountType(type) {
-    state.accountType = type;
-    document.getElementById('btn-existing').classList.toggle('active', type === 'existing');
-    document.getElementById('btn-new').classList.toggle('active', type === 'new');
-    launchApp('kinetic-flow');
-    loadPage('sign-in');
-}
+// (The old Existing/New Account toggle is gone — new accounts go through the
+// sign-in page's "Request Access" button instead.)
 
 // Switching Worker ↔ Customer ends the previous session outright (QA note:
 // the wrong user's page must never show through). Worker mode reboots to
@@ -352,26 +346,36 @@ function setRole(role) {
 // ── Auth Flow ───────────────────────────────────────────────────────────────
 // Passwordless by design: the password field on sign-in.html is decorative
 // only and is never read, checked, or stored anywhere in this file. Signing
-// in looks up a real `users` row by email (case-insensitive) so the app
-// carries the signed-in user's real identity/company/branch from here on;
-// an email that doesn't match any seeded user falls back to a fixed demo
-// identity rather than dead-ending the flow.
-const DEFAULT_DEMO_EMAIL = 'master@kineticflow.com';
+// in looks up a real `users` row by email (case-insensitive); an email that
+// doesn't match any account shows an inline error and does NOT sign in —
+// there is no demo-account fallback.
+function signInError(message) {
+    const el = document.getElementById('signin-error');
+    if (el) {
+        el.textContent = message;
+        el.style.display = 'block';
+    } else {
+        alert(message);
+    }
+}
 
 function signIn() {
-    if (state.accountType === 'new') {
-        showSignUp();
-        return;
-    }
     const emailInput = document.getElementById('signin-email');
     const typed = ((emailInput && emailInput.value) || '').trim().toLowerCase();
-    const user = (typed && DB.findOne('users', function (u) { return !u.deleted_at && u.email.toLowerCase() === typed; }))
-        || DB.findOne('users', function (u) { return u.email === DEFAULT_DEMO_EMAIL; });
+    if (!typed) {
+        signInError('Enter your email to sign in.');
+        return;
+    }
+    const user = DB.findOne('users', function (u) { return !u.deleted_at && u.email.toLowerCase() === typed; });
+    if (!user) {
+        signInError('No account found for "' + typed + '". Check the email or tap Request Access below.');
+        return;
+    }
     // Accounts created through sign-up start as approval_status 'pending' and
     // stay locked out until the platform admin (admin@gmail.com) approves them
     // on admin-approvals. Seeded users have no approval_status — treated as
     // approved.
-    if (user && user.approval_status === 'pending') {
+    if (user.approval_status === 'pending') {
         loadPage('account-pending');
         return;
     }
@@ -2212,12 +2216,8 @@ function restoreState() {
     }
 
     // Header toggle buttons are plain DOM (not re-rendered by loadPage), so
-    // sync their active state to the restored accountType/role the same way
-    // setAccountType()/setRole() do when the user clicks them directly.
-    const existingBtn = document.getElementById('btn-existing');
-    const newBtn = document.getElementById('btn-new');
-    if (existingBtn) existingBtn.classList.toggle('active', state.accountType === 'existing');
-    if (newBtn) newBtn.classList.toggle('active', state.accountType === 'new');
+    // sync their active state to the restored role the same way setRole()
+    // does when the user clicks them directly.
     // 'supplier' stopped being a header role (it's a company role now) — a
     // session saved before that change lands in worker mode.
     if (state.role === 'supplier') state.role = 'worker';
@@ -2263,7 +2263,7 @@ function activate() {
     Object.assign(window, {
         state, DB, resetDemoData, esc, jsArg,
         loadPage, navTo, goBack,
-        setAccountType, setRole,
+        setRole,
         signIn, afterSignIn, signOut, showSignUp, closeSignUp, submitAccount, goToSignIn,
         showAccountSearch, hideAccountSearch, filterAccountSearch, pickAccount, accountPositionLabel,
         showSabbathLock, hideSabbathLock,

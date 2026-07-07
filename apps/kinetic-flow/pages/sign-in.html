@@ -8,10 +8,12 @@
         <label>Email</label>
         <div class="account-search">
             <input type="email" id="signin-email" placeholder="you@example.com" autocomplete="off"
-                onfocus="showAccountSearch()" oninput="filterAccountSearch()" onblur="hideAccountSearch()"
+                onfocus="showAccountSearch()" onblur="hideAccountSearch()"
+                oninput="filterAccountSearch(); var e = document.getElementById('signin-error'); if (e) e.style.display = 'none';"
                 onkeydown="if (event.key === 'Enter') { this.blur(); signIn(); }">
             <div class="account-search-list" id="account-search-list"></div>
         </div>
+        <div id="signin-error" style="display:none; color:#dc2626; font-size:0.78rem; margin-top:6px;"></div>
     </div>
     <div class="form-group">
         <label>Password</label>
