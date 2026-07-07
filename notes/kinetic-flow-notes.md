@@ -110,3 +110,14 @@ When I try to open another app and go back to kinetic flow, it brings me back to
 
 ---
 
+## 2026-07-07T15:07:00.424Z
+
+- Screen: kinetic-flow — customer-home
+- Role: customer
+- Account: Existing Account
+- Phone size: 390 × 720
+
+When a bit is created and it should create a PDF of the bid the invoice the schedule and everything The customer needs to see. That PDF will be sent to the customer.  The only time that the customer will use the app is when they scan a QR code to see the floor plan or what paints or trim or other things were used for the  Building.
+
+---
+
