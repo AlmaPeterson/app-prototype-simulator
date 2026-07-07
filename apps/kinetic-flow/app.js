@@ -2147,7 +2147,9 @@ function restoreState() {
         currentTimeEntryId = saved.clock.timeEntryId || null;
         currentPhaseLogId = saved.clock.phaseLogId || null;
         elapsedSeconds = Math.max(0, Math.floor((Date.now() - clockStartedAt) / 1000));
-        timerInterval = setInterval(tickTimer, 1000);
+        // start() re-runs on app resume (see shell.js renderedAppId) — don't
+        // stack a second ticker on the one that's already running.
+        if (!timerInterval) timerInterval = setInterval(tickTimer, 1000);
     }
 
     // Header toggle buttons are plain DOM (not re-rendered by loadPage), so

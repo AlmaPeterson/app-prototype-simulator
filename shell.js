@@ -9,6 +9,11 @@ const BOOT_DELAY_MS = 400;
 const loadedAppScripts = new Set();
 const launchedApps = new Set();
 let currentAppId = null;
+// Every app renders into the same #main container, so switching apps leaves
+// the previous app's markup on screen. This tracks whose UI currently
+// occupies #main so reopening an already-launched app re-renders it instead
+// of showing the other app's leftover screen.
+let renderedAppId = null;
 
 // ── App Loading ──────────────────────────────────────────────────────────
 // All registered apps' scripts are preloaded at boot (see init, below) so
@@ -66,10 +71,13 @@ function openApp(appId) {
     loadAppScript(app).then(() => {
         const entry = window.Apps && window.Apps[appId];
         if (entry && entry.activate) entry.activate();
-        if (!launchedApps.has(appId)) {
-            launchedApps.add(appId);
-            if (entry && entry.start) entry.start();
-        }
+        // start() runs on first launch, and again whenever another app has
+        // rendered into #main since — each app's start() resumes from its own
+        // saved state, so a re-run is a resume, not a reset.
+        const needsRender = !launchedApps.has(appId) || renderedAppId !== appId;
+        launchedApps.add(appId);
+        if (needsRender && entry && entry.start) entry.start();
+        renderedAppId = appId;
     });
 }
 
@@ -81,6 +89,8 @@ function openApp(appId) {
 function launchApp(appId) {
     currentAppId = appId;
     launchedApps.add(appId);
+    // The caller is about to render its own page into #main.
+    renderedAppId = appId;
     showScreen('app');
     const entry = window.Apps && window.Apps[appId];
     if (entry && entry.activate) entry.activate();
