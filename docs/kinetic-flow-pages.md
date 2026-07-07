@@ -223,7 +223,7 @@ sense — nothing hits a server.
 ### more.html ("More" tab)
 - **See:** Your real user card — initials avatar, name, position (from your active role) + company, guild-level badge; subtitle shows company • position. Grouped nav cards.
 - **Edit:** Nothing.
-- **Do:** Open My Scorecard (self-assessment → scorecard.html), Scoreboard, Task Statistics, Finance Dashboard, Customer Home Details, Message Templates, Team Timesheets, Company & Branches, Stock Inventory; preview the Sabbath Lock overlay; **Reset Demo Data** (confirm dialog, then discards localStorage and reloads seed JSON); Sign Out.
+- **Do:** Open My Scorecard (self-assessment → scorecard.html), Scoreboard, Task Statistics, Finance Dashboard, Customer Home Details, Message Templates, Team Timesheets, Company & Branches, Stock Inventory; preview the Sabbath Lock overlay; Sign Out. (Resetting demo data lives in the website header's Reset Data button, not in the app.)
 
 ### message-templates.html
 - **See:** Company message templates (from `message_templates`), each pre-filled with the current job's context (customer first name, job name, crew, start time); unresolvable placeholders render as editable `[blanks]`. A banner states Kinetic Flow does not send texts itself.
