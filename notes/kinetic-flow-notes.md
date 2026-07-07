@@ -121,3 +121,14 @@ When a bit is created and it should create a PDF of the bid the invoice the sche
 
 ---
 
+## 2026-07-07T15:08:35.815Z
+
+- Screen: kinetic-flow — customer-home
+- Role: customer
+- Account: Existing Account
+- Phone size: 390 × 720
+
+And actually the customer will not use the app they will be using a website when they scan the QR Code to see the floor plan and details of the building.  We just need to make sure that the managers or workers can edit the or add a floor plan and add Do the building of the job or customer that they're working for.
+
+---
+
