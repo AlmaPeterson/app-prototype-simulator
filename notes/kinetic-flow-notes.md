@@ -165,3 +165,14 @@ When you switch between customer and worker or supplier in the header controls t
 
 ---
 
+## 2026-07-07T15:22:23.156Z
+
+- Screen: kinetic-flow — schedule
+- Role: worker
+- Account: Existing Account
+- Phone size: 390 × 720
+
+The schedule should only have work days.   You will not be able to complete tasks on Sunday.
+
+---
+
