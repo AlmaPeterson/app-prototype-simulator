@@ -1,9 +1,20 @@
 <div class="page" style="padding-bottom:80px;">
     <button class="btn btn-secondary btn-sm mb-4" onclick="loadPage('kits')">&larr; Kits</button>
 
-    <div class="page-title">Generate Labels</div>
-    <div class="page-subtitle mb-4">Expand a category or kit and select categories, kits, tools, or materials to generate a printable label sheet PDF.</div>
+    <div class="page-title">Labels</div>
+    <div class="page-subtitle mb-4">Select kits, tools, or materials and hand them off to the Label Maker app to design and print.</div>
 
+    <!-- Saved templates come from the (separate) Label Maker app — mock
+         previews until that app is installed in this simulator. -->
+    <div class="section-header">
+        <span class="section-title">Saved Templates</span>
+        <span class="kit-row-count">from Label Maker</span>
+    </div>
+    <div id="label-templates" style="display:flex; gap:10px; overflow-x:auto; padding-bottom:6px; margin-bottom:14px;"></div>
+
+    <div class="section-header">
+        <span class="section-title">Pick Items to Label</span>
+    </div>
     <input class="search-bar" type="text" id="kit-search" placeholder="Search kits..." oninput="filterLabelKits(this.value)">
 
     <div id="label-list" class="mt-4"></div>
@@ -12,12 +23,12 @@
         <div class="flex-between">
             <div>
                 <div class="card-title" id="label-count">0 labels selected</div>
-                <div class="card-subtitle">One label per item, 30 per sheet.</div>
+                <div class="card-subtitle">One label per selected item.</div>
             </div>
         </div>
         <div style="display:flex; gap:8px; margin-top:10px;">
             <button class="btn btn-secondary" style="margin:0;" onclick="clearLabelSelection()">Clear</button>
-            <button class="btn btn-primary" style="margin:0;" onclick="generateLabelsPDF()">Generate PDF</button>
+            <button class="btn btn-primary" style="margin:0;" onclick="sendToLabelMaker()">Open in Label Maker</button>
         </div>
     </div>
 </div>
@@ -203,47 +214,32 @@
         render();
     };
 
-    window.generateLabelsPDF = function () {
+    // Handoff, not generation (QA note): label design/printing belongs to
+    // the separate Label Maker app. Until that app is installed in this
+    // simulator, the handoff is an honest stub.
+    window.sendToLabelMaker = function () {
         if (selected.size === 0) {
-            alert('Select at least one category, kit, tool, or material to generate labels.');
+            alert('Select at least one category, kit, tool, or material to label.');
             return;
         }
-        if (!window.jspdf) {
-            alert('PDF library did not load — check your internet connection and try again.');
-            return;
-        }
-        var jsPDF = window.jspdf.jsPDF;
-        var doc = new jsPDF({ unit: 'in', format: 'letter' });
-
-        var cols = 3, rows = 10, perPage = cols * rows;
-        var marginX = 0.19, marginY = 0.5;
-        var labelW = 2.63, labelH = 1.0, gapX = 0.12;
-
-        Array.from(selected.values()).forEach(function (text, idx) {
-            var posOnPage = idx % perPage;
-            if (idx > 0 && posOnPage === 0) doc.addPage();
-            var col = posOnPage % cols;
-            var row = Math.floor(posOnPage / cols);
-            var x = marginX + col * (labelW + gapX);
-            var y = marginY + row * labelH;
-
-            doc.setDrawColor(200);
-            doc.rect(x, y, labelW, labelH);
-
-            doc.setFont(undefined, 'bold');
-            doc.setFontSize(11);
-            var lines = doc.splitTextToSize(text, labelW - 0.24);
-            doc.text(lines, x + labelW / 2, y + labelH / 2, { align: 'center', baseline: 'middle' });
-
-            doc.setFont(undefined, 'normal');
-            doc.setFontSize(7);
-            doc.setTextColor(140);
-            doc.text('Building Forward LLC', x + labelW / 2, y + labelH - 0.12, { align: 'center' });
-            doc.setTextColor(0);
-        });
-
-        doc.save('kit-labels.pdf');
+        showToast('Label Maker Handoff', [selected.size + ' label' + (selected.size === 1 ? '' : 's')
+            + ' ready — this will open the Label Maker app once it’s installed in this simulator.'], '#1e40af');
     };
+
+    // Mock template previews — stand-ins for real saved templates that will
+    // sync from Label Maker.
+    var MOCK_TEMPLATES = [
+        { name: 'Kit Tools — Avery 5160', size: '30 / sheet' },
+        { name: 'Shelf Tags — 2×4', size: '10 / sheet' },
+        { name: 'Bin Labels — 1×3', size: '30 / sheet' },
+    ];
+    document.getElementById('label-templates').innerHTML = MOCK_TEMPLATES.map(function (t) {
+        return '<div class="card" style="min-width:130px; flex:0 0 auto; margin:0; cursor:pointer;" onclick="sendToLabelMaker()">' +
+            '<div style="border:1px dashed #cbd5e1; border-radius:6px; height:44px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:0.65rem; margin-bottom:6px;">Preview</div>' +
+            '<div style="font-size:0.75rem; font-weight:600;">' + t.name + '</div>' +
+            '<div style="font-size:0.68rem; color:#94a3b8;">' + t.size + '</div>' +
+        '</div>';
+    }).join('');
 
     render();
 })();

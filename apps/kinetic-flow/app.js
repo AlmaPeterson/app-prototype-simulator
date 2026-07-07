@@ -1600,6 +1600,27 @@ function toggleClock() {
 function syncClockoutGate() {
     const gate = document.getElementById('clockout-gate');
     if (gate) gate.style.display = clockedIn ? '' : 'none';
+    syncClockoutButton();
+}
+
+// While clocked in, the Clock Out button is visibly disabled until every
+// checklist item is done (QA note) — the alert in toggleClock() stays as a
+// backstop. Re-run on every checkbox change (onchange in field-clock.html),
+// material-log save, and kit-photo capture.
+function syncClockoutButton() {
+    const btn = document.getElementById('clock-btn');
+    if (!btn) return;
+    if (!clockedIn) {
+        btn.disabled = false;
+        btn.style.opacity = '';
+        return;
+    }
+    const done = ['gate-materials', 'gate-kit-photo', 'gate-cleanliness'].every(function (id) {
+        const el = document.getElementById(id);
+        return el && el.checked;
+    });
+    btn.disabled = !done;
+    btn.style.opacity = done ? '' : '0.5';
 }
 
 function tickTimer() {
@@ -1892,6 +1913,7 @@ function saveMaterialLog() {
     }
     const gate = document.getElementById('gate-materials');
     if (gate) gate.checked = true;
+    syncClockoutButton();
     closeMaterialModal();
 }
 
@@ -1899,6 +1921,23 @@ function saveMaterialLog() {
 // A scorecard for today's shift is required before the timesheet can go to
 // the supervisor. If none exists yet, send the worker to fill one out and
 // have submitScorecard() route back here to finish the submission.
+// End-of-day is scorecard-first (QA note): the field-clock button routes
+// through the daily self-assessment before the timesheet. If today's
+// scorecard is already in, skip straight to the timesheet — submitScorecard()
+// returns here via scorecardReturnTo either way.
+function openEndOfDay() {
+    const today = new Date().toISOString().slice(0, 10);
+    const hasScorecard = DB.find('scorecard_entries', function (s) {
+        return s.user_id === state.currentUserId && s.shift_date === today && !s.deleted_at;
+    }).length > 0;
+    if (hasScorecard) {
+        loadPage('review-time');
+        return;
+    }
+    state.scorecardReturnTo = 'review-time';
+    openScorecard(state.currentUserId);
+}
+
 // The "Notes for Supervisor" textarea on review-time.html: Save Draft keeps
 // the text in state (restored next visit), Submit stamps it onto the entries
 // going to the manager — either way the worker's note is never silently lost.
@@ -2181,9 +2220,9 @@ function activate() {
         recordPpeVideo, ppeVideoComplete,
         toggleClock, addActivity,
         openMaterialLog, closeMaterialModal, saveMaterialLog,
-        submitTimeSheet, saveTimesheetDraft,
+        submitTimeSheet, saveTimesheetDraft, openEndOfDay, syncClockoutButton,
         openTeamTime, managedWorkers, submitTeamTimeToQuickBooks,
-        openScoreboard, openStats, openFinance, openCustomerHome, openMore,
+        openScoreboard, openStats, openFinance, openCustomerHome, openMore, showToast,
         switchTab, toggleChip,
         CUSTOMER_DEMO_JOB_ID, computeSyntheticPaymentSchedule,
     });

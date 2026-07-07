@@ -26,7 +26,7 @@
         <div class="card" style="cursor:default; margin-bottom:16px;">
             <div class="list-item" style="padding:8px 0;">
                 <div class="list-item-body"><div class="list-item-title">Materials logged</div></div>
-                <input type="checkbox" id="gate-materials" class="label-checkbox">
+                <input type="checkbox" id="gate-materials" class="label-checkbox" onchange="syncClockoutButton()">
             </div>
             <div class="list-item" style="padding:8px 0;">
                 <div class="list-item-body">
@@ -34,11 +34,11 @@
                     <div class="list-item-sub" id="gate-kit-photo-status">Snap your kit before you leave</div>
                 </div>
                 <button class="btn btn-secondary btn-sm" style="margin:0 8px 0 0; width:auto;" id="gate-kit-photo-btn" onclick="captureKitPhoto()">Take Photo</button>
-                <input type="checkbox" id="gate-kit-photo" class="label-checkbox">
+                <input type="checkbox" id="gate-kit-photo" class="label-checkbox" onchange="syncClockoutButton()">
             </div>
             <div class="list-item" style="padding:8px 0; border-bottom:none;">
                 <div class="list-item-body"><div class="list-item-title">Site cleanliness confirmed</div></div>
-                <input type="checkbox" id="gate-cleanliness" class="label-checkbox">
+                <input type="checkbox" id="gate-cleanliness" class="label-checkbox" onchange="syncClockoutButton()">
             </div>
         </div>
     </div>
@@ -94,7 +94,9 @@
 
     <div id="activity-log" style="padding:0 14px; margin-bottom:16px; border:1px solid #e2e8f0;"></div>
 
-    <button class="btn btn-primary" onclick="openTimeSheet()">Submit Timesheet</button>
+    <!-- End of day is scorecard-first: daily self-assessment, then the
+         timesheet review, then submit (openEndOfDay in app.js). -->
+    <button class="btn btn-primary" onclick="openEndOfDay()">Daily Scorecard &amp; Timesheet</button>
 </div>
 
 <script>
@@ -189,6 +191,7 @@
         setTimeout(function () {
             var box = document.getElementById('gate-kit-photo');
             if (box) box.checked = true;
+            syncClockoutButton();
             if (btn) { btn.disabled = false; btn.textContent = 'Retake'; }
             if (status) status.textContent = 'Kit photo captured at '
                 + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });

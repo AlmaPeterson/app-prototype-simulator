@@ -47,13 +47,15 @@
             return role && role.company_id === companyId;
         });
     }
-    var companies = DB.find('companies', function (c) { return !c.deleted_at; });
-    // New accounts only see companies they actually belong to — the seeded
-    // demo companies stay hidden (preserving the "No companies yet" empty
-    // state) while one they create locally shows up immediately.
-    if (state.accountType === 'new') {
-        companies = companies.filter(function (c) { return !!membershipIn(c.id); });
-    }
+    // Only companies you're actually part of (QA note): your home company
+    // (users.company_id) or any you hold a user_roles row in — pending join
+    // requests included, since their "Pending" badge is how you see the
+    // request is still waiting. Everything else is reachable via + → Join.
+    var me = state.currentUserId ? DB.getById('users', state.currentUserId) : null;
+    var companies = DB.find('companies', function (c) {
+        if (c.deleted_at) return false;
+        return (me && me.company_id === c.id) || !!membershipIn(c.id);
+    });
     document.getElementById('company-list').innerHTML = companies.map(function (c) {
         // Members = users homed here plus active role-holders (pending
         // user_roles rows are join requests, not memberships) — same
@@ -70,7 +72,7 @@
             : 'selectCompany(\'' + c.id + '\')';
         return '<div class="card" onclick="' + clickAction + '">' +
             '<div class="flex-between mb-1">' +
-                '<div class="card-title" style="margin:0;">' + c.name + '</div>' +
+                '<div class="card-title" style="margin:0;">' + esc(c.name) + '</div>' +
                 badge +
             '</div>' +
             '<div class="card-subtitle mb-2">' + memberCount + ' team member' + (memberCount === 1 ? '' : 's') + '</div>' +

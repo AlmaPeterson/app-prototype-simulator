@@ -3,7 +3,7 @@
         <div class="page-title">Kits &amp; Tools</div>
         <div class="page-subtitle">Browse kits by category to see tools, materials, and training videos.</div>
     </div>
-    <button class="btn btn-outline btn-sm mb-4" onclick="loadPage('label-generator')">Generate Labels</button>
+    <button class="btn btn-outline btn-sm mb-4" onclick="loadPage('label-generator')">Labels</button>
 
     <div class="kit-search-row">
         <button class="icon-btn" onclick="openKitDrawer()" aria-label="Browse kit categories">
@@ -122,12 +122,60 @@
     }
 
     function emptyStateHtml() {
+        // No kits at all is a different situation from none selected — offer
+        // the create flow instead of a drawer that would open empty.
+        if (CATEGORIES.length === 0) {
+            return '<div class="kit-noselect">' +
+                '<div class="kit-noselect-title">No kits yet</div>' +
+                '<div class="kit-noselect-sub">Create your company’s first kit to start tracking tools and materials.</div>' +
+                '<button class="btn btn-primary btn-sm" style="margin-top:14px;" onclick="openCreateKit()">+ Create a Kit</button>' +
+                '</div>';
+        }
         return '<div class="kit-noselect">' +
             '<div class="kit-noselect-title">No kit selected</div>' +
             '<div class="kit-noselect-sub">Expand a category to choose a kit.</div>' +
             '<button class="btn btn-primary btn-sm" style="margin-top:14px;" onclick="openKitDrawer()">Browse Categories</button>' +
             '</div>';
     }
+
+    window.openCreateKit = function () {
+        var existing = document.getElementById('kit-create-panel');
+        if (existing) existing.remove();
+        var modal = document.createElement('div');
+        modal.id = 'kit-create-panel';
+        modal.className = 'modal-overlay';
+        modal.innerHTML =
+            '<div class="modal-sheet">' +
+                '<div class="modal-handle"></div>' +
+                '<div class="page-title-sm mb-2">New Kit</div>' +
+                '<div class="form-group"><label>Kit Name</label><input type="text" id="kc-name" placeholder="e.g. Basic Electrical Kit"></div>' +
+                '<div class="form-group"><label>Category</label><input type="text" id="kc-category" placeholder="e.g. Electrical"></div>' +
+                '<button class="btn btn-primary mt-2" onclick="saveNewKit()">Create Kit</button>' +
+                '<button class="btn btn-secondary" onclick="document.getElementById(\'kit-create-panel\').remove()">Cancel</button>' +
+            '</div>';
+        modal.addEventListener('click', function (e) { if (e.target === modal) modal.remove(); });
+        document.getElementById('phone').appendChild(modal);
+    };
+
+    window.saveNewKit = function () {
+        var name = (document.getElementById('kc-name').value || '').trim();
+        if (!name) { alert('Enter a kit name.'); return; }
+        var category = (document.getElementById('kc-category').value || '').trim() || 'Uncategorized';
+        var kit = DB.insert('inventory_kits', {
+            company_id: state.currentCompanyId, name: name, description: '',
+            image_url: null, location: 'shop', division_number: null, category: category,
+        });
+        document.getElementById('kit-create-panel').remove();
+        CATEGORIES = loadCategories();
+        // Select the new kit so the user lands ready to add tools/materials.
+        CATEGORIES.forEach(function (cat, ci) {
+            cat.kits.forEach(function (k, ki) {
+                if (k.id === kit.id) appState.selected = { ci: ci, ki: ki };
+            });
+        });
+        if (appState.selected) appState.expandedCat = appState.selected.ci;
+        render();
+    };
 
     function searchResultsHtml(query) {
         var q = query.toLowerCase();
