@@ -8,7 +8,7 @@
         <button class="fab" style="position:static; margin:0;" onclick="createJob()">+</button>
     </div>
 
-    <input class="search-bar" type="text" placeholder="Search jobs...">
+    <input class="search-bar" type="text" id="jobs-search" placeholder="Search jobs..." oninput="filterJobs(this.value)">
 
     <div id="job-list"></div>
 </div>
@@ -32,24 +32,45 @@
         var d = new Date(iso);
         return months[d.getUTCMonth()] + ' ' + d.getUTCDate();
     }
-    document.getElementById('job-list').innerHTML = jobs.map(function (j) {
+
+    // Pre-resolve the joined display fields once so search can match on them too.
+    var rows = jobs.map(function (j) {
         var bid = j.bid_id ? DB.getById('bids', j.bid_id) : null;
         var addr = j.address_id ? DB.getById('addresses', j.address_id) : null;
         var lead = DB.findOne('job_assignments', function (a) { return a.job_id === j.id && a.role_on_job === 'lead'; });
         var leadUser = lead ? DB.getById('users', lead.user_id) : null;
-        var costLabel = bid ? '$' + bid.total_cost.toLocaleString() : 'No Bid';
-        return '<div class="card" onclick="openJob(\'' + j.id + '\')">' +
-            '<div class="flex-between mb-1">' +
-                '<div class="card-title" style="margin:0;">' + j.name + '</div>' +
-                '<span style="font-size:0.78rem; color:#64748b; text-align:right;">' + costLabel + '</span>' +
-            '</div>' +
-            '<div class="card-subtitle">' + [(addr ? addr.street : ''), fmtDate(j.scheduled_start)].filter(Boolean).join(' &bull; ') + '</div>' +
-            '<div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">' +
-                (j.job_type || 'General') + ' &bull; ' + (j.priority || 'normal').replace(/^./, function (c) { return c.toUpperCase(); }) + ' &bull; ' +
-                (leadUser ? leadUser.full_name : 'Unassigned') +
-            '</div>' +
-        '</div>';
-    }).join('');
+        return {
+            job: j,
+            costLabel: bid ? '$' + bid.total_cost.toLocaleString() : 'No Bid',
+            street: addr ? addr.street : '',
+            leadName: leadUser ? leadUser.full_name : 'Unassigned',
+        };
+    });
+
+    function render(query) {
+        var q = (query || '').trim().toLowerCase();
+        var visible = rows.filter(function (r) {
+            if (!q) return true;
+            return [r.job.name, r.street, r.job.job_type, r.leadName].join(' ').toLowerCase().indexOf(q) !== -1;
+        });
+        document.getElementById('job-list').innerHTML = visible.length ? visible.map(function (r) {
+            var j = r.job;
+            return '<div class="card" onclick="openJob(\'' + esc(j.id) + '\')">' +
+                '<div class="flex-between mb-1">' +
+                    '<div class="card-title" style="margin:0;">' + esc(j.name) + '</div>' +
+                    '<span style="font-size:0.78rem; color:#64748b; text-align:right;">' + r.costLabel + '</span>' +
+                '</div>' +
+                '<div class="card-subtitle">' + [esc(r.street), fmtDate(j.scheduled_start)].filter(Boolean).join(' &bull; ') + '</div>' +
+                '<div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">' +
+                    esc(j.job_type || 'General') + ' &bull; ' + esc((j.priority || 'normal').replace(/^./, function (c) { return c.toUpperCase(); })) + ' &bull; ' +
+                    esc(r.leadName) +
+                '</div>' +
+            '</div>';
+        }).join('') :
+            '<div class="alert">' + (q ? 'No jobs match "' + esc(q) + '".' : 'No jobs yet — tap + to create one.') + '</div>';
+    }
+
+    window.filterJobs = function (q) { render(q); };
+    render('');
 })();
 </script>
-

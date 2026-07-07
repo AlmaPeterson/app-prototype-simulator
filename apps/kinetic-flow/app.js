@@ -88,6 +88,13 @@ function esc(s) {
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// For values inside onclick="fn('…')" attributes: the browser HTML-decodes
+// the attribute before running it as JS, so esc() alone would still leave a
+// bare quote inside the JS string — JS-escape first, then HTML-escape.
+function jsArg(s) {
+    return esc(String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
+}
+
 const DB = {
     isLoaded: function () { return _dbLoaded; },
     load: function () {
@@ -152,26 +159,43 @@ function resetDemoData() {
 }
 
 // ── Bottom Nav Definitions ──────────────────────────────────────────────────
+// Simple stroke icons (inherit the tab's color via currentColor, so the
+// active-tab blue applies automatically).
+function navSvg(inner) {
+    return '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + inner + '</svg>';
+}
+const NAV_ICONS = {
+    home:     navSvg('<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/>'),
+    calendar: navSvg('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/>'),
+    clock:    navSvg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+    box:      navSvg('<path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/>'),
+    more:     navSvg('<circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/>'),
+    file:     navSvg('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/>'),
+    dollar:   navSvg('<path d="M12 2v20"/><path d="M17 6.5c-1-1.5-2.7-2-5-2-2.8 0-4.5 1.3-4.5 3.2 0 4.6 9.8 2.3 9.8 7 0 2-1.8 3.3-5 3.3-2.5 0-4.3-.8-5.3-2.3"/>'),
+    chart:    navSvg('<path d="M6 20v-8M12 20V4M18 20v-6"/>'),
+    archive:  navSvg('<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><path d="M10 13h4"/>'),
+};
+
 const workerNav = [
-    { icon: '',   label: 'Home',     page: 'jobs' },
-    { icon: '',   label: 'Schedule', page: 'schedule' },
-    { icon: '',   label: 'Field',    page: 'feild-clock' },
-    { icon: '',   label: 'Kits',     page: 'kits' },
-    { icon: '',   label: 'More',     page: 'more' },
+    { icon: NAV_ICONS.home,     label: 'Home',     page: 'jobs' },
+    { icon: NAV_ICONS.calendar, label: 'Schedule', page: 'schedule' },
+    { icon: NAV_ICONS.clock,    label: 'Field',    page: 'feild-clock' },
+    { icon: NAV_ICONS.box,      label: 'Kits',     page: 'kits' },
+    { icon: NAV_ICONS.more,     label: 'More',     page: 'more' },
 ];
 
 const customerNav = [
-    { icon: '',   label: 'Home',     page: 'customer-home' },
-    { icon: '',   label: 'Bid',      page: 'customer-bid' },
-    { icon: '',   label: 'Invoice',  page: 'customer-invoice' },
-    { icon: '',   label: 'Schedule', page: 'schedule' },
+    { icon: NAV_ICONS.home,     label: 'Home',     page: 'customer-home' },
+    { icon: NAV_ICONS.file,     label: 'Bid',      page: 'customer-bid' },
+    { icon: NAV_ICONS.dollar,   label: 'Invoice',  page: 'customer-invoice' },
+    { icon: NAV_ICONS.calendar, label: 'Schedule', page: 'schedule' },
 ];
 
 const supplierNav = [
-    { icon: '',   label: 'Inventory', page: 'inventory' },
-    { icon: '',   label: 'Kits',      page: 'kits' },
-    { icon: '',   label: 'Stats',     page: 'stats' },
-    { icon: '',   label: 'Finance',   page: 'finance' },
+    { icon: NAV_ICONS.archive,  label: 'Inventory', page: 'inventory' },
+    { icon: NAV_ICONS.box,      label: 'Kits',      page: 'kits' },
+    { icon: NAV_ICONS.chart,    label: 'Stats',     page: 'stats' },
+    { icon: NAV_ICONS.dollar,   label: 'Finance',   page: 'finance' },
 ];
 
 // Pages that show the bottom nav
@@ -274,7 +298,12 @@ function updateBottomNav() {
 
 function navTo(page) {
     if (page === 'jobs') {
-        if (state.currentJobId) { loadPage('job-home'); return; }
+        // Sticky job context (deliberate — see job-home's chip): first tap of
+        // Home lands on the current job; tapping Home again while already
+        // there pops up to the jobs list, standard tap-active-tab-for-root
+        // behavior. Browsing the list never clears currentJobId — only
+        // opening a different job changes it.
+        if (state.currentJobId && state.currentPage !== 'job-home') { loadPage('job-home'); return; }
         loadPage('jobs');
         return;
     }
@@ -379,7 +408,7 @@ function filterAccountSearch() {
             || accountPositionLabel(u).toLowerCase().indexOf(q) !== -1;
     });
     list.innerHTML = matches.length ? matches.map(function (u) {
-        return `<div class="account-search-item" onmousedown="pickAccount('${esc(u.email)}')">
+        return `<div class="account-search-item" onmousedown="pickAccount('${jsArg(u.email)}')">
             <div class="account-search-name">${esc(u.full_name)}<span class="account-search-position">${esc(accountPositionLabel(u))}</span></div>
             <div class="account-search-email">${esc(u.email)}</div>
         </div>`;
@@ -1025,8 +1054,13 @@ function applyScorecardToGuildProgression(scorecard) {
 // the loadPage() that often follows the event it announces.
 function showToast(title, lines, bg) {
     if (!lines.length) return;
+    // Stack above any toasts already on screen instead of overlapping them
+    // (e.g. a geofence flag and a promotion landing on the same submit).
+    let bottom = 90;
+    document.querySelectorAll('.kf-toast').forEach(function (el) { bottom += el.offsetHeight + 8; });
     const toast = document.createElement('div');
-    toast.style.cssText = 'position:fixed; left:50%; bottom:90px; transform:translateX(-50%);'
+    toast.className = 'kf-toast';
+    toast.style.cssText = 'position:fixed; left:50%; bottom:' + bottom + 'px; transform:translateX(-50%);'
         + 'background:' + (bg || '#166534') + '; color:#fff; padding:12px 18px; border-radius:12px;'
         + 'font-size:0.85rem; line-height:1.4; text-align:center; z-index:2000;'
         + 'box-shadow:0 8px 24px rgba(0,0,0,0.35); max-width:85%;';
@@ -2035,7 +2069,7 @@ window.addEventListener('beforeunload', saveState);
 // *this* app's implementation, not some other installed app's same-named one.
 function activate() {
     Object.assign(window, {
-        state, DB, resetDemoData, esc,
+        state, DB, resetDemoData, esc, jsArg,
         loadPage, navTo, goBack,
         setAccountType, setRole,
         signIn, afterSignIn, signOut, showSignUp, closeSignUp, submitAccount, goToSignIn,
@@ -2078,6 +2112,12 @@ window.Apps['kinetic-flow'] = {
         // task-select.html no longer exists (the picker is a sheet on
         // feild-clock now) — a session saved mid-flow shouldn't resume onto a 404.
         if (state.currentPage === 'task-select') state.currentPage = 'feild-clock';
+        // First open fetches 41 db/*.json seeds — show something meanwhile,
+        // and surface a fetch failure instead of leaving a silent blank screen.
+        const main = document.getElementById('main');
+        if (!DB.isLoaded() && main) {
+            main.innerHTML = '<div class="page" style="justify-content:center; align-items:center; color:#94a3b8; font-size:0.85rem;">Loading Kinetic Flow&hellip;</div>';
+        }
         (DB.isLoaded() ? Promise.resolve() : DB.load()).then(function () {
             ensurePlatformAdmin();
             if (state.role === 'customer') {
@@ -2087,6 +2127,10 @@ window.Apps['kinetic-flow'] = {
             } else {
                 loadPage('sign-in');
             }
+        }).catch(function (err) {
+            if (main) main.innerHTML =
+                '<div class="page"><div class="alert">Couldn&rsquo;t load app data (' + esc(err && err.message) + '). Check your connection and try again.</div>' +
+                '<button class="btn btn-primary" onclick="location.reload()">Retry</button></div>';
         });
     },
     // Closing back to the OS home screen while looking at a job's full detail

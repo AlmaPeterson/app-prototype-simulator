@@ -1,14 +1,14 @@
 <div class="page" style="padding-bottom:80px;">
     <div class="page-title">More</div>
-    <div class="page-subtitle mb-4">Kinetic Flow LLC &bull; Master Admin</div>
+    <div class="page-subtitle mb-4" id="more-subtitle"></div>
 
     <!-- User card -->
     <div style="border:1px solid #e2e8f0; padding:16px; display:flex; align-items:center; gap:14px; margin-bottom:20px;">
-        <div class="leaderboard-avatar" style="width:52px; height:52px; font-size:1.1rem;">MA</div>
+        <div class="leaderboard-avatar" style="width:52px; height:52px; font-size:1.1rem;" id="more-avatar"></div>
         <div style="flex:1;">
-            <div style="font-size:1rem; color:#0f172a;">Master Admin</div>
-            <div style="font-size:0.8rem; color:#64748b;">Admin &bull; Kinetic Flow LLC</div>
-            <span class="badge badge-gray mt-2" style="font-size:0.65rem;">Master</span>
+            <div style="font-size:1rem; color:#0f172a;" id="more-user-name"></div>
+            <div style="font-size:0.8rem; color:#64748b;" id="more-user-sub"></div>
+            <span class="badge badge-gray mt-2" style="font-size:0.65rem;" id="more-user-level"></span>
         </div>
         <span class="badge badge-gray">Active</span>
     </div>
@@ -153,3 +153,27 @@
         </div>
     </div>
 </div>
+
+<script>
+(function () {
+    var user = state.currentUserId ? DB.getById('users', state.currentUserId) : null;
+    var company = state.currentCompanyId ? DB.getById('companies', state.currentCompanyId) : null;
+    var name = user ? user.full_name : 'Not signed in';
+    var position = user ? accountPositionLabel(user) : '';
+    var initials = name.split(/\s+/).map(function (p) { return p.charAt(0); }).slice(0, 2).join('').toUpperCase();
+
+    document.getElementById('more-subtitle').textContent =
+        [(company ? company.name : ''), position].filter(Boolean).join(' • ');
+    document.getElementById('more-avatar').textContent = initials;
+    document.getElementById('more-user-name').textContent = name;
+    document.getElementById('more-user-sub').textContent =
+        [position, (company ? company.name : '')].filter(Boolean).join(' • ');
+    var levelEl = document.getElementById('more-user-level');
+    if (user && user.global_level) {
+        var level = LEVELS.find(function (l) { return l.slug === user.global_level; });
+        levelEl.textContent = level ? level.name : user.global_level;
+    } else {
+        levelEl.style.display = 'none';
+    }
+})();
+</script>

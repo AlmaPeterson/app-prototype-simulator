@@ -59,7 +59,7 @@
         </div>
     </div>
 
-    <button class="btn btn-primary" style="margin-bottom:8px;" onclick="alert('Send flow not wired in prototype.')">Send to Customer</button>
+    <button class="btn btn-primary" style="margin-bottom:8px;" id="prop-send-btn" onclick="sendBidToCustomer()">Send to Customer</button>
     <button class="btn btn-secondary" onclick="loadPage('bid')">&larr; Back to Bid Creation</button>
 </div>
 
@@ -176,6 +176,12 @@
     // 2 scope), so the signing user is a reasonable stand-in per the plan.
     document.getElementById('prop-signer-company').textContent = company ? company.name : '';
     document.getElementById('prop-signer-name').textContent = (state.currentUser && state.currentUser.name) || '—';
+
+    // Already-sent bids re-send (sendBidToCustomer keeps the lifecycle state).
+    if (bid.status === 'sent' || bid.status === 'signed') {
+        document.getElementById('prop-send-btn').textContent =
+            'Re-Send to Customer (sent ' + fmtDate(bid.sent_at) + ')';
+    }
 
 })();
 </script>

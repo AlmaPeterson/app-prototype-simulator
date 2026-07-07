@@ -2,7 +2,10 @@
     <div class="flex-between mb-4">
         <div>
             <div class="page-title">Field Clock</div>
-            <div class="page-subtitle">Riverside HVAC Retrofit</div>
+            <!-- Sticky job context, made visible: the chip always shows which
+                 job a punch will land on, and tapping it is the one-tap way
+                 to switch jobs (it never clears the current job by itself). -->
+            <div class="page-subtitle" id="fc-job-chip" onclick="loadPage('jobs')" style="cursor:pointer;"></div>
         </div>
         <span id="clock-status" class="badge badge-gray">Clocked Out</span>
     </div>
@@ -11,7 +14,7 @@
     <div style="padding:24px; text-align:center; margin-bottom:16px; border:1px solid #e2e8f0;">
         <div style="font-size:0.72rem; color:#64748b; margin-bottom:4px;">Today's Time</div>
         <div id="timer" class="timer-display">00:00:00</div>
-        <div style="font-size:0.78rem; color:#64748b; margin-top:4px;">Jun 30, 2024 &bull; Job JOB-2024</div>
+        <div style="font-size:0.78rem; color:#64748b; margin-top:4px;" id="fc-clock-sub"></div>
     </div>
 
     <!-- Clock-out gate — sits directly above the clock button and only
@@ -26,7 +29,11 @@
                 <input type="checkbox" id="gate-materials" class="label-checkbox">
             </div>
             <div class="list-item" style="padding:8px 0;">
-                <div class="list-item-body"><div class="list-item-title">Kit photo uploaded</div></div>
+                <div class="list-item-body">
+                    <div class="list-item-title">Kit photo uploaded</div>
+                    <div class="list-item-sub" id="gate-kit-photo-status">Snap your kit before you leave</div>
+                </div>
+                <button class="btn btn-secondary btn-sm" style="margin:0 8px 0 0; width:auto;" id="gate-kit-photo-btn" onclick="captureKitPhoto()">Take Photo</button>
                 <input type="checkbox" id="gate-kit-photo" class="label-checkbox">
             </div>
             <div class="list-item" style="padding:8px 0; border-bottom:none;">
@@ -50,30 +57,14 @@
         </div>
     </div>
 
-    <!-- JIT Training -->
-    <div class="section-header mt-4">
-        <span class="section-title">JIT Training Required</span>
+    <!-- JIT Training — real training_modules for this company, with the
+         signed-in user's training_assignments telling Done from Pending.
+         Watching happens through the Task gate chain (Task button below),
+         so a pending card just points there. -->
+    <div class="section-header mt-4" id="fc-training-header">
+        <span class="section-title">JIT Training</span>
     </div>
-
-    <div class="card" style="cursor:default; margin-bottom:8px;">
-        <div class="card-row">
-            <div class="card-body">
-                <div class="card-title">HVAC Safety Procedures</div>
-                <div class="card-subtitle">Completed today at 7:12 AM &bull; <span class="badge badge-gray" style="font-size:0.6rem;">mastery</span></div>
-            </div>
-            <span class="badge badge-gray">Done</span>
-        </div>
-    </div>
-
-    <div class="card" onclick="alert('Open training module')" style="margin-bottom:16px;">
-        <div class="card-row">
-            <div class="card-body">
-                <div class="card-title">Refrigerant Handling</div>
-                <div class="card-subtitle">Watch 8-min video to proceed &bull; <span class="badge badge-gray" style="font-size:0.6rem;">exposure</span></div>
-            </div>
-            <span class="badge badge-gray">Pending</span>
-        </div>
-    </div>
+    <div id="fc-training-list" style="margin-bottom:16px;"></div>
 
     <!-- Activity Log -->
     <div class="section-header">
@@ -95,33 +86,113 @@
         </button>
     </div>
 
-    <!-- Activity feed -->
+    <!-- Activity feed — today's real punches and task logs from the DB;
+         in-progress activities get prepended on top by syncClockUI(). -->
     <div class="section-header">
         <span class="section-title">Today's Log</span>
     </div>
 
-    <div id="activity-log" style="padding:0 14px; margin-bottom:16px; border:1px solid #e2e8f0;">
-        <div class="list-item">
-            <div class="list-item-body">
-                <div class="list-item-title">Clock In</div>
-                <div class="list-item-sub">7:05 AM</div>
-            </div>
-        </div>
-        <div class="list-item">
-            <div class="list-item-body">
-                <div class="list-item-title">Driving to Site</div>
-                <div class="list-item-sub">6:45 AM &ndash; 7:05 AM &bull; 20 min</div>
-            </div>
-        </div>
-        <div class="list-item" style="border-bottom:none;">
-            <div class="list-item-body">
-                <div class="list-item-title">Air Handler Install</div>
-                <div class="list-item-sub">7:10 AM &ndash; ongoing</div>
-                <div class="list-item-detail" style="font-family:monospace;">Mark: 7f3a1c9e2b4d&hellip;e91c</div>
-            </div>
-            <span class="badge badge-gray">Active</span>
-        </div>
-    </div>
+    <div id="activity-log" style="padding:0 14px; margin-bottom:16px; border:1px solid #e2e8f0;"></div>
 
     <button class="btn btn-primary" onclick="openTimeSheet()">Submit Timesheet</button>
 </div>
+
+<script>
+(function () {
+    var job = state.currentJobId ? DB.getById('jobs', state.currentJobId) : null;
+
+    // Header: which job this punch belongs to (tap to switch), plus today's date.
+    var chip = document.getElementById('fc-job-chip');
+    chip.innerHTML = job
+        ? '&#128205; ' + esc(job.name) + ' <span style="color:#94a3b8;">&#9662;</span>'
+        : '<span style="color:#b91c1c;">No job selected &mdash; tap to choose</span>';
+    document.getElementById('fc-clock-sub').textContent =
+        new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        + (job ? ' • ' + job.name : '');
+
+    function fmtTime(iso) {
+        return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    }
+    var today = new Date().toISOString().slice(0, 10);
+
+    // Today's Log: real clock punches and task phase logs for the signed-in
+    // user, newest first (syncClockUI prepends any still-ongoing activity on top).
+    var events = [];
+    DB.find('time_entries', function (t) {
+        return t.user_id === state.currentUserId && t.clock_in_at && t.clock_in_at.slice(0, 10) === today;
+    }).forEach(function (t) {
+        var j = t.job_id ? DB.getById('jobs', t.job_id) : null;
+        events.push({ at: t.clock_in_at, title: 'Clock In', sub: fmtTime(t.clock_in_at) + (j ? ' • ' + j.name : '') });
+        if (t.clock_out_at) {
+            events.push({ at: t.clock_out_at, title: 'Clock Out', sub: fmtTime(t.clock_out_at) + (j ? ' • ' + j.name : '') });
+        }
+    });
+    DB.find('phase_logs', function (p) {
+        return p.user_id === state.currentUserId && p.started_at && p.started_at.slice(0, 10) === today && p.ended_at;
+    }).forEach(function (p) {
+        var mod = p.task_module_id ? DB.getById('task_modules', p.task_module_id) : null;
+        events.push({
+            at: p.started_at,
+            title: mod ? mod.task_name : 'Task',
+            sub: fmtTime(p.started_at) + ' – ' + fmtTime(p.ended_at),
+            mark: p.masons_mark,
+        });
+    });
+    events.sort(function (a, b) { return new Date(b.at) - new Date(a.at); });
+
+    var log = document.getElementById('activity-log');
+    log.innerHTML = events.length ? events.map(function (e, i) {
+        return '<div class="list-item"' + (i === events.length - 1 ? ' style="border-bottom:none;"' : '') + '>' +
+            '<div class="list-item-body">' +
+                '<div class="list-item-title">' + esc(e.title) + '</div>' +
+                '<div class="list-item-sub">' + esc(e.sub) + '</div>' +
+                (e.mark ? '<div class="list-item-detail" style="font-family:monospace;">Mark: ' + esc(e.mark.replace('sha256:', '').slice(0, 12)) + '&hellip;' + esc(e.mark.slice(-4)) + '</div>' : '') +
+            '</div>' +
+        '</div>';
+    }).join('') :
+        '<div class="list-item" id="activity-empty" style="border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">No activity recorded yet today.</div></div>';
+
+    // JIT Training list.
+    var modules = DB.find('training_modules', function (m) {
+        return !m.deleted_at && m.company_id === state.currentCompanyId;
+    });
+    var trainingHtml = modules.map(function (m, i) {
+        var mod = m.task_module_id ? DB.getById('task_modules', m.task_module_id) : null;
+        var viewed = DB.findOne('training_assignments', function (a) {
+            return a.user_id === state.currentUserId && a.module_id === m.id && a.viewed_at;
+        });
+        var title = m.title || (mod ? mod.task_name : 'Training Module');
+        return '<div class="card" style="margin-bottom:8px;' + (viewed ? ' cursor:default;' : '') + '"' +
+            (viewed ? '' : ' onclick="addActivity(\'task\')"') + '>' +
+            '<div class="card-row">' +
+                '<div class="card-body">' +
+                    '<div class="card-title">' + esc(title) + '</div>' +
+                    '<div class="card-subtitle">' + (viewed
+                        ? 'Watched ' + new Date(viewed.viewed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                        : 'Plays automatically when you start this task') + '</div>' +
+                '</div>' +
+                '<span class="badge badge-gray">' + (viewed ? 'Done' : 'Pending') + '</span>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+    document.getElementById('fc-training-list').innerHTML = trainingHtml;
+    if (!trainingHtml) document.getElementById('fc-training-header').style.display = 'none';
+
+    // Simulated kit-photo capture for the clock-out gate — same pattern as
+    // the PPE video: no real camera, but the gate is earned, not just ticked.
+    window.captureKitPhoto = function () {
+        var btn = document.getElementById('gate-kit-photo-btn');
+        var status = document.getElementById('gate-kit-photo-status');
+        if (!btn) return;
+        btn.disabled = true;
+        btn.textContent = 'Capturing…';
+        setTimeout(function () {
+            var box = document.getElementById('gate-kit-photo');
+            if (box) box.checked = true;
+            if (btn) { btn.disabled = false; btn.textContent = 'Retake'; }
+            if (status) status.textContent = 'Kit photo captured at '
+                + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        }, 900);
+    };
+})();
+</script>

@@ -51,7 +51,7 @@
 
     <div class="form-group">
         <label>Notes for Supervisor</label>
-        <textarea placeholder="Any discrepancies, overtime reasons, or notes..."></textarea>
+        <textarea id="rt-notes" placeholder="Any discrepancies, overtime reasons, or notes..."></textarea>
     </div>
 
     <div class="alert">
@@ -59,11 +59,15 @@
     </div>
 
     <button class="btn btn-primary" onclick="submitTimeSheet()">Submit Timesheet</button>
-    <button class="btn btn-secondary" onclick="loadPage('feild-clock')">Save Draft</button>
+    <button class="btn btn-secondary" onclick="saveTimesheetDraft()">Save Draft</button>
 </div>
 
 <script>
 (function () {
+    // Restore a draft note saved by saveTimesheetDraft() (or stashed by the
+    // scorecard-gate detour in submitTimeSheet).
+    if (state.timesheetNote) document.getElementById('rt-notes').value = state.timesheetNote;
+
     function fmtDate(iso) {
         return new Date(iso).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
     }

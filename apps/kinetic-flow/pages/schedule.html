@@ -91,10 +91,10 @@
         document.getElementById('schedule-day-list').innerHTML = events.map(function (e) {
             var job = e.job_id ? DB.getById('jobs', e.job_id) : null;
             var assignee = e.assigned_to ? DB.getById('users', e.assigned_to) : null;
-            var clickAttr = job ? ' onclick="openJob(\'' + job.id + '\')"' : '';
+            var clickAttr = job ? ' onclick="openJob(\'' + esc(job.id) + '\')"' : '';
             return '<div class="schedule-slot"' + clickAttr + '>' +
-                '<div class="slot-title">' + e.title + '</div>' +
-                '<div class="slot-time">' + fmtRange(e) + ' &bull; ' + (assignee ? assignee.full_name : 'Unassigned') + '</div>' +
+                '<div class="slot-title">' + esc(e.title) + '</div>' +
+                '<div class="slot-time">' + fmtRange(e) + ' &bull; ' + (assignee ? esc(assignee.full_name) : 'Unassigned') + '</div>' +
             '</div>';
         }).join('') || '<div style="font-size:0.8rem; color:#94a3b8; padding:8px 0;">No jobs scheduled</div>';
     }
@@ -129,10 +129,10 @@
 
         events.forEach(function (e) {
             var job = e.job_id ? DB.getById('jobs', e.job_id) : null;
-            var clickAttr = job ? ' onclick="openJob(\'' + job.id + '\')" style="cursor:pointer;"' : '';
+            var clickAttr = job ? ' onclick="openJob(\'' + esc(job.id) + '\')" style="cursor:pointer;"' : '';
             html += '<div' + clickAttr + '><div style="padding:8px 6px; border-bottom:1px solid #f1f5f9;">' +
-                '<div style="font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + e.title + '">' + e.title + '</div>' +
-                (job ? '<div style="color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + job.name + '</div>' : '') +
+                '<div style="font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + esc(e.title) + '">' + esc(e.title) + '</div>' +
+                (job ? '<div style="color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(job.name) + '</div>' : '') +
                 '</div></div>';
             weekIsos.forEach(function (iso) {
                 var active = e.start_date <= iso && e.end_date >= iso;
@@ -176,8 +176,64 @@
         render();
     };
 
+    // Real insert path: a bottom sheet that writes a schedule_events row the
+    // same shape as the seeded ones, defaulting to the selected day.
     window.showCreateSchedule = function () {
-        alert('Create schedule entry — form would open here.');
+        var existing = document.getElementById('schedule-create-modal');
+        if (existing) existing.remove();
+        var defaultDate = isoDateOnly(dateForDay(selectedDay));
+        var jobs = DB.find('jobs', function (j) { return j.company_id === state.currentCompanyId && !j.deleted_at; });
+        var jobOptions = '<option value="">No job (general)</option>' + jobs.map(function (j) {
+            return '<option value="' + esc(j.id) + '">' + esc(j.name) + '</option>';
+        }).join('');
+        var modal = document.createElement('div');
+        modal.id = 'schedule-create-modal';
+        modal.className = 'modal-overlay';
+        modal.innerHTML =
+            '<div class="modal-sheet">' +
+                '<div class="modal-handle"></div>' +
+                '<div class="page-title-sm mb-2">New Schedule Entry</div>' +
+                '<div class="form-group"><label>Title</label><input type="text" id="sc-title" placeholder="e.g. Rough Electrical — Unit 4"></div>' +
+                '<div class="form-group"><label>Job</label><select id="sc-job">' + jobOptions + '</select></div>' +
+                '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">' +
+                    '<div class="form-group"><label>Start</label><input type="date" id="sc-start" value="' + defaultDate + '"></div>' +
+                    '<div class="form-group"><label>End</label><input type="date" id="sc-end" value="' + defaultDate + '"></div>' +
+                '</div>' +
+                '<button class="btn btn-primary" onclick="saveScheduleEntry()">Add to Schedule</button>' +
+                '<button class="btn btn-secondary" onclick="closeCreateSchedule()">Cancel</button>' +
+            '</div>';
+        modal.addEventListener('click', function (e) { if (e.target === modal) window.closeCreateSchedule(); });
+        document.getElementById('phone').appendChild(modal);
+    };
+
+    window.closeCreateSchedule = function () {
+        var modal = document.getElementById('schedule-create-modal');
+        if (modal) modal.remove();
+    };
+
+    window.saveScheduleEntry = function () {
+        var title = (document.getElementById('sc-title').value || '').trim();
+        if (!title) { alert('Enter a title for the schedule entry.'); return; }
+        var start = document.getElementById('sc-start').value;
+        var end = document.getElementById('sc-end').value || start;
+        if (!start) { alert('Pick a start date.'); return; }
+        if (end < start) { alert('End date can\'t be before the start date.'); return; }
+        DB.insert('schedule_events', {
+            company_id: state.currentCompanyId,
+            branch_id: state.currentBranchId,
+            job_id: document.getElementById('sc-job').value || null,
+            bid_division_id: null,
+            task_module_id: null,
+            assigned_to: state.currentUserId,
+            title: title,
+            start_date: start,
+            end_date: end,
+            view_type: state.role === 'customer' ? 'customer' : 'worker',
+            color: '#2563eb',
+            status: 'scheduled',
+        });
+        window.closeCreateSchedule();
+        render();
     };
 
     renderDay('wed');

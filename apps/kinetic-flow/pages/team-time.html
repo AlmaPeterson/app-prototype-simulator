@@ -103,7 +103,8 @@
             return '<div class="list-item"' + (i === rows.length - 1 ? ' style="border-bottom:none;"' : '') + '>' +
                 '<div class="list-item-body">' +
                     '<div class="list-item-title">' + fmtDate(t.clock_in_at) + '</div>' +
-                    '<div class="list-item-sub">' + (job ? job.name : 'Unknown Job') + '</div>' +
+                    '<div class="list-item-sub">' + (job ? esc(job.name) : 'Unknown Job') + '</div>' +
+                    (t.worker_note ? '<div class="list-item-detail" style="font-style:italic; color:#475569;">&ldquo;' + esc(t.worker_note) + '&rdquo;</div>' : '') +
                 '</div>' +
                 '<div class="list-item-right">' +
                     '<div class="list-item-value">' + hrs.toFixed(1) + ' hrs</div>' +

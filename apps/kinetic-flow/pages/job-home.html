@@ -2,7 +2,9 @@
     <button class="btn btn-secondary btn-sm mb-4" onclick="loadPage('jobs')">&larr; Jobs</button>
 
     <div class="page-title" id="job-home-title">Job</div>
-    <div class="page-subtitle mb-4" id="job-home-subtitle">&nbsp;</div>
+    <!-- Sticky job context made visible: this is your job until you switch;
+         tapping just opens the jobs list — only picking another job changes it. -->
+    <div class="page-subtitle mb-4" id="job-home-subtitle" onclick="loadPage('jobs')" style="cursor:pointer;">&nbsp;</div>
 
     <button class="btn btn-primary mb-4" onclick="openFieldClock()">Clock In / Out</button>
 
@@ -37,7 +39,8 @@
     var bidBtn = document.getElementById('job-home-bid-btn');
 
     if (titleEl) titleEl.textContent = job ? job.name : 'No Job Selected';
-    if (subEl) subEl.textContent = isNoBid ? 'No Bid Yet' : 'Active';
+    if (subEl) subEl.innerHTML = (isNoBid ? 'No Bid Yet' : 'Active')
+        + ' &bull; <span style="color:#2563eb;">Switch job</span>';
     if (bidBtn) bidBtn.textContent = isNoBid ? '+ Create Bid' : 'View Bid';
 })();
 </script>
