@@ -44,3 +44,69 @@ This is where the task select should be, when click to record a task it should p
 ---
 
 
+## 2026-07-06T21:28:58.478Z
+
+- Screen: kinetic-flow — kits
+- Role: worker
+- Account: Existing Account
+- Phone size: 390 × 720
+
+If there are no kits there should be a button to take you to add kits
+
+---
+
+## 2026-07-06T21:30:12.999Z
+
+- Screen: kinetic-flow — companies
+- Role: worker
+- Account: Existing Account
+- Phone size: 390 × 720
+
+This needs to be data base drive, only show  companies your a part of.
+
+---
+
+## 2026-07-06T21:33:34.054Z
+
+- Screen: kinetic-flow — label-generator
+- Role: worker
+- Account: Existing Account
+- Phone size: 390 × 720
+
+This should not generate labels, in the future it will open another app that I made with the details of the labels. This page will also have saved templates and previews of labels from my other app
+
+---
+
+## 2026-07-06T21:45:55.326Z
+
+- Screen: kinetic-flow — feild-clock
+- Role: worker
+- Account: Existing Account
+- Phone size: 430 × 932
+
+The sumbit timesheet button should be changed to be a button that takes you to the daily score card that will then take you to review your time sheet, then sumbit it.
+
+---
+
+## 2026-07-06T21:46:54.844Z
+
+- Screen: kinetic-flow — feild-clock
+- Role: worker
+- Account: Existing Account
+- Phone size: 430 × 932
+
+Clockout button should be clearly disabled if checklist not complete
+
+---
+
+## 2026-07-06T21:48:31.477Z
+
+- Screen: kinetic-flow — feild-clock
+- Role: worker
+- Account: Existing Account
+- Phone size: 430 × 932
+
+When I try to open another app and go back to kinetic flow, it brings me back to the other app.
+
+---
+
