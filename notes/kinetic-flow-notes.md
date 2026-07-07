@@ -9,3 +9,13 @@ We got up figuring out how to do the tasks because we can't have it where you ha
 
 ---
 
+## 2026-07-07T18:06:02.508Z
+
+- Screen: kinetic-flow — job-home
+- Role: worker
+- Phone size: 390 × 720
+
+When I click the bug button then the pop-up shows in the center of the screen and my phone keyboard shows over it we need to make so you can type and still see the pop-up and it should move up when the keyboard opens.
+
+---
+
