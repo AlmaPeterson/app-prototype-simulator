@@ -71,6 +71,25 @@ header {
     color: white;
 }
 
+/* Test tools (account switcher + demo-data reset): the select adopts the
+   same look as the sibling .toggle-group buttons. */
+#test-tools select {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 600;
+    background: transparent;
+    color: #64748b;
+    max-width: 220px;
+}
+
+#btn-reset-data:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
 /* ── Phone Frame ── */
 #phone-wrap {
     display: flex;

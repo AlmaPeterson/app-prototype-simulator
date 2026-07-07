@@ -335,6 +335,51 @@ function setRole(role) {
     bootPhone();
 }
 
+// ── Header Test Tools ───────────────────────────────────────────────────────
+// "Sign in as…" dropdown: lists every seeded account (same source as the
+// sign-in page's email picker) and switches the session to the chosen one
+// instantly — no sign-out → sign-in round trip when checking a screen from a
+// different permission level.
+function populateHeaderAccountSwitch() {
+    const sel = document.getElementById('header-account-switch');
+    if (!sel) return;
+    ensureDbReady().then(function () {
+        const users = DB.find('users', function (u) { return !u.deleted_at; });
+        sel.innerHTML = '<option value="">Sign in as&hellip;</option>' + users.map(function (u) {
+            const position = accountPositionLabel(u);
+            return '<option value="' + esc(u.email) + '">'
+                + esc(u.full_name) + (position ? ' — ' + position : '')
+                + '</option>';
+        }).join('');
+    });
+}
+
+function headerSwitchAccount(email) {
+    const sel = document.getElementById('header-account-switch');
+    if (sel) sel.selectedIndex = 0; // snap back to the "Sign in as…" label
+    if (!email) return;
+    launchApp('kinetic-flow');
+    ensureDbReady().then(function () {
+        const user = DB.findOne('users', function (u) { return !u.deleted_at && u.email === email; });
+        if (!user) return;
+        // Customers have no accounts (tokenized link, not a login), so
+        // switching to a real account implies the worker flow — sync the
+        // header role buttons the same way restoreState() does.
+        if (state.role === 'customer') {
+            state.role = 'worker';
+            const workerBtn = document.getElementById('btn-worker');
+            const customerBtn = document.getElementById('btn-customer');
+            if (workerBtn) workerBtn.classList.add('active');
+            if (customerBtn) customerBtn.classList.remove('active');
+        }
+        // Fresh session for the new identity: the old account's back-stack
+        // and sticky job context would leak its screens otherwise.
+        pageHistory = [];
+        state.currentJobId = null;
+        afterSignIn(user);
+    });
+}
+
 // ── Auth Flow ───────────────────────────────────────────────────────────────
 // Passwordless by design: the password field on sign-in.html is decorative
 // only and is never read, checked, or stored anywhere in this file. Signing
@@ -1998,25 +2043,43 @@ function saveState() {
     } catch (e) { /* localStorage unavailable (private mode, quota, etc.) */ }
 }
 
-function restoreState() {
-    let saved;
-    try {
-        saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    } catch (e) {
-        saved = null;
-    }
-    if (!saved) return;
-
-    if (saved.state) Object.assign(state, saved.state);
-    // A snapshot from an older DB_VERSION or from before a schema change may
-    // be missing newly added tables, rows, or fields — using it would shadow
-    // the fresh seed data (e.g. all tasks showing Student because the old
-    // worker_task_competency rows were sparse). Discard it and let DB.load()
-    // re-fetch fresh seed data instead.
-    if (saved.db && saved.dbVersion === DB_VERSION && TABLES.every(function (t) { return saved.db[t]; })) {
+// A snapshot from an older DB_VERSION or from before a schema change may
+// be missing newly added tables, rows, or fields — using it would shadow
+// the fresh seed data (e.g. all tasks showing Student because the old
+// worker_task_competency rows were sparse). Discard it and let DB.load()
+// re-fetch fresh seed data instead.
+function restoreDbSnapshot(saved) {
+    if (saved && saved.db && saved.dbVersion === DB_VERSION && TABLES.every(function (t) { return saved.db[t]; })) {
         _tables = saved.db;
         _dbLoaded = true;
     }
+}
+
+function readSavedSnapshot() {
+    try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY));
+    } catch (e) {
+        return null;
+    }
+}
+
+// The header test controls (Sign in as… / populate) can fire before the app
+// has ever been opened this session, i.e. before start() has run
+// restoreState(). Populate the DB the same way start() would — from the
+// localStorage snapshot if a valid one exists, else fresh seeds — without
+// touching session state or the clock.
+function ensureDbReady() {
+    if (DB.isLoaded()) return Promise.resolve();
+    restoreDbSnapshot(readSavedSnapshot());
+    return DB.isLoaded() ? Promise.resolve() : DB.load();
+}
+
+function restoreState() {
+    const saved = readSavedSnapshot();
+    if (!saved) return;
+
+    if (saved.state) Object.assign(state, saved.state);
+    restoreDbSnapshot(saved);
 
     if (saved.clock && saved.clock.clockedIn) {
         clockedIn = true;
@@ -2079,6 +2142,7 @@ function activate() {
         state, DB, resetDemoData, esc, jsArg,
         loadPage, navTo, goBack,
         setAccountType, setRole,
+        populateHeaderAccountSwitch, headerSwitchAccount,
         signIn, afterSignIn, signOut, showSignUp, closeSignUp, submitAccount, goToSignIn,
         showAccountSearch, hideAccountSearch, filterAccountSearch, pickAccount, accountPositionLabel,
         showSabbathLock, hideSabbathLock,

@@ -24,6 +24,13 @@
                 <button id="btn-customer" onclick="setRole('customer')">Customer</button>
                 <button id="btn-supplier" onclick="setRole('supplier')">Supplier</button>
             </div>
+            <div class="toggle-group" id="test-tools">
+                <select id="header-account-switch" title="Kinetic Flow: instantly sign in as any seeded account"
+                        onfocus="populateHeaderAccountSwitch()" onchange="headerSwitchAccount(this.value)">
+                    <option value="">Sign in as&hellip;</option>
+                </select>
+                <button id="btn-reset-data" onclick="resetDemoData()" title="Kinetic Flow: discard every change and reload the original seed data">Reset Data</button>
+            </div>
             <div class="toggle-group" id="size-presets">
                 <button onclick="setPhoneSize(320, 568)">Mini</button>
                 <button onclick="setPhoneSize(390, 720)">Phone</button>
