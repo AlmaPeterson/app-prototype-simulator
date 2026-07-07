@@ -176,3 +176,14 @@ The schedule should only have work days.   You will not be able to complete task
 
 ---
 
+## 2026-07-07T15:26:17.053Z
+
+- Screen: OS home
+- Role: Customer
+- Account: Existing Account
+- Phone size: 390 × 720
+
+And the website header with the worker customer and supplier controls we should probably remove the supplier control because it should just be an account not a setting. And for the customer option if it is selected then this sign in should only show customer URLS that Show the customer's Floor plan and building details of materials used
+
+---
+
