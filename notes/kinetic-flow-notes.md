@@ -154,3 +154,14 @@ There should not be A different type of account for suppliers. before I said Sup
 
 ---
 
+## 2026-07-07T15:16:37.649Z
+
+- Screen: OS home
+- Role: Worker
+- Account: Existing Account
+- Phone size: 390 × 720
+
+When you switch between customer and worker or supplier in the header controls then it should log the previous user out so it doesn't Show the wrong page.
+
+---
+
