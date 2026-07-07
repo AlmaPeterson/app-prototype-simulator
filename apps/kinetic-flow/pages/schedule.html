@@ -10,8 +10,9 @@
     <!-- Week nav -->
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
         <button class="btn btn-secondary btn-sm" style="width:auto; padding:6px 12px;" onclick="shiftScheduleWeek(-1)" title="Previous week">&larr;</button>
+        <!-- Work days only (QA note): no Sunday — Kinetic Flow locks on the
+             day of rest, so nothing can be scheduled or completed then. -->
         <div style="display:flex; gap:6px;">
-            <div id="day-sun" class="chip" onclick="selectDay('sun')">Sun</div>
             <div id="day-mon" class="chip" onclick="selectDay('mon')">Mon</div>
             <div id="day-tue" class="chip" onclick="selectDay('tue')">Tue</div>
             <div id="day-wed" class="chip selected" onclick="selectDay('wed')">Wed</div>
@@ -42,12 +43,13 @@
 
 <script>
 (function () {
-    // Week anchored on the Sunday before the seeded schedule_events cluster
+    // Week anchored on the Monday before the seeded schedule_events cluster
     // (Jun 24 – Jul 8, 2026) so the day chips land on real data instead of
     // needing a "today" concept the seed data doesn't consistently support.
+    // Work days only: Monday–Saturday — Sunday is the locked day of rest.
     var WEEK_START = new Date('2026-06-29T00:00:00');
-    var DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-    var DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    var DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    var DAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     var weekOffset = 0;
     var selectedDay = 'wed';
     var viewMode = 'day';
@@ -109,7 +111,7 @@
         var events = DB.find('schedule_events', function (e) {
             return e.company_id === state.currentCompanyId
                 && e.view_type === viewType
-                && e.start_date <= weekIsos[6] && e.end_date >= weekIsos[0];
+                && e.start_date <= weekIsos[weekIsos.length - 1] && e.end_date >= weekIsos[0];
         }).sort(function (a, b) { return a.start_date < b.start_date ? -1 : 1; });
 
         var grid = document.getElementById('schedule-grid');
@@ -119,7 +121,7 @@
         }
 
         // Header row: blank task column + short day labels with dates.
-        var html = '<div style="display:grid; grid-template-columns:120px repeat(7, minmax(34px, 1fr)); min-width:380px; font-size:0.72rem;">';
+        var html = '<div style="display:grid; grid-template-columns:120px repeat(' + DAYS.length + ', minmax(34px, 1fr)); min-width:380px; font-size:0.72rem;">';
         html += '<div style="padding:8px 6px; border-bottom:1px solid #e2e8f0; font-weight:600;">Task</div>';
         DAYS.forEach(function (day, di) {
             var d = dateForDay(day);
