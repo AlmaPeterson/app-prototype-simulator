@@ -721,6 +721,10 @@ function renderPreviewMode(ctx, st) {
     for (let i = 0; i < totalLabels; i++) {
         const absoluteLabelIndex = st.previewPageIndex * labelsPerPage + i;
         const labelRowData = absoluteLabelIndex < dataState.rows.length ? dataState.rows[absoluteLabelIndex] : undefined;
+        // Once real CSV data is loaded, leave any slot past the last row
+        // blank (matches the PDF export) instead of repeating the master
+        // template on a partially-filled last page.
+        if (dataState.rows.length > 0 && labelRowData === undefined) continue;
         renderLabel(ctx, i, st, labelRowData, absoluteLabelIndex);
     }
 }
