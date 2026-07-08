@@ -102,7 +102,7 @@
             '<div class="list-item-title">' + m.name + (m.video_asset_id
                 ? ' <span style="cursor:pointer;" onclick="event.stopPropagation(); openMaterialVideo(\'' + m.id + '\')">&#127916;</span>'
                 : '') + '</div>' +
-            '<div class="list-item-sub">' + categoryFor(m) + ' &bull; ' + m.sku + ' &bull; ' + (m.location || 'shop') + '</div>' +
+            '<div class="list-item-sub">' + categoryFor(m) + (m.brand ? ' &bull; ' + esc(m.brand) : '') + ' &bull; ' + m.sku + ' &bull; ' + (m.location || 'shop') + '</div>' +
             '</div><div class="list-item-right">' + right + '</div></div>';
     }
 
@@ -271,6 +271,7 @@
                     '<div class="form-group"><label>SKU</label><input type="text" id="ii-sku" value="' + (m ? m.sku : '') + '" placeholder="ELE-PNL-200"></div>' +
                     '<div class="form-group"><label>Unit</label><input type="text" id="ii-unit" value="' + (m ? (m.unit || 'each') : 'each') + '"></div>' +
                 '</div>' +
+                '<div class="form-group"><label>Brand</label><input type="text" id="ii-brand" value="' + (m && m.brand ? esc(m.brand) : '') + '" placeholder="e.g. Milwaukee"></div>' +
                 '<div class="form-group"><label>Location</label><input type="text" id="ii-location" value="' + (m ? (m.location || 'shop') : 'shop') + '" placeholder="shop / truck_1 / trailer"></div>' +
                 '<div class="form-row">' +
                     '<div class="form-group"><label>In Stock</label><input type="number" id="ii-stock" min="0" step="1" value="' + (m ? m.stock_qty : 0) + '"></div>' +
@@ -301,6 +302,7 @@
             name: name,
             sku: (document.getElementById('ii-sku').value || '').trim().toUpperCase(),
             unit: (document.getElementById('ii-unit').value || 'each').trim(),
+            brand: (document.getElementById('ii-brand').value || '').trim() || null,
             location: (document.getElementById('ii-location').value || 'shop').trim(),
             stock_qty: Math.max(0, parseInt(document.getElementById('ii-stock').value, 10) || 0),
             reorder_qty: Math.max(0, parseInt(document.getElementById('ii-reorder').value, 10) || 0),

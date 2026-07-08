@@ -5,11 +5,11 @@
     <div class="page-subtitle mb-4">Select kits, tools, or materials and hand them off to the Label Maker app to design and print.</div>
 
     <!-- Templates saved here (uploaded .labeltemplate files + a preview
-         image) — opening one to design/print still hands off to the
-         separate Label Maker app once it's installed in this simulator. -->
+         image). Tap one to select it as the template for the items picked
+         below, then hand both off to Label Designer together. -->
     <div class="section-header">
         <span class="section-title">Saved Templates</span>
-        <span class="kit-row-count">tap to open, or upload a new one</span>
+        <span class="kit-row-count">tap to select, or upload a new one</span>
     </div>
     <div id="label-templates" style="display:flex; gap:10px; overflow-x:auto; padding-bottom:6px; margin-bottom:14px;"></div>
 
@@ -24,9 +24,13 @@
         <div class="flex-between">
             <div>
                 <div class="card-title" id="label-count">0 labels selected</div>
-                <div class="card-subtitle">One label per selected item.</div>
+                <div class="card-subtitle" id="label-template-status">No template selected — tap one above (optional)</div>
             </div>
         </div>
+        <label style="display:flex; align-items:center; gap:6px; font-size:0.78rem; color:#475569; margin-top:10px;">
+            <input type="checkbox" id="label-include-image" checked onchange="toggleIncludeImageColumn(this.checked)">
+            Include image filename column (e.g. "Cool Hammer" &rarr; cool-hammer.png)
+        </label>
         <div style="display:flex; gap:8px; margin-top:10px;">
             <button class="btn btn-secondary" style="margin:0;" onclick="clearLabelSelection()">Clear</button>
             <button class="btn btn-primary" style="margin:0;" onclick="sendToLabelMaker()">Open in Label Maker</button>
@@ -50,10 +54,11 @@
         kits.forEach(function (k) {
             var cat = k.category || 'Uncategorized';
             if (!byCat[cat]) { byCat[cat] = []; order.push(cat); }
-            var tools = DB.find('materials', function (m) { return m.kit_id === k.id && m.item_type === 'tool' && !m.deleted_at; })
-                .map(function (t) { return t.name; });
-            var materials = DB.find('materials', function (m) { return m.kit_id === k.id && m.item_type === 'material' && !m.deleted_at; })
-                .map(function (i) { return i.stock_qty && i.stock_qty !== 1 ? (i.name + ' (' + i.stock_qty + ')') : i.name; });
+            // Kept as full material rows (not pre-formatted strings) so a
+            // selected tool/material can carry its real sku/qty/id through to
+            // the Label Maker handoff — itemDisplayText() renders them.
+            var tools = DB.find('materials', function (m) { return m.kit_id === k.id && m.item_type === 'tool' && !m.deleted_at; });
+            var materials = DB.find('materials', function (m) { return m.kit_id === k.id && m.item_type === 'material' && !m.deleted_at; });
             byCat[cat].push({ id: k.id, name: k.name, tools: tools, materials: materials });
         });
         return order.map(function (name) { return { name: name, kits: byCat[name] }; });
@@ -83,7 +88,17 @@
 
     var CATEGORIES = loadCategories();
     var STANDALONE_GROUPS = loadStandaloneGroups();
-    var appState = { expandedCats: new Set(), expandedKits: new Set(), expandedLocations: new Set(), searchQuery: '' };
+    var appState = { expandedCats: new Set(), expandedKits: new Set(), expandedLocations: new Set(), searchQuery: '', selectedTemplateId: null, includeImageColumn: true };
+
+    window.toggleIncludeImageColumn = function (checked) { appState.includeImageColumn = checked; };
+
+    // "Cool Hammer" -> "cool-hammer" — a predictable slug so it can be
+    // matched against an image library filename (…png) inside Label
+    // Designer's own asset store. Non-alphanumeric runs (spaces, punctuation)
+    // collapse to a single hyphen.
+    function slugify(text) {
+        return String(text || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    }
     var selected = new Map(); // id -> label text
 
     function clearSearchInput() {
@@ -95,6 +110,34 @@
         var el = document.getElementById('label-count');
         var n = selected.size;
         el.textContent = n + ' label' + (n !== 1 ? 's' : '') + ' selected';
+        var statusEl = document.getElementById('label-template-status');
+        if (statusEl) {
+            var t = appState.selectedTemplateId ? DB.getById('label_templates', appState.selectedTemplateId) : null;
+            statusEl.textContent = t ? ('Template: ' + t.name) : 'No template selected — tap one above (optional)';
+        }
+    }
+
+    function itemDisplayText(row) {
+        return row.stock_qty && row.stock_qty !== 1 ? (row.name + ' (' + row.stock_qty + ')') : row.name;
+    }
+
+    // What gets handed off per selected item — one row per label, shaped as
+    // plain { ColumnName: value } so Label Designer can bind {Name}/{SKU}/…
+    // text placeholders directly, no schema negotiation needed on this end.
+    function materialRecord(row, extra) {
+        return Object.assign({
+            Name: row.name,
+            Brand: row.brand || '',
+            Type: row.item_type === 'tool' ? 'Tool' : 'Material',
+            SKU: row.sku || '',
+            Qty: row.stock_qty != null ? row.stock_qty : '',
+            Location: row.location || '',
+            QR: row.id,
+        }, extra);
+    }
+
+    function kitRecord(kit, categoryName) {
+        return { Name: kit.name, Type: 'Kit', Category: categoryName, QR: kit.id };
     }
 
     function itemGroupHtml(title, kind, ci, ki, items) {
@@ -103,12 +146,12 @@
             html += '<div class="kit-empty" style="padding-left:40px;">No ' + title.toLowerCase() + ' listed.</div>';
             return html;
         }
-        html += items.map(function (text, i) {
+        html += items.map(function (row, i) {
             var id = kind + '|' + ci + '|' + ki + '|' + i;
             var checked = selected.has(id) ? ' checked' : '';
             return '<div class="label-row label-row-item">' +
                 '<input type="checkbox"' + checked + ' class="label-checkbox" onclick="toggleLabelItem(\'' + kind + '\',' + ci + ',' + ki + ',' + i + ')">' +
-                '<span class="label-name">' + text + '</span></div>';
+                '<span class="label-name">' + esc(itemDisplayText(row)) + '</span></div>';
         }).join('');
         return html;
     }
@@ -255,7 +298,7 @@
     window.toggleLabelKit = function (ci, ki) {
         var id = 'K|' + ci + '|' + ki;
         if (selected.has(id)) selected.delete(id);
-        else selected.set(id, CATEGORIES[ci].kits[ki].name);
+        else selected.set(id, kitRecord(CATEGORIES[ci].kits[ki], CATEGORIES[ci].name));
         render();
     };
 
@@ -264,9 +307,10 @@
         if (selected.has(id)) {
             selected.delete(id);
         } else {
-            var kit = CATEGORIES[ci].kits[ki];
-            var text = kind === 'T' ? kit.tools[i] : kit.materials[i];
-            selected.set(id, text);
+            var cat = CATEGORIES[ci];
+            var kit = cat.kits[ki];
+            var row = kind === 'T' ? kit.tools[i] : kit.materials[i];
+            selected.set(id, materialRecord(row, { Kit: kit.name, Category: cat.name }));
         }
         render();
     };
@@ -283,7 +327,7 @@
             selected.delete(id);
         } else {
             var m = DB.getById('materials', materialId);
-            selected.set(id, m ? m.name : materialId);
+            if (m) selected.set(id, materialRecord(m, {}));
         }
         render();
     };
@@ -293,16 +337,46 @@
         render();
     };
 
-    // Handoff, not generation (QA note): label design/printing belongs to
-    // the separate Label Maker app. Until that app is installed in this
-    // simulator, the handoff is an honest stub.
+    // Resolves a saved template's raw .labeltemplate JSON, regardless of
+    // whether it's a seed file on disk or a user upload sitting in IndexedDB
+    // (see Assets in app.js) — same source downloadLabelTemplate() reads.
+    function resolveTemplateDesignJSON(templateId) {
+        var t = DB.getById('label_templates', templateId);
+        if (!t) return Promise.resolve(null);
+        var urlPromise = t.template_asset_id
+            ? Assets.url(t.template_asset_id)
+            : Promise.resolve('apps/kinetic-flow/db/' + t.template_path);
+        return urlPromise.then(function (url) {
+            if (!url) throw new Error('Template file not found.');
+            return fetch(url).then(function (r) { return r.json(); });
+        });
+    }
+
+    // Real handoff: stages the chosen template's design JSON (if any) plus
+    // one data record per selected kit/tool/material on a well-known window
+    // global, then opens Label Designer — its adapter (apps/label-designer/
+    // app.js) picks the handoff up in start() and loads it via the module's
+    // loadHandoff(). Both apps run in the same page/window (no iframes), so
+    // this is just a plain global rather than postMessage or a server round
+    // trip. Template is optional: with none selected, the designer still
+    // opens with the picked items as data the user can bind by hand.
     window.sendToLabelMaker = function () {
         if (selected.size === 0) {
             alert('Select at least one category, kit, tool, or material to label.');
             return;
         }
-        showToast('Label Maker Handoff', [selected.size + ' label' + (selected.size === 1 ? '' : 's')
-            + ' ready — this will open the Label Maker app once it’s installed in this simulator.'], '#1e40af');
+        var records = Array.from(selected.values()).map(function (r) {
+            return appState.includeImageColumn ? Object.assign({}, r, { Image: slugify(r.Name) + '.png' }) : r;
+        });
+        var templateId = appState.selectedTemplateId;
+        var designDone = templateId ? resolveTemplateDesignJSON(templateId) : Promise.resolve(null);
+        designDone.then(function (design) {
+            window.LabelDesignerHandoff = { design: design, records: records };
+            openApp('label-designer');
+        }).catch(function (err) {
+            console.error('Failed to load template for Label Maker handoff:', err);
+            alert('Could not load that template file. Try again or pick a different template.');
+        });
     };
 
     // Saved templates come from the real label_templates table now: the seed
@@ -311,15 +385,27 @@
     // seeds, IndexedDB Assets for uploads) — same asset split inventory.html
     // uses for photos/videos, so neither blows through localStorage's quota.
     function templateCardHtml(t) {
+        var isSelected = appState.selectedTemplateId === t.id;
         var preview = t.preview_image_asset_id
             ? '<img data-asset-id="' + t.preview_image_asset_id + '" style="width:100%; height:44px; object-fit:cover; border-radius:6px; margin-bottom:6px; background:#f1f5f9;" alt="">'
             : '<div style="border:1px dashed #cbd5e1; border-radius:6px; height:44px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:0.65rem; margin-bottom:6px;">Preview</div>';
-        return '<div class="card" style="min-width:130px; flex:0 0 auto; margin:0; cursor:pointer;" onclick="openTemplateActions(\'' + t.id + '\')">' +
+        return '<div class="card' + (isSelected ? ' card-selected' : '') + '" style="min-width:130px; flex:0 0 auto; margin:0; cursor:pointer; position:relative;" onclick="selectLabelTemplate(\'' + t.id + '\')">' +
+            '<button type="button" style="position:absolute; top:4px; right:4px; width:20px; height:20px; border:none; border-radius:50%; background:rgba(255,255,255,0.9); color:#64748b; font-size:0.85rem; line-height:1; cursor:pointer; padding:0;" title="Template options" onclick="event.stopPropagation(); openTemplateActions(\'' + t.id + '\')">&#8942;</button>' +
+            (isSelected ? '<div style="position:absolute; top:4px; left:4px; width:16px; height:16px; border-radius:50%; background:#2563eb; color:#fff; font-size:0.65rem; display:flex; align-items:center; justify-content:center;">&#10003;</div>' : '') +
             preview +
             '<div style="font-size:0.75rem; font-weight:600;">' + esc(t.name) + '</div>' +
             '<div style="font-size:0.68rem; color:#94a3b8;">' + esc(t.size_label || '') + '</div>' +
         '</div>';
     }
+
+    // Tapping a card selects it as the template for "Open in Label Maker"
+    // below (tap again to deselect); the small ⋯ button opens the actions
+    // sheet for download/remove without stealing the tap-to-select gesture.
+    window.selectLabelTemplate = function (templateId) {
+        appState.selectedTemplateId = appState.selectedTemplateId === templateId ? null : templateId;
+        renderTemplates();
+        renderFooter();
+    };
 
     function uploadTileHtml() {
         return '<div class="card" style="min-width:100px; flex:0 0 auto; margin:0; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px dashed #cbd5e1;" onclick="openUploadTemplatePanel()">' +
@@ -336,12 +422,6 @@
         el.innerHTML = rows.map(templateCardHtml).join('') + uploadTileHtml();
         hydrateAssetMedia(el);
     }
-
-    window.openLabelMakerForTemplate = function (templateId) {
-        var t = DB.getById('label_templates', templateId);
-        showToast('Label Maker Handoff', [(t ? '“' + t.name + '”' : 'This template')
-            + ' will open in the Label Maker app once it’s installed in this simulator.'], '#1e40af');
-    };
 
     window.downloadLabelTemplate = function (templateId) {
         var t = DB.getById('label_templates', templateId);
@@ -364,31 +444,94 @@
         var t = DB.getById('label_templates', templateId);
         if (!confirm('Remove ' + (t ? '“' + t.name + '”' : 'this template') + '? This can\'t be undone.')) return;
         DB.softDelete('label_templates', templateId);
+        if (appState.selectedTemplateId === templateId) appState.selectedTemplateId = null;
         var sheet = document.getElementById('lt-action-sheet');
         if (sheet) sheet.remove();
         renderTemplates();
+        renderFooter();
     };
+
+    // Reads which data columns a template's elements actually bind to, so a
+    // template can be checked against the fields Label Generator hands off
+    // (Name, Brand, SKU, Qty, Location, QR, Image…) before opening it.
+    // {ColumnName}/<ColumnName> text placeholders carry their real name, but
+    // this is a design-only file (no "data" section — see fileFormat.js), so
+    // an image/QR placeholder's binding is just a bare columnId with no name
+    // attached; those show up generically as "Image"/"QR" instead of a raw id.
+    function extractTemplateColumns(design) {
+        var VARIABLE_REGEX = /\{([^{}]+)\}|<([^<>]+)>/g;
+        var textColumns = [];
+        var needsImage = false;
+        var needsQr = false;
+
+        function scanElements(elements) {
+            (elements || []).forEach(function (el) {
+                if (el.type === 'text' && el.content) {
+                    var m;
+                    VARIABLE_REGEX.lastIndex = 0;
+                    while ((m = VARIABLE_REGEX.exec(el.content))) {
+                        var name = (m[1] || m[2] || '').trim();
+                        if (name && textColumns.indexOf(name) === -1) textColumns.push(name);
+                    }
+                } else if (el.type === 'placeholder') {
+                    if (el.placeholderType === 'image' && el.imageNameBinding) needsImage = true;
+                    if (el.placeholderType === 'qrCode' && el.qrValueBinding) needsQr = true;
+                }
+            });
+        }
+
+        var d = design && design.design;
+        if (d) {
+            scanElements(d.masterLabel && d.masterLabel.elements);
+            (d.labelOverrides || []).forEach(function (o) {
+                scanElements(o && o.override && o.override.additionalElements);
+            });
+        }
+        return { textColumns: textColumns, needsImage: needsImage, needsQr: needsQr };
+    }
+
+    function describeTemplateColumns(design) {
+        var cols = extractTemplateColumns(design);
+        var parts = cols.textColumns.slice();
+        if (cols.needsImage) parts.push('Image (filename)');
+        if (cols.needsQr) parts.push('QR (code value)');
+        return parts.length ? parts.join(', ') : 'No data-bound fields in this template.';
+    }
 
     window.openTemplateActions = function (templateId) {
         var t = DB.getById('label_templates', templateId);
         if (!t) return;
+        var isSelected = appState.selectedTemplateId === t.id;
         var existing = document.getElementById('lt-action-sheet');
         if (existing) existing.remove();
         var modal = document.createElement('div');
         modal.id = 'lt-action-sheet';
         modal.className = 'modal-overlay';
+        modal.setAttribute('data-template-id', t.id);
         modal.innerHTML =
             '<div class="modal-sheet">' +
                 '<div class="modal-handle"></div>' +
                 '<div class="page-title-sm mb-2">' + esc(t.name) + '</div>' +
-                '<div class="card-subtitle mb-4">' + esc(t.size_label || '') + '</div>' +
-                '<button class="btn btn-primary" onclick="document.getElementById(\'lt-action-sheet\').remove(); openLabelMakerForTemplate(\'' + t.id + '\')">Open in Label Maker</button>' +
+                '<div class="card-subtitle mb-2">' + esc(t.size_label || '') + '</div>' +
+                '<div class="card-subtitle mb-4"><strong>Columns used:</strong> <span id="lt-columns-info">loading…</span></div>' +
+                '<button class="btn btn-primary" onclick="document.getElementById(\'lt-action-sheet\').remove(); selectLabelTemplate(\'' + t.id + '\')">' + (isSelected ? 'Deselect Template' : 'Use for Selected Items') + '</button>' +
                 '<button class="btn btn-outline" onclick="downloadLabelTemplate(\'' + t.id + '\')">Download Template File</button>' +
                 '<button class="btn btn-secondary" style="color:#dc2626;" onclick="removeLabelTemplate(\'' + t.id + '\')">Remove Template</button>' +
                 '<button class="btn btn-secondary" onclick="document.getElementById(\'lt-action-sheet\').remove()">Cancel</button>' +
             '</div>';
         modal.addEventListener('click', function (e) { if (e.target === modal) modal.remove(); });
         document.getElementById('phone').appendChild(modal);
+
+        resolveTemplateDesignJSON(t.id).then(function (design) {
+            var sheet = document.getElementById('lt-action-sheet');
+            var infoEl = document.getElementById('lt-columns-info');
+            if (!sheet || sheet.getAttribute('data-template-id') !== t.id || !infoEl) return;
+            infoEl.textContent = describeTemplateColumns(design);
+        }).catch(function (err) {
+            console.error('Failed to read template columns:', err);
+            var infoEl = document.getElementById('lt-columns-info');
+            if (infoEl) infoEl.textContent = 'Could not read this template’s fields.';
+        });
     };
 
     // Upload flow — file staged here until Save, same pattern as

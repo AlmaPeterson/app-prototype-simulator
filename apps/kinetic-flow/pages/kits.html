@@ -380,7 +380,8 @@
                 '<div class="form-group"><label>' + (kind === 'video' ? 'Video Title (optional)' : 'Name') + '</label>' +
                     '<input type="text" id="ka-name" placeholder="' + (kind === 'video' ? 'e.g. Panel Swap Walkthrough' : 'e.g. Torpedo Level') + '"></div>' +
                 (kind !== 'video'
-                    ? '<div class="form-group"><label>Quantity</label><input type="number" id="ka-qty" min="1" step="1" value="1"></div>'
+                    ? '<div class="form-group"><label>Brand</label><input type="text" id="ka-brand" placeholder="e.g. Milwaukee"></div>' +
+                      '<div class="form-group"><label>Quantity</label><input type="number" id="ka-qty" min="1" step="1" value="1"></div>'
                     : '<div class="form-group"><label>Video File</label><input type="file" id="ka-video-file" accept="video/*"></div>') +
                 '<button class="btn btn-primary mt-2" onclick="saveKitEntry(\'' + kind + '\')">Add</button>' +
                 '<button class="btn btn-secondary" onclick="document.getElementById(\'kit-add-panel\').remove()">Cancel</button>' +
@@ -395,10 +396,11 @@
         if (kind === 'tool' || kind === 'material') {
             if (!name) { alert('Enter a name.'); return; }
             var qty = parseInt(document.getElementById('ka-qty').value, 10) || 1;
+            var brand = (document.getElementById('ka-brand').value || '').trim();
             DB.insert('materials', {
                 company_id: kit.company_id, name: name, sku: null, unit: 'each', unit_cost: 0,
                 stock_qty: qty, reorder_qty: 0, location: kit.id, kit_id: kit.id, item_type: kind,
-                image_asset_id: null, video_asset_id: null, brand: null, image_url: null, reference_url: null,
+                image_asset_id: null, video_asset_id: null, brand: brand || null, image_url: null, reference_url: null,
             });
             document.getElementById('kit-add-panel').remove();
             render();
@@ -481,6 +483,7 @@
                     '<input type="file" id="ke-photo-input" accept="image/*" style="display:none;" onchange="handleKitItemPhotoChange(this)">' +
                 '</div>' +
                 '<div class="form-group"><label>Name</label><input type="text" id="ke-name"></div>' +
+                '<div class="form-group"><label>Brand</label><input type="text" id="ke-brand" placeholder="e.g. Milwaukee"></div>' +
                 '<div class="form-group"><label>Quantity</label><input type="number" id="ke-qty" min="1" step="1"></div>' +
                 '<button class="btn btn-primary mt-2" onclick="saveKitItemEdit(\'' + kind + '\',\'' + id + '\')">Save</button>' +
                 '<button class="btn btn-outline" style="color:#dc2626; border-color:#fca5a5;" onclick="removeKitItem(\'' + kind + '\',\'' + id + '\')">Remove from Kit</button>' +
@@ -491,6 +494,7 @@
         hydrateAssetMedia(modal);
         // Set values via the DOM (not the HTML string) so names with quotes render intact.
         document.getElementById('ke-name').value = row.name || '';
+        document.getElementById('ke-brand').value = row.brand || '';
         document.getElementById('ke-qty').value = row.stock_qty || 1;
     };
 
@@ -499,7 +503,8 @@
         if (!name) { alert('Enter a name.'); return; }
         var qty = parseInt(document.getElementById('ke-qty').value, 10);
         if (!qty || qty < 1) qty = 1;
-        var patch = { name: name, stock_qty: qty };
+        var brand = (document.getElementById('ke-brand').value || '').trim();
+        var patch = { name: name, stock_qty: qty, brand: brand || null };
 
         function finish(imageAssetId) {
             if (imageAssetId !== undefined) patch.image_asset_id = imageAssetId;
