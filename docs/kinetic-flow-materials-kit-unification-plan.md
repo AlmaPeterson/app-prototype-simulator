@@ -177,17 +177,28 @@ string, disconnected from its "real" counterpart (if one even exists) in Invento
   `materials.filter(m => m.kit_id === k.id)`.
 - `loadStandaloneGroups()`: simplifies the same way as kits.html's standalone view.
 
-### E. `apps/kinetic-flow/pages/inventory.html`
-- Add supplier scoping: when `userIsSupplier()`, filter `loadMaterials()` to
-  `location === 'shop'` only (confirmed: not trucks, not trailer, not kit-owned;
-  `location === 'shop'` still works fine as a filter even though the field is no
-  longer a closed enum, since kit ids never equal `'shop'`).
-- Still unresolved (open question #4): list UX once kit-owned rows are included —
-  needs actual design, not just a query change. Solve during implementation.
-- Any other UI that renders `location` as one of the four fixed enum values (e.g.
-  a location filter dropdown) needs to either exclude kit-owned rows or render the
-  kit's name for kit-id locations — check `inventory.html` and `label-generator.html`
-  for these.
+### E. `apps/kinetic-flow/pages/inventory.html` — BUILT 2026-07-08
+- Resolved open question #4: `loadMaterials()` now excludes kit-owned rows
+  entirely (`!m.kit_id`) rather than trying to badge/tab them in — kit-owned
+  items already have a full editor on `kits.html` (photo upload included), so
+  Inventory just goes back to being standalone-stock-only, matching its
+  pre-migration behavior. Page subtitle got a one-line pointer ("kit contents
+  are managed from Kits") so the narrower list doesn't read as data loss.
+  Total item count dropped from 236 back to 80, confirmed via Playwright.
+- Supplier scoping added in the same `loadMaterials()` filter: when
+  `userIsSupplier()`, additionally require `location === 'shop'`. Verified
+  `supplier@kineticflow.com` sees exactly the 11 shop-located standalone
+  items, `master@kineticflow.com` sees all 80.
+- Location-enum audit: turned out to be a non-issue once the `!m.kit_id`
+  filter went in — every other place that reads `.location` as one of the
+  four fixed values (`kits.html`'s standalone view, `label-generator.html`'s
+  standalone groups) was *already* scoped to standalone-only rows via
+  `loadStandaloneMaterials()`/`loadStandaloneGroups()`, so a kit-id
+  `location` value was never actually reachable there. `inventory.html`'s
+  free-text Location input on the item-edit panel is unaffected since that
+  panel only ever opens for standalone rows now.
+- New inventory items now get explicit `kit_id: null, item_type: 'material'`
+  on insert, for schema consistency with every other `materials` row.
 
 ### F. Restocking — checklist only, no new build
 - Decided: checklist tier only for this pass (kit lists required items/quantities,

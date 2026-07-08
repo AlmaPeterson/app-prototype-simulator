@@ -2,7 +2,7 @@
     <div class="flex-between mb-4">
         <div>
             <div class="page-title">Inventory</div>
-            <div class="page-subtitle">Stock &amp; Supplies</div>
+            <div class="page-subtitle">Stock &amp; Supplies &bull; kit contents are managed from Kits</div>
         </div>
         <button class="btn btn-primary btn-sm" onclick="addInventoryItem()">+ Add</button>
     </div>
@@ -54,9 +54,17 @@
 
     var appState = { activeTab: 'All', searchQuery: '' };
 
+    // Kit-owned rows (kit_id set) are browsed/edited from Kits, not here —
+    // this page is standalone stock only, matching how it worked before
+    // kit_tools/kit_items folded into materials (see docs/kinetic-flow-
+    // materials-kit-unification-plan.md section E). Suppliers only restock
+    // the shop, so their scope narrows further to location === 'shop' (not
+    // trucks or trailer).
     function loadMaterials() {
         return DB.find('materials', function (m) {
-            return m.company_id === state.currentCompanyId && !m.deleted_at;
+            if (m.company_id !== state.currentCompanyId || m.deleted_at || m.kit_id) return false;
+            if (userIsSupplier() && m.location !== 'shop') return false;
+            return true;
         });
     }
 
@@ -311,7 +319,7 @@
             if (materialId) {
                 DB.update('materials', materialId, patch);
             } else {
-                DB.insert('materials', Object.assign({ company_id: state.currentCompanyId }, patch));
+                DB.insert('materials', Object.assign({ company_id: state.currentCompanyId, kit_id: null, item_type: 'material' }, patch));
             }
             closeItemPanel();
             refresh();
