@@ -36,4 +36,10 @@ const APPS = [
         icon: '🏷️',
         script: 'apps/label-designer/app.js',
     },
+    {
+        id: 'tool-rentals',
+        name: 'ToolYard Rentals',
+        icon: '🧰',
+        script: 'apps/tool-rentals/app.js',
+    },
 ];
