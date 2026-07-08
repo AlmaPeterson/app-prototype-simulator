@@ -17,7 +17,7 @@ const STORAGE_KEY = 'kineticFlow.state';
 // Bump whenever db/*.json seed data or table shapes change: restoreState()
 // discards localStorage DB snapshots from older versions and re-fetches the
 // fresh seeds, so users don't need a manual "Reset Demo Data".
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 // ── App State ──────────────────────────────────────────────────────────────
 const state = {
@@ -1021,14 +1021,31 @@ function submitJob() {
 // and reseeding an in-memory window.bidData blob every time. Once created, a
 // job keeps the same bids row (linked via jobs.bid_id) for its whole life —
 // reopening "View Bid" always resumes the same draft/sent/signed record.
+// Auto-generated, human-readable bid number (QA note: "make it auto-generate
+// a bid number"): BID-<year>-<seq>, sequenced per company. Counts every bids
+// row including soft-deleted ones so a number is never reused after a delete.
+function nextBidNumber() {
+    const seq = DB.find('bids', function (b) { return b.company_id === state.currentCompanyId; }).length + 1;
+    return 'BID-' + new Date().getFullYear() + '-' + String(seq).padStart(3, '0');
+}
+
+// Expiration is how long the *quoted price* stays valid (material prices and
+// crew availability go stale), not how long the job takes — so it's a fixed
+// validity window from the bid date, standard 30 days.
+const BID_VALIDITY_DAYS = 30;
+
 function openBid() {
     const job = DB.getById('jobs', state.currentJobId);
     let bid = job.bid_id ? DB.getById('bids', job.bid_id) : null;
     if (!bid) {
+        const expires = new Date();
+        expires.setDate(expires.getDate() + BID_VALIDITY_DAYS);
         bid = DB.insert('bids', {
             company_id: state.currentCompanyId, branch_id: state.currentBranchId,
             customer_id: job.customer_id, address_id: job.address_id,
             title: job.name + ' — Bid', status: 'draft',
+            bid_number: nextBidNumber(),
+            expires_at: expires.toISOString().slice(0, 10),
             total_labor: 0, total_materials: 0, total_cost: 0,
             created_by: state.currentUserId, sent_at: null, signed_at: null,
             signature_url: null, notes: null,
@@ -1137,6 +1154,21 @@ function sendBidToCustomer() {
         [gotPdf ? 'PDF downloaded — that document is what the customer receives. (Demo — no real email/text goes out.)'
                 : 'Marked sent, but the PDF library didn\'t load — check your connection and re-send for the document.'],
         '#1e40af');
+}
+
+// "Download PDF" on bid-proposal.html for already-sent bids (QA note:
+// "instead of resending the bid it should be a download PDF button") — same
+// document as sendBidToCustomer, but a pure download: no status change, no
+// sent_at re-stamp.
+function downloadBidPdf() {
+    if (!state.currentBidId) return;
+    const bid = DB.getById('bids', state.currentBidId);
+    if (!bid) return;
+    if (generateBidPdf(bid)) {
+        showToast('PDF Downloaded', ['Same document the customer received — print it or attach it from your phone.'], '#1e40af');
+    } else {
+        showToast('PDF Not Generated', ['The PDF library didn\'t load — check your connection and try again.'], '#b91c1c');
+    }
 }
 
 // Recomputes a bid's total_labor/total_materials/total_cost from its
@@ -1528,8 +1560,28 @@ function closeTaskSelectModal() {
     if (modal) modal.remove();
 }
 
+// True when this task's training was watched today or yesterday — the
+// "watch the videos the day before" QA note. A fresh watch satisfies the
+// on-site video gate (selectClockInTask skips straight past it); anything
+// older still re-plays, per the reference doc's required-every-time rule.
+function trainingFreshlyViewed(taskModuleId) {
+    const module = DB.findOne('training_modules', function (m) { return m.task_module_id === taskModuleId; });
+    if (!module) return false;
+    const assignment = DB.findOne('training_assignments', function (a) {
+        return a.user_id === state.currentUserId && a.module_id === module.id && a.viewed_at;
+    });
+    if (!assignment) return false;
+    const viewedDay = assignment.viewed_at.slice(0, 10);
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    return viewedDay === today || viewedDay === yesterday;
+}
+
 function selectClockInTask(taskModuleId, level, isHighHazard) {
     closeTaskSelectModal();
+    // A prep watch abandoned via Back would otherwise hijack this chain's
+    // trainingVideoComplete() into the prep branch.
+    state.prepWatch = null;
     const taskModule = DB.getById('task_modules', taskModuleId);
     state.clockInTask = {
         taskModuleId: taskModuleId,
@@ -1537,6 +1589,22 @@ function selectClockInTask(taskModuleId, level, isHighHazard) {
         level: level,
         isHighHazard: !!isHighHazard,
     };
+    // Pre-watched last night (or earlier today)? The video gate is already
+    // satisfied — jump straight to the competency branch (co-sign / PPE /
+    // start) so the on-site morning starts with work, not videos.
+    if (trainingFreshlyViewed(taskModuleId)) {
+        trainingVideoComplete();
+        return;
+    }
+    loadPage('training-video');
+}
+
+// "Prep for Tomorrow" on job-home: watch an upcoming task's training video
+// the night before. Records the same training_assignments trail as the
+// on-site gate, which then skips the video for a day (trainingFreshlyViewed).
+function openPrepVideo(taskModuleId) {
+    const taskModule = DB.getById('task_modules', taskModuleId);
+    state.prepWatch = { taskModuleId: taskModuleId, name: taskModule ? taskModule.task_name : 'Task' };
     loadPage('training-video');
 }
 
@@ -1558,10 +1626,10 @@ function proceedPastGates() {
 // task_module necessarily has one) and records/updates a training_assignments
 // row so there's a real persisted trail of "this user watched this training"
 // alongside the phase_logs.video_completion_verified flag set at clock-in.
-function recordTrainingCompletion() {
-    const task = state.clockInTask || {};
-    if (!task.taskModuleId) return;
-    const module = DB.findOne('training_modules', function (m) { return m.task_module_id === task.taskModuleId; });
+function recordTrainingCompletion(taskModuleId) {
+    const tmId = taskModuleId || (state.clockInTask || {}).taskModuleId;
+    if (!tmId) return;
+    const module = DB.findOne('training_modules', function (m) { return m.task_module_id === tmId; });
     if (!module) return; // no matching training module — nothing to record
     const now = new Date().toISOString();
     const existing = DB.findOne('training_assignments', function (a) {
@@ -1584,6 +1652,15 @@ function recordTrainingCompletion() {
 }
 
 function trainingVideoComplete() {
+    // Prep mode (watched from job-home's Prep for Tomorrow, no task being
+    // started): record the watch and go back — no competency gates involved.
+    if (state.prepWatch) {
+        recordTrainingCompletion(state.prepWatch.taskModuleId);
+        state.prepWatch = null;
+        loadPage('job-home');
+        showToast('Training Watched', ['Recorded — start this task tomorrow without re-watching the video.'], '#1e40af');
+        return;
+    }
     const task = state.clockInTask || {};
     const levelInfo = window.COMPETENCY_LEVELS.find(function (c) { return c.slug === task.level; });
     const requiresCosign = !!(levelInfo && levelInfo.requiresCosign);
@@ -1597,6 +1674,9 @@ function trainingVideoComplete() {
         const btn = document.getElementById('tv-continue-btn');
         if (status) status.textContent = 'Not cleared to perform this task solo yet.';
         if (btn) btn.outerHTML = '<button class="btn btn-secondary" onclick="loadPage(\'field-clock\')">Back to Field Clock</button>';
+        // Reached via the pre-watched skip (no training-video page in the
+        // DOM): surface the dead-end as a toast instead.
+        if (!status) showToast('Not Cleared', ['You\'re not cleared to perform this task solo yet.'], '#b91c1c');
     }
 }
 
@@ -2442,12 +2522,13 @@ function activate() {
         LEVELS, COMPETENCY_LEVELS, companyDivisions,
         openCompanyDivisions,
         openJob, createJob, submitJob,
-        openBid, submitBid, recalcBidTotals, sendBidToCustomer,
+        openBid, submitBid, recalcBidTotals, sendBidToCustomer, downloadBidPdf, nextBidNumber,
         openDivision, saveDivision, previewProposal,
         openSchedule, openTimeSheet, openKits, openLabelGenerator, openFieldClock, openInventory,
         openScorecard, openMyScorecard, submitScorecard, isManagerOrAdmin, pendingSelfScorecard,
         computeProductionSpeed,
         openTaskSelect, closeTaskSelectModal, selectClockInTask, trainingVideoComplete, showCoSignModal, closeCoSignModal, confirmCoSign,
+        openPrepVideo, trainingFreshlyViewed,
         recordPpeVideo, ppeVideoComplete,
         toggleClock, addActivity,
         openMaterialLog, closeMaterialModal, saveMaterialLog,

@@ -177,10 +177,13 @@
     document.getElementById('prop-signer-company').textContent = company ? company.name : '';
     document.getElementById('prop-signer-name').textContent = (state.currentUser && state.currentUser.name) || '—';
 
-    // Already-sent bids re-send (sendBidToCustomer keeps the lifecycle state).
+    // Already-sent bids get a plain "Download PDF" instead of a re-send (QA
+    // note): the proposal already went out and its sent_at/status should
+    // stand — you just need the document again.
     if (bid.status === 'sent' || bid.status === 'signed') {
-        document.getElementById('prop-send-btn').textContent =
-            'Re-Send to Customer (sent ' + fmtDate(bid.sent_at) + ')';
+        var sendBtn = document.getElementById('prop-send-btn');
+        sendBtn.textContent = 'Download PDF (sent ' + fmtDate(bid.sent_at) + ')';
+        sendBtn.setAttribute('onclick', 'downloadBidPdf()');
     }
 
 })();

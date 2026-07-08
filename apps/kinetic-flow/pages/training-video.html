@@ -16,10 +16,15 @@
 
 <script>
 (function () {
-    var task = (typeof state !== 'undefined' && state.clockInTask) || { name: 'Task', level: 'student' };
+    // Prep mode (opened from job-home's Prep for Tomorrow) reuses this same
+    // player — different framing, no "cannot be skipped" gate language.
+    var prep = (typeof state !== 'undefined' && state.prepWatch) || null;
+    var task = prep || (typeof state !== 'undefined' && state.clockInTask) || { name: 'Task', level: 'student' };
 
     var titleEl = document.getElementById('tv-title');
-    if (titleEl) titleEl.textContent = task.name + ' — Safety Training';
+    if (titleEl) titleEl.textContent = task.name + (prep ? ' — Training' : ' — Safety Training');
+    var subEl = document.getElementById('tv-subtitle');
+    if (prep && subEl) subEl.textContent = 'Watching now counts: tomorrow you can start this task on-site without re-watching the video.';
 
     var bar = document.getElementById('tv-progress');
     var status = document.getElementById('tv-status');

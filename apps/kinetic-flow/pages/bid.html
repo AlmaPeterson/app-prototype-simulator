@@ -94,7 +94,7 @@
                 <input type="number" id="sched-build" min="0">
             </div>
         </div>
-        <p style="font-size:0.75rem; color:#64748b; margin:6px 0 0 0;">On-site days auto-sum from division sheets. Override here if needed.</p>
+        <p style="font-size:0.75rem; color:#64748b; margin:6px 0 0 0;">On-site days auto-sum from division sheets; est. completion auto-calculates from start + procurement + on-site working days (Mon&ndash;Sat). Override either if needed.</p>
     </div>
 
     <!-- Schedule of Payments -->
@@ -155,6 +155,21 @@
 
     var bidId = state.currentBidId;
     var bid   = DB.getById('bids', bidId);
+
+    // Backfill the auto-generated fields on bids created before they existed
+    // (seeded/legacy rows) — new bids get both at creation in openBid().
+    // Expiration = bid date + 30 days: it's how long the quoted *price* stays
+    // valid, not how long the job takes.
+    if (!bid.bid_number) {
+        DB.update('bids', bidId, { bid_number: nextBidNumber() });
+        bid = DB.getById('bids', bidId);
+    }
+    if (!bid.expires_at) {
+        var exp = new Date((isoDate(bid.created_at) || new Date().toISOString().slice(0, 10)) + 'T12:00:00');
+        exp.setDate(exp.getDate() + 30);
+        DB.update('bids', bidId, { expires_at: exp.toISOString().slice(0, 10) });
+        bid = DB.getById('bids', bidId);
+    }
     var job   = DB.getById('jobs', state.currentJobId);
     var customer = bid.customer_id ? DB.getById('customers', bid.customer_id) : null;
     var address  = bid.address_id ? DB.getById('addresses', bid.address_id) : null;
@@ -215,10 +230,45 @@
     document.getElementById('hdr-email').addEventListener('input', function () {
         if (customer) DB.update('customers', customer.id, { email: this.value });
     });
-    document.getElementById('sched-start').addEventListener('input', function () { DB.update('bids', bidId, { start_date: this.value }); });
+    // ── Est. completion auto-calc ─────────────────────────────────────────
+    // completion = start + procurement + on-site days, counting Mon–Sat as
+    // working days (Sunday off). On-site days fall back to the auto-sum from
+    // the division sheets when the override field is blank — same rule
+    // bid-proposal.html uses. Recomputed whenever start/procurement/on-site
+    // or the division list changes; the field stays hand-editable, and a
+    // manual date holds until one of those inputs changes again.
+    function autoOnsiteDays() {
+        var rows = DB.find('bid_divisions', function (d) { return d.bid_id === bidId && !d.deleted_at; });
+        return rows.reduce(function (sum, row) {
+            var hours = DB.find('bid_line_items', function (li) {
+                return li.bid_division_id === row.id && !li.deleted_at && li.type === 'labor' && li.task_included !== false;
+            }).reduce(function (s, li) { return s + (li.quantity || 0); }, 0);
+            var guys = (row.form_data && row.form_data.guys) || 1;
+            return sum + Math.ceil(hours / (8 * guys));
+        }, 0);
+    }
+    function addWorkDays(iso, days) {
+        var d = new Date(iso + 'T12:00:00');
+        var left = days;
+        while (left > 0) {
+            d.setDate(d.getDate() + 1);
+            if (d.getDay() !== 0) left--;
+        }
+        return d.toISOString().slice(0, 10);
+    }
+    function recalcCompletion() {
+        var start = document.getElementById('sched-start').value;
+        if (!start) return;
+        var proc  = +document.getElementById('sched-proc').value  || 0;
+        var build = +document.getElementById('sched-build').value || autoOnsiteDays();
+        var end = addWorkDays(start, proc + build);
+        document.getElementById('sched-end').value = end;
+        DB.update('bids', bidId, { completion_date: end });
+    }
+    document.getElementById('sched-start').addEventListener('input', function () { DB.update('bids', bidId, { start_date: this.value }); recalcCompletion(); });
     document.getElementById('sched-end').addEventListener('input', function () { DB.update('bids', bidId, { completion_date: this.value }); });
-    document.getElementById('sched-proc').addEventListener('input', function () { DB.update('bids', bidId, { procurement_days: +this.value || 0 }); });
-    document.getElementById('sched-build').addEventListener('input', function () { DB.update('bids', bidId, { construction_days: +this.value || 0 }); });
+    document.getElementById('sched-proc').addEventListener('input', function () { DB.update('bids', bidId, { procurement_days: +this.value || 0 }); recalcCompletion(); });
+    document.getElementById('sched-build').addEventListener('input', function () { DB.update('bids', bidId, { construction_days: +this.value || 0 }); recalcCompletion(); });
     document.getElementById('pay-m1').addEventListener('input', function () { DB.update('bids', bidId, { milestone_1: this.value }); });
     document.getElementById('pay-m2').addEventListener('input', function () { DB.update('bids', bidId, { milestone_2: this.value }); });
 
@@ -322,10 +372,14 @@
         }
         renderDivList();
         recalc();
+        recalcCompletion();
     };
 
     renderDivList();
     recalc();
+    // Only fill, never clobber, on plain page load — a hand-set completion
+    // date survives navigation; edits to the schedule inputs re-derive it.
+    if (!bid.completion_date) recalcCompletion();
 
 })();
 </script>

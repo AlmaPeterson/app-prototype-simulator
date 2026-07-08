@@ -8,6 +8,18 @@
 
     <button class="btn btn-primary mb-4" id="job-home-clock-btn" onclick="openFieldClock()">Clock In / Out</button>
 
+    <!-- Prep for Tomorrow (QA note): training videos for this job's upcoming
+         scheduled tasks, watchable the night before. A fresh watch (today or
+         yesterday) satisfies the on-site video gate, so the next work day
+         starts with the task itself, not a video. -->
+    <div id="prep-section" style="display:none; margin-bottom:16px;">
+        <div class="section-header">
+            <span class="section-title">Prep for Tomorrow</span>
+        </div>
+        <p style="font-size:0.78rem; color:#64748b; margin:0 0 8px 0;">Watch tonight &mdash; start the task on-site without stopping for videos.</p>
+        <div id="prep-list"></div>
+    </div>
+
     <div class="section-header">
         <span class="section-title">Quick Actions</span>
     </div>
@@ -45,5 +57,49 @@
     if (subEl) subEl.innerHTML = (isNoBid ? 'No Bid Yet' : 'Active')
         + ' &bull; <span style="color:#2563eb;">Switch job</span>';
     if (bidBtn) bidBtn.textContent = isNoBid ? '+ Create Bid' : 'View Bid';
+
+    // ── Prep for Tomorrow ────────────────────────────────────────────────
+    // This job's scheduled tasks that aren't complete yet and have a
+    // training video. Prefer the signed-in user's own assignments; if none
+    // are theirs, show the job's upcoming tasks anyway (in the demo seed
+    // most events belong to other role accounts, and an empty section
+    // teaches nothing). "Upcoming, not complete" rather than strictly
+    // tomorrow's date, for the same reason.
+    if (job && !userIsSupplier()) {
+        var events = DB.find('schedule_events', function (e) {
+            return !e.deleted_at && e.job_id === job.id && e.task_module_id && e.status !== 'complete';
+        });
+        var mine = events.filter(function (e) { return e.assigned_to === state.currentUserId; });
+        if (mine.length) events = mine;
+
+        var today = new Date().toISOString().slice(0, 10);
+        var cards = events.map(function (e) {
+            var training = DB.findOne('training_modules', function (m) {
+                return !m.deleted_at && m.task_module_id === e.task_module_id;
+            });
+            if (!training) return '';
+            var fresh = trainingFreshlyViewed(e.task_module_id);
+            var when = e.start_date > today
+                ? 'Scheduled ' + new Date(e.start_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                : 'In progress';
+            return '<div class="card" style="margin-bottom:8px;' + (fresh ? ' cursor:default;' : '') + '"' +
+                (fresh ? '' : ' onclick="openPrepVideo(\'' + e.task_module_id + '\')"') + '>' +
+                '<div class="card-row">' +
+                    '<div class="card-body">' +
+                        '<div class="card-title">' + esc(e.title) + '</div>' +
+                        '<div class="card-subtitle">' + when + (fresh
+                            ? ' &bull; watched &mdash; no video needed on-site'
+                            : ' &bull; ' + esc(training.title)) + '</div>' +
+                    '</div>' +
+                    '<span class="badge ' + (fresh ? 'badge-green' : 'badge-gray') + '">' + (fresh ? 'Ready' : 'Watch') + '</span>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+
+        if (cards) {
+            document.getElementById('prep-list').innerHTML = cards;
+            document.getElementById('prep-section').style.display = 'block';
+        }
+    }
 })();
 </script>

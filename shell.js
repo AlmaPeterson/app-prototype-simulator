@@ -260,6 +260,45 @@ document.addEventListener('fullscreenchange', () => {
     }
 });
 
+// ── On-Screen Keyboard / Visual Viewport ────────────────────────────────────
+// On a real phone the on-screen keyboard shrinks only the *visual* viewport;
+// the layout viewport — and the fullscreen-mode phone frame pinned to 100vh —
+// stay full height, so a focused input in the bottom half (or the centered
+// notes modal's buttons) ends up hidden behind the keys. Mirror the visual
+// viewport's height into --vvh, which the fullscreen-mode CSS uses in place
+// of 100vh: the frame shrinks above the keyboard, #main re-lays-out, and the
+// notes modal re-centers in the space that's actually visible.
+(function initKeyboardHandling() {
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    function syncViewport() {
+        document.documentElement.style.setProperty('--vvh', vv.height + 'px');
+        // Some mobile browsers also pan the layout viewport up when the
+        // keyboard opens — pin it back so the shrunken frame stays aligned
+        // with the visible area instead of half-scrolled out of it.
+        if (document.body.classList.contains('fullscreen-mode') && (vv.offsetTop > 0 || window.scrollY > 0)) {
+            window.scrollTo(0, 0);
+        }
+    }
+    vv.addEventListener('resize', syncViewport);
+    vv.addEventListener('scroll', syncViewport);
+    syncViewport();
+
+    // Once the frame has resized, make sure the field being typed in didn't
+    // stay under where the keyboard came up. The delay lets the keyboard
+    // animation finish so scrollIntoView measures the settled layout.
+    document.addEventListener('focusin', (e) => {
+        const el = e.target;
+        if (!el.matches || !el.matches('input, textarea, select')) return;
+        setTimeout(() => {
+            if (document.activeElement === el) {
+                el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            }
+        }, 300);
+    });
+})();
+
 // ── Init ────────────────────────────────────────────────────────────────────
 // On a wide (desktop) viewport there's room to show the phone at its "Large"
 // preset; on a narrow viewport (an actual phone) that size wouldn't fit

@@ -217,7 +217,10 @@ body.fullscreen-mode #phone-wrap {
 
 body.fullscreen-mode #phone {
     width: 100vw !important;
-    height: 100vh !important;
+    /* --vvh tracks window.visualViewport.height (see shell.js): when the
+       on-screen keyboard opens on a real phone, the frame shrinks to the
+       visible area instead of staying 100vh half-hidden behind the keys. */
+    height: var(--vvh, 100vh) !important;
     border-radius: 0;
     border: none;
     box-shadow: none;
@@ -372,6 +375,13 @@ body.fullscreen-mode #resize-grip {
     align-items: center;
     justify-content: center;
     padding: 20px;
+    /* With the keyboard open the phone frame can get shorter than the
+       panel; let the overlay scroll rather than clipping the buttons. */
+    overflow-y: auto;
+}
+
+.notes-modal-panel {
+    margin: auto 0;
 }
 
 .notes-modal-panel {
@@ -965,6 +975,7 @@ body.fullscreen-mode #resize-grip {
 }
 
 .badge-gray { background: #f1f5f9; color: #475569; }
+.badge-green { background: #dcfce7; color: #166534; }
 
 /* ── Section Headers ── */
 .section-header {
