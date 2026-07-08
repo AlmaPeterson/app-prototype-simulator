@@ -126,6 +126,7 @@ export async function checkMissingReferences(
                     imageName: String(imageName),
                     labelIndex: Math.floor(idx / labelsPerPage) === Math.floor(labelIndex / labelsPerPage) ? labelIndex : undefined,
                     rowIndex: idx,
+                    columnId,
                   });
                 }
               });

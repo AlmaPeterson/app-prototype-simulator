@@ -44,6 +44,7 @@ import {
 } from '../../lib/fileFormat.js';
 import { generateBulkPDF } from '../../lib/export.js';
 import { checkMissingReferences } from '../../lib/referenceChecker.js';
+import { showImageFixDialog } from './ImageFixDialog.js';
 import { getPortalRoot, isDesignerVisible } from '../../lib/portal.js';
 
 // ============================================================================
@@ -494,8 +495,20 @@ export function createToolbar(container) {
     refIndicator.className = 'toolbar-ref-indicator';
     refIndicator.style.display = 'none';
     refIndicator.innerHTML = ICONS.warning;
-    refIndicator.title = 'Missing references detected';
+    refIndicator.addEventListener('mouseenter', () => showRefTooltip(refIndicator));
+    refIndicator.addEventListener('mouseleave', hideRefTooltip);
+    refIndicator.addEventListener('focus', () => showRefTooltip(refIndicator));
+    refIndicator.addEventListener('blur', hideRefTooltip);
     refIndicator.addEventListener('click', () => {
+        hideRefTooltip();
+        // Missing images are the one issue with an actual fix flow — jump
+        // straight there instead of burying it as the last, easy-to-miss
+        // item in a dropdown otherwise full of disabled/informational rows.
+        // Missing columns/data (no fix flow yet) still fall back to the list.
+        if (lastRefResult && lastRefResult.missingImages.length > 0) {
+            showImageFixDialog();
+            return;
+        }
         showRefIndicatorDropdown(refIndicator);
     });
 
@@ -594,9 +607,10 @@ function updateToolbarState() {
             const count = lastRefResult.totalCount;
             if (count > 0) {
                 refEl.style.display = 'flex';
-                refEl.title = `${count} missing reference(s) detected`;
+                refEl.setAttribute('aria-label', `${count} missing reference(s) detected — hover for details`);
             } else {
                 refEl.style.display = 'none';
+                hideRefTooltip();
             }
         }
     }
@@ -667,12 +681,10 @@ function buildNamedRefItems(heading, names) {
 function showRefIndicatorDropdown(trigger) {
     if (!lastRefResult || lastRefResult.totalCount === 0) return;
 
+    // Missing images are handled by jumping straight to the fix dialog (see
+    // the click handler above), so this list only ever needs to cover the
+    // issues that don't have a dedicated fix flow.
     const items = [];
-    if (lastRefResult.missingImages.length > 0) {
-        items.push(
-            ...buildNamedRefItems('Missing images', lastRefResult.missingImages.map((m) => m.imageName)),
-        );
-    }
     if (lastRefResult.missingColumns.length > 0) {
         if (items.length > 0) items.push({ divider: true });
         items.push(
@@ -685,6 +697,110 @@ function showRefIndicatorDropdown(trigger) {
     }
 
     showDropdown(trigger, items, { align: 'right', minWidth: 220 });
+}
+
+// ============================================================================
+// Missing References Hover Preview
+// ============================================================================
+
+/** @type {HTMLElement|null} Currently shown hover preview for the ref indicator */
+let refTooltipEl = null;
+
+function hideRefTooltip() {
+    if (refTooltipEl) {
+        refTooltipEl.remove();
+        refTooltipEl = null;
+    }
+}
+
+/**
+ * Build the hover preview's content: a count summary, a peek at the actual
+ * missing image names (the thing most likely to need fixing), and a hint
+ * that tells you what clicking will actually do — so the icon isn't just
+ * "something's wrong, click to find out."
+ */
+function buildRefTooltipContent() {
+    const frag = document.createElement('div');
+
+    // Dedupe by name — the checker emits one raw entry per (label position ×
+    // row), so a template with several labels per page inflates the same
+    // handful of missing filenames into a much bigger-looking number.
+    const imageNames = Array.from(new Set(lastRefResult.missingImages.map((m) => m.imageName)));
+    const columnNames = Array.from(new Set(lastRefResult.missingColumns.map((m) => m.columnName)));
+
+    const summaryParts = [];
+    if (imageNames.length > 0) {
+        summaryParts.push(`${imageNames.length} missing image${imageNames.length === 1 ? '' : 's'}`);
+    }
+    if (columnNames.length > 0) {
+        summaryParts.push(`${columnNames.length} missing column${columnNames.length === 1 ? '' : 's'}`);
+    }
+    if (lastRefResult.missingData.length > 0) {
+        summaryParts.push(`${lastRefResult.missingData.length} missing data ${lastRefResult.missingData.length === 1 ? 'entry' : 'entries'}`);
+    }
+
+    const summary = document.createElement('div');
+    summary.className = 'toolbar-ref-tooltip-summary';
+    summary.textContent = summaryParts.join(' · ');
+    frag.appendChild(summary);
+
+    if (imageNames.length > 0) {
+        const names = imageNames;
+        const list = document.createElement('ul');
+        list.className = 'toolbar-ref-tooltip-list';
+        for (const name of names.slice(0, 4)) {
+            const li = document.createElement('li');
+            li.textContent = name;
+            li.title = name;
+            list.appendChild(li);
+        }
+        if (names.length > 4) {
+            const li = document.createElement('li');
+            li.className = 'toolbar-ref-tooltip-more';
+            li.textContent = `+${names.length - 4} more`;
+            list.appendChild(li);
+        }
+        frag.appendChild(list);
+    }
+
+    const hint = document.createElement('div');
+    hint.className = 'toolbar-ref-tooltip-hint';
+    hint.textContent = lastRefResult.missingImages.length > 0
+        ? 'Click to fix missing images →'
+        : 'Click to view details →';
+    frag.appendChild(hint);
+
+    return frag;
+}
+
+function showRefTooltip(trigger) {
+    if (!lastRefResult || lastRefResult.totalCount === 0) return;
+    hideRefTooltip();
+
+    const tooltip = document.createElement('div');
+    tooltip.className = 'toolbar-ref-tooltip';
+    tooltip.appendChild(buildRefTooltipContent());
+
+    const portalRoot = getPortalRoot();
+    tooltip.style.visibility = 'hidden';
+    portalRoot.appendChild(tooltip);
+
+    const triggerRect = trigger.getBoundingClientRect();
+    const rootRect = portalRoot.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+
+    let top = triggerRect.bottom - rootRect.top + 6;
+    let left = triggerRect.right - rootRect.left - tooltipRect.width;
+    if (left < 4) left = 4;
+    if (top + tooltipRect.height > rootRect.height - 4) {
+        top = triggerRect.top - rootRect.top - tooltipRect.height - 6;
+    }
+
+    tooltip.style.top = `${top}px`;
+    tooltip.style.left = `${left}px`;
+    tooltip.style.visibility = 'visible';
+
+    refTooltipEl = tooltip;
 }
 
 // ============================================================================
@@ -735,6 +851,7 @@ export function destroyToolbar() {
     if (unsubscribeData) unsubscribeData();
     if (refCheckDebounceTimer) clearTimeout(refCheckDebounceTimer);
     refCheckDebounceTimer = null;
+    hideRefTooltip();
     if (toolbarEl) toolbarEl.remove();
     toolbarEl = null;
 }
@@ -874,6 +991,50 @@ function injectStyles() {
 
         .toolbar-ref-indicator:hover {
             background: rgba(245, 158, 11, 0.1);
+        }
+
+        .toolbar-ref-tooltip {
+            position: absolute;
+            z-index: 9998;
+            max-width: 260px;
+            background: var(--color-text-primary, #1a1a1a);
+            color: #fff;
+            border-radius: var(--radius-sm, 4px);
+            padding: 8px 10px;
+            font-size: 11px;
+            line-height: 1.5;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+            pointer-events: none;
+        }
+
+        .toolbar-ref-tooltip-summary {
+            font-weight: 600;
+            color: #fbbf24;
+            margin-bottom: 4px;
+        }
+
+        .toolbar-ref-tooltip-list {
+            list-style: none;
+            margin: 0 0 6px;
+            padding: 0;
+        }
+
+        .toolbar-ref-tooltip-list li {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .toolbar-ref-tooltip-more {
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.6) !important;
+        }
+
+        .toolbar-ref-tooltip-hint {
+            color: rgba(255, 255, 255, 0.7);
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            padding-top: 4px;
         }
     `;
     document.head.appendChild(style);

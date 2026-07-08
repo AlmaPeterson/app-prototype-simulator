@@ -11,6 +11,7 @@ import {
     getState,
     setColumns,
     setRows,
+    updateRow,
     toggleRowSelection,
     selectAllRows,
     clearRowSelection,
@@ -19,6 +20,7 @@ import { subscribe as subscribeData } from '../../store/dataStore.js';
 import { parseCSV, sanitizeColumnName } from '../../lib/csvParser.js';
 import { createDataColumn, createDataRow } from '../../types.js';
 import { createColumnManager } from './ColumnManager.js';
+import { showImageFixDialog } from './ImageFixDialog.js';
 
 // ============================================================================
 // SVG Icons
@@ -53,6 +55,9 @@ let warnings = [];
 
 /** @type {boolean} */
 let skipEmptyRows = true;
+
+/** @type {string} Current data-grid row search filter, kept across re-renders */
+let rowSearchQuery = '';
 
 // ============================================================================
 // Helpers
@@ -111,6 +116,7 @@ function importParsedData(headers, rows, skipEmpty) {
     setColumns(mergedColumns);
     setRows(dataRows);
     warnings = [];
+    rowSearchQuery = '';
 }
 
 async function importDemoData() {
@@ -147,6 +153,17 @@ function render() {
     status.className = 'di-status';
     status.textContent = state.columns.length + ' columns, ' + state.rows.length + ' rows';
     panelEl.appendChild(status);
+
+    // Fix / browse images button — opens a dialog that groups any CSV rows
+    // pointing at a missing image asset, and lets you search unused uploads
+    // to assign the right one (updating the row data in place).
+    const fixImagesBtn = document.createElement('button');
+    fixImagesBtn.className = 'ld-btn ld-btn-secondary di-fix-images-btn';
+    fixImagesBtn.innerHTML = ICONS.warning + ' Fix / Browse Images';
+    fixImagesBtn.addEventListener('click', () => {
+        showImageFixDialog();
+    });
+    panelEl.appendChild(fixImagesBtn);
 
     // Buttons row
     const btnRow = document.createElement('div');
@@ -259,6 +276,7 @@ function render() {
                 { id: 'description', name: 'Description', type: 'text', required: false },
             ]);
             setRows([]);
+            rowSearchQuery = '';
         });
         panelEl.appendChild(clearBtn);
     }
@@ -338,7 +356,9 @@ function renderDataGrid(state) {
 
     const gridTitle = document.createElement('div');
     gridTitle.className = 'di-grid-title';
-    gridTitle.textContent = 'Data Preview (' + state.rows.length + ' rows)';
+
+    const titleText = document.createElement('span');
+    gridTitle.appendChild(titleText);
 
     const selectAllRow = document.createElement('div');
     selectAllRow.className = 'di-grid-select-all';
@@ -363,6 +383,24 @@ function renderDataGrid(state) {
     gridTitle.appendChild(selectAllRow);
     gridWrapper.appendChild(gridTitle);
 
+    // Row search — filters the (now fully rendered, no longer capped) grid
+    // by matching against every column's value, so fixing a specific row in
+    // a large dataset doesn't mean scrolling through hundreds of others.
+    const searchRow = document.createElement('div');
+    searchRow.className = 'di-grid-search-row';
+
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.className = 'di-grid-search-input';
+    searchInput.placeholder = 'Search rows…';
+    searchInput.value = rowSearchQuery;
+    searchInput.addEventListener('input', () => {
+        rowSearchQuery = searchInput.value;
+        applyRowFilter();
+    });
+    searchRow.appendChild(searchInput);
+    gridWrapper.appendChild(searchRow);
+
     const table = document.createElement('div');
     table.className = 'di-grid';
 
@@ -382,11 +420,15 @@ function renderDataGrid(state) {
     }
     table.appendChild(headerRow);
 
-    // Rows (show first 20)
-    const displayRows = state.rows.slice(0, 20);
-    for (const row of displayRows) {
+    // All rows — filtering (not a hard cap) is what keeps a large dataset
+    // manageable now, so every row is rendered up front.
+    for (const row of state.rows) {
         const rowEl = document.createElement('div');
         rowEl.className = 'di-grid-row';
+        rowEl.dataset.search = state.columns
+            .map((col) => (row[col.id] != null ? String(row[col.id]) : ''))
+            .join(' ')
+            .toLowerCase();
 
         const check = document.createElement('div');
         check.className = 'di-grid-cell di-grid-cell--check';
@@ -403,24 +445,54 @@ function renderDataGrid(state) {
 
         for (const col of state.columns) {
             const cell = document.createElement('div');
-            cell.className = 'di-grid-cell';
-            cell.textContent = row[col.id] != null ? String(row[col.id]) : '';
-            cell.title = cell.textContent;
+            cell.className = 'di-grid-cell di-grid-cell--editable';
+
+            const value = row[col.id] != null ? String(row[col.id]) : '';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'di-grid-input';
+            input.value = value;
+            input.title = value;
+            input.addEventListener('change', () => {
+                const next = input.value;
+                updateRow(row.id, { [col.id]: next === '' ? undefined : next });
+                input.title = next;
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') input.blur();
+            });
+
+            cell.appendChild(input);
             rowEl.appendChild(cell);
         }
 
         table.appendChild(rowEl);
     }
 
-    if (state.rows.length > 20) {
-        const moreRow = document.createElement('div');
-        moreRow.className = 'di-grid-row di-grid-more';
-        moreRow.textContent = '... and ' + (state.rows.length - 20) + ' more rows';
-        table.appendChild(moreRow);
-    }
+    const noMatches = document.createElement('div');
+    noMatches.className = 'di-grid-row di-grid-more di-grid-no-matches';
+    noMatches.textContent = 'No rows match your search.';
+    noMatches.style.display = 'none';
+    table.appendChild(noMatches);
 
     gridWrapper.appendChild(table);
     panelEl.appendChild(gridWrapper);
+
+    function applyRowFilter() {
+        const q = rowSearchQuery.trim().toLowerCase();
+        let visibleCount = 0;
+        for (const rowEl of table.querySelectorAll('.di-grid-row:not(.di-grid-header):not(.di-grid-no-matches)')) {
+            const match = !q || rowEl.dataset.search.includes(q);
+            rowEl.style.display = match ? '' : 'none';
+            if (match) visibleCount++;
+        }
+        noMatches.style.display = q && visibleCount === 0 ? '' : 'none';
+        titleText.textContent = q
+            ? `Data Preview (${visibleCount} of ${state.rows.length} rows)`
+            : `Data Preview (${state.rows.length} rows)`;
+    }
+
+    applyRowFilter();
 }
 
 // ============================================================================
@@ -477,6 +549,17 @@ function injectStyles() {
             padding: 8px;
             background: var(--color-bg-secondary, #f0f0f0);
             border-radius: var(--radius-sm, 4px);
+            margin-bottom: 8px;
+        }
+
+        .di-fix-images-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            padding: 6px 8px;
+            font-size: 11px;
             margin-bottom: 8px;
         }
 
@@ -608,11 +691,29 @@ function injectStyles() {
             letter-spacing: normal;
         }
 
+        .di-grid-search-row {
+            padding: 0 8px 6px;
+        }
+
+        .di-grid-search-input {
+            width: 100%;
+            padding: 6px 10px;
+            font-size: 12px;
+            border: 1px solid var(--color-border, #d0d0d0);
+            border-radius: var(--radius-sm, 4px);
+            box-sizing: border-box;
+        }
+
+        .di-grid-search-input:focus {
+            outline: none;
+            border-color: var(--color-accent, #2563eb);
+        }
+
         .di-grid {
             border: 1px solid var(--color-border-light, #e8e8e8);
             border-radius: var(--radius-sm, 4px);
             overflow: auto;
-            max-height: 300px;
+            max-height: 420px;
         }
 
         .di-grid-row {
@@ -662,6 +763,33 @@ function injectStyles() {
 
         .di-grid-cell--check input {
             margin: 0;
+        }
+
+        .di-grid-cell--editable {
+            padding: 0;
+        }
+
+        .di-grid-input {
+            width: 100%;
+            min-width: 0;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-family: inherit;
+            color: inherit;
+            border: 1px solid transparent;
+            background: transparent;
+            border-radius: 0;
+            box-sizing: border-box;
+        }
+
+        .di-grid-input:hover {
+            border-color: var(--color-border-light, #e8e8e8);
+        }
+
+        .di-grid-input:focus {
+            outline: none;
+            border-color: var(--color-accent, #2563eb);
+            background: var(--color-bg-primary, #fff);
         }
     }
     `;
