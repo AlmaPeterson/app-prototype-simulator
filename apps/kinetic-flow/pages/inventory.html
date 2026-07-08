@@ -45,6 +45,7 @@
     var SKU_CATEGORY = {
         HVAC: 'HVAC', ELE: 'Electrical', PLB: 'Plumbing', CAR: 'Carpentry',
         DRY: 'Drywall', PNT: 'Painting', FLR: 'Flooring', FAS: 'Fasteners', SAF: 'Safety',
+        TRL: 'Tools',
     };
     function categoryFor(material) {
         var prefix = (material.sku || '').split('-')[0];
@@ -71,15 +72,29 @@
         render();
     }
 
+    // A material's photo is either a user upload (image_asset_id, resolved
+    // from IndexedDB via Assets/hydrateAssetMedia) or a seed-provided static
+    // image (image_url, a plain path shipped with the app) — the upload
+    // takes priority since it's the more recent, intentional choice.
+    function thumbHtml(m) {
+        var style = 'width:36px; height:36px; border-radius:8px; object-fit:cover; background:#f1f5f9; flex-shrink:0;';
+        if (m.image_asset_id) return '<img data-asset-id="' + m.image_asset_id + '" style="' + style + '" alt="">';
+        if (m.image_url) return '<img src="' + esc(m.image_url) + '" style="' + style + '" alt="">';
+        return '<div style="' + style + '"></div>';
+    }
+
     function itemRowHtml(m, opts) {
         opts = opts || {};
         var right = opts.lowStock
             ? '<div class="list-item-value">' + m.stock_qty + ' left</div><div class="list-item-detail">Min: ' + m.reorder_qty + '</div>'
             : '<div class="list-item-value">' + m.stock_qty + '</div><div class="list-item-detail">$' + Number(m.unit_cost).toLocaleString() + ' ea</div>';
-        return '<div class="list-item" style="padding:8px 0; cursor:pointer;" onclick="editInventoryItem(\'' + m.id + '\')">' +
+        return '<div class="list-item" style="padding:8px 0; cursor:pointer; display:flex; align-items:center;" onclick="editInventoryItem(\'' + m.id + '\')">' +
+            thumbHtml(m) +
             '<div class="list-item-body" style="margin-left:10px;">' +
-            '<div class="list-item-title">' + m.name + '</div>' +
-            '<div class="list-item-sub">' + categoryFor(m) + ' &bull; ' + m.sku + '</div>' +
+            '<div class="list-item-title">' + m.name + (m.video_asset_id
+                ? ' <span style="cursor:pointer;" onclick="event.stopPropagation(); openMaterialVideo(\'' + m.id + '\')">&#127916;</span>'
+                : '') + '</div>' +
+            '<div class="list-item-sub">' + categoryFor(m) + ' &bull; ' + m.sku + ' &bull; ' + (m.location || 'shop') + '</div>' +
             '</div><div class="list-item-right">' + right + '</div></div>';
     }
 
@@ -109,6 +124,8 @@
         allList.innerHTML = scoped.length
             ? scoped.map(function (m) { return itemRowHtml(m); }).join('')
             : '<div class="kit-empty">No items match.</div>';
+
+        hydrateAssetMedia(document.getElementById('inventory-search').closest('.page'));
     }
 
     window.setInventoryTab = function (tab) {
@@ -121,9 +138,98 @@
         render();
     };
 
+    // Photo/video the user picked for the item currently open in the panel,
+    // staged here until Save — Assets.save() only happens once, on submit, so
+    // Cancel never leaves an orphaned blob in IndexedDB.
+    var pendingImageFile = null;
+    var pendingImageRemoved = false;
+    var pendingVideoFile = null;
+    var pendingVideoRemoved = false;
+    var pendingVideoPreviewUrl = null; // local blob: url so "Play" works before Save
+    var currentPanelMaterial = null;
+
+    window.handleInventoryPhotoChange = function (input) {
+        var file = input.files && input.files[0];
+        if (!file) return;
+        pendingImageFile = file;
+        pendingImageRemoved = false;
+        var preview = document.getElementById('ii-photo-preview');
+        preview.removeAttribute('data-asset-id');
+        preview.src = URL.createObjectURL(file);
+    };
+
+    window.clearInventoryItemPhoto = function () {
+        pendingImageFile = null;
+        pendingImageRemoved = true;
+        var preview = document.getElementById('ii-photo-preview');
+        preview.removeAttribute('data-asset-id');
+        preview.removeAttribute('src');
+    };
+
+    function showVideoPlayer(url, title) {
+        var existing = document.getElementById('inv-video-panel');
+        if (existing) existing.remove();
+        var modal = document.createElement('div');
+        modal.id = 'inv-video-panel';
+        modal.className = 'modal-overlay';
+        modal.innerHTML =
+            '<div class="modal-sheet">' +
+                '<div class="modal-handle"></div>' +
+                '<div class="page-title-sm mb-2">' + title + '</div>' +
+                '<video controls autoplay playsinline style="width:100%; border-radius:10px; background:#000;" src="' + url + '"></video>' +
+                '<button class="btn btn-secondary mt-2" onclick="document.getElementById(\'inv-video-panel\').remove()">Close</button>' +
+            '</div>';
+        modal.addEventListener('click', function (e) { if (e.target === modal) modal.remove(); });
+        document.getElementById('phone').appendChild(modal);
+    }
+
+    window.handleInventoryVideoChange = function (input) {
+        var file = input.files && input.files[0];
+        if (!file) return;
+        pendingVideoFile = file;
+        pendingVideoRemoved = false;
+        if (pendingVideoPreviewUrl) URL.revokeObjectURL(pendingVideoPreviewUrl);
+        pendingVideoPreviewUrl = URL.createObjectURL(file);
+        document.getElementById('ii-video-play-btn').style.display = 'inline-block';
+        document.getElementById('ii-video-empty-label').style.display = 'none';
+        document.getElementById('ii-video-remove-btn').style.display = 'inline-block';
+    };
+
+    window.clearInventoryItemVideo = function () {
+        pendingVideoFile = null;
+        pendingVideoRemoved = true;
+        if (pendingVideoPreviewUrl) { URL.revokeObjectURL(pendingVideoPreviewUrl); pendingVideoPreviewUrl = null; }
+        document.getElementById('ii-video-play-btn').style.display = 'none';
+        document.getElementById('ii-video-empty-label').style.display = 'inline';
+        document.getElementById('ii-video-remove-btn').style.display = 'none';
+    };
+
+    // A file just picked in this sheet has no persisted asset id yet, so it
+    // gets a quick inline preview instead of the real material-video.html
+    // page. A video already saved to the item gets its own page — same
+    // pattern as tapping the &#127916; marker on the list row.
+    window.playInventoryItemVideo = function () {
+        if (pendingVideoPreviewUrl) { showVideoPlayer(pendingVideoPreviewUrl, 'Preview'); return; }
+        if (!currentPanelMaterial || !currentPanelMaterial.video_asset_id) return;
+        var materialId = currentPanelMaterial.id;
+        closeItemPanel();
+        openMaterialVideo(materialId);
+    };
+
+    window.openMaterialVideo = function (materialId) {
+        state.materialVideoId = materialId;
+        loadPage('material-video');
+    };
+
     // One sheet serves both add (materialId null) and edit/adjust.
     function openItemPanel(materialId) {
         var m = materialId ? DB.getById('materials', materialId) : null;
+        currentPanelMaterial = m;
+        pendingImageFile = null;
+        pendingImageRemoved = false;
+        pendingVideoFile = null;
+        pendingVideoRemoved = false;
+        if (pendingVideoPreviewUrl) { URL.revokeObjectURL(pendingVideoPreviewUrl); pendingVideoPreviewUrl = null; }
         var existing = document.getElementById('inv-item-panel');
         if (existing) existing.remove();
         var modal = document.createElement('div');
@@ -133,11 +239,31 @@
             '<div class="modal-sheet">' +
                 '<div class="modal-handle"></div>' +
                 '<div class="page-title-sm mb-2">' + (m ? 'Update Item' : 'New Inventory Item') + '</div>' +
+                '<div class="form-group"><label>Photo</label>' +
+                    '<div style="display:flex; align-items:center; gap:10px;">' +
+                        '<img id="ii-photo-preview" ' + (m && m.image_asset_id ? 'data-asset-id="' + m.image_asset_id + '"' : (m && m.image_url ? 'src="' + esc(m.image_url) + '"' : '')) +
+                            ' style="width:56px; height:56px; border-radius:10px; object-fit:cover; background:#f1f5f9;" alt="">' +
+                        '<button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById(\'ii-photo-input\').click()">Choose Photo</button>' +
+                        (m && (m.image_asset_id || m.image_url) ? '<button type="button" class="btn btn-outline btn-sm" style="color:#dc2626;" onclick="clearInventoryItemPhoto()">Remove</button>' : '') +
+                    '</div>' +
+                    '<input type="file" id="ii-photo-input" accept="image/*" style="display:none;" onchange="handleInventoryPhotoChange(this)">' +
+                '</div>' +
+                '<div class="form-group"><label>How-To Video</label>' +
+                    '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">' +
+                        '<button type="button" id="ii-video-play-btn" class="btn btn-outline btn-sm" style="display:' + (m && m.video_asset_id ? 'inline-block' : 'none') + ';" onclick="playInventoryItemVideo()">&#9654; Play</button>' +
+                        '<span id="ii-video-empty-label" style="font-size:0.78rem; color:#94a3b8; display:' + (m && m.video_asset_id ? 'none' : 'inline') + ';">No video</span>' +
+                        '<button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById(\'ii-video-input\').click()">Choose Video</button>' +
+                        '<button type="button" id="ii-video-remove-btn" class="btn btn-outline btn-sm" style="color:#dc2626; display:' + (m && m.video_asset_id ? 'inline-block' : 'none') + ';" onclick="clearInventoryItemVideo()">Remove</button>' +
+                    '</div>' +
+                    (m && m.reference_url ? '<div style="margin-top:6px;"><a href="' + esc(m.reference_url) + '" target="_blank" rel="noopener" style="font-size:0.78rem;">&#128279; Reference video (YouTube)</a></div>' : '') +
+                    '<input type="file" id="ii-video-input" accept="video/*" style="display:none;" onchange="handleInventoryVideoChange(this)">' +
+                '</div>' +
                 '<div class="form-group"><label>Name</label><input type="text" id="ii-name" value="' + (m ? m.name : '') + '" placeholder="e.g. 200A Panel"></div>' +
                 '<div class="form-row">' +
                     '<div class="form-group"><label>SKU</label><input type="text" id="ii-sku" value="' + (m ? m.sku : '') + '" placeholder="ELE-PNL-200"></div>' +
                     '<div class="form-group"><label>Unit</label><input type="text" id="ii-unit" value="' + (m ? (m.unit || 'each') : 'each') + '"></div>' +
                 '</div>' +
+                '<div class="form-group"><label>Location</label><input type="text" id="ii-location" value="' + (m ? (m.location || 'shop') : 'shop') + '" placeholder="shop / truck_1 / trailer"></div>' +
                 '<div class="form-row">' +
                     '<div class="form-group"><label>In Stock</label><input type="number" id="ii-stock" min="0" step="1" value="' + (m ? m.stock_qty : 0) + '"></div>' +
                     '<div class="form-group"><label>Reorder At</label><input type="number" id="ii-reorder" min="0" step="1" value="' + (m ? m.reorder_qty : 1) + '"></div>' +
@@ -149,6 +275,7 @@
             '</div>';
         modal.addEventListener('click', function (e) { if (e.target === modal) modal.remove(); });
         document.getElementById('phone').appendChild(modal);
+        hydrateAssetMedia(modal);
     }
 
     function closeItemPanel() {
@@ -166,20 +293,29 @@
             name: name,
             sku: (document.getElementById('ii-sku').value || '').trim().toUpperCase(),
             unit: (document.getElementById('ii-unit').value || 'each').trim(),
+            location: (document.getElementById('ii-location').value || 'shop').trim(),
             stock_qty: Math.max(0, parseInt(document.getElementById('ii-stock').value, 10) || 0),
             reorder_qty: Math.max(0, parseInt(document.getElementById('ii-reorder').value, 10) || 0),
             unit_cost: Math.max(0, parseFloat(document.getElementById('ii-cost').value) || 0),
         };
-        if (materialId) {
-            DB.update('materials', materialId, patch);
-        } else {
-            DB.insert('materials', Object.assign({
-                company_id: state.currentCompanyId,
-                location: 'shop',
-            }, patch));
-        }
-        closeItemPanel();
-        refresh();
+
+        var imageDone = pendingImageFile
+            ? Assets.save(pendingImageFile).then(function (asset) { patch.image_asset_id = asset.id; })
+            : Promise.resolve().then(function () { if (pendingImageRemoved) patch.image_asset_id = null; });
+
+        var videoDone = pendingVideoFile
+            ? Assets.save(pendingVideoFile).then(function (asset) { patch.video_asset_id = asset.id; })
+            : Promise.resolve().then(function () { if (pendingVideoRemoved) patch.video_asset_id = null; });
+
+        Promise.all([imageDone, videoDone]).then(function () {
+            if (materialId) {
+                DB.update('materials', materialId, patch);
+            } else {
+                DB.insert('materials', Object.assign({ company_id: state.currentCompanyId }, patch));
+            }
+            closeItemPanel();
+            refresh();
+        });
     };
 
     window.removeInventoryItem = function (materialId) {
@@ -191,5 +327,14 @@
     };
 
     render();
+
+    // Landed here from kits.html's "Edit in Inventory" (a standalone tool has
+    // kit_id: null, so its only editor is this page) — open straight to that
+    // item's sheet instead of the bare list.
+    if (state.inventoryEditMaterialId) {
+        var materialToEdit = state.inventoryEditMaterialId;
+        state.inventoryEditMaterialId = null;
+        editInventoryItem(materialToEdit);
+    }
 })();
 </script>

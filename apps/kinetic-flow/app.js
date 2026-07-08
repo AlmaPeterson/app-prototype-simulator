@@ -17,7 +17,7 @@ const STORAGE_KEY = 'kineticFlow.state';
 // Bump whenever db/*.json seed data or table shapes change: restoreState()
 // discards localStorage DB snapshots from older versions and re-fetches the
 // fresh seeds, so users don't need a manual "Reset Demo Data".
-const DB_VERSION = 5;
+const DB_VERSION = 10;
 
 // ── App State ──────────────────────────────────────────────────────────────
 const state = {
@@ -44,6 +44,8 @@ const state = {
     timesheetNote: null,      // draft "Notes for Supervisor" text from review-time.html, kept across visits until submit
     customerJobId: null,      // customer mode: the property (job) opened from the customer-links picker
     rankSeen: null,           // { userId, companyId, rank } — your scoreboard rank the last time you looked at the scoreboard; drives the header's ▲ improved-rank chip
+    materialVideoId: null,    // materials.id being watched on material-video.html (set by openMaterialVideo() in inventory.html)
+    inventoryEditMaterialId: null, // materials.id to auto-open the edit sheet for on landing in inventory.html (set by kits.html's "Edit in Inventory")
 };
 
 // ── Mock DB ──────────────────────────────────────────────────────────────
@@ -57,14 +59,14 @@ const state = {
 const TABLES = [
     'companies', 'branches', 'users', 'roles', 'user_roles', 'customers',
     'addresses', 'jobs', 'bids', 'bid_divisions', 'bid_line_items', 'divisions',
-    'materials', 'inventory_kits', 'kit_items', 'kit_tools', 'kit_checkouts',
+    'materials', 'inventory_kits', 'kit_checkouts',
     'job_assignments', 'task_modules', 'tasks', 'task_materials', 'task_photos',
     'time_entries', 'time_entry_edits', 'schedule_events',
     'message_templates', 'scorecard_entries', 'worker_task_competency',
     'competency_levels', 'levels', 'user_level_history', 'training_modules',
     'training_assignments', 'job_history_library', 'finance_snapshots',
     'expense_entries', 'finance_dashboard_permissions', 'property_records',
-    'phase_logs', 'system_state',
+    'phase_logs', 'system_state', 'label_templates',
 ];
 
 let _tables = {};
@@ -128,6 +130,89 @@ const DB = {
         return this.load();
     },
 };
+
+// ── Asset Storage (photos & videos) ─────────────────────────────────────────
+// Material/tool photos and kit training videos are Blobs, which would blow
+// through localStorage's ~5MB quota in a couple of uploads — so unlike the
+// rest of the mock DB, they live in IndexedDB, keyed by a generated id. DB
+// rows only ever store that id string (`image_asset_id` / `video_asset_id`);
+// Assets.url() resolves it to a Blob object URL for an <img>/<video> to point
+// at, on demand.
+const ASSETS_DB_NAME = 'kineticFlow.assets';
+const ASSETS_STORE = 'blobs';
+let _assetsDbPromise = null;
+const _assetUrlCache = {}; // assetId -> object URL, so repeat renders don't churn createObjectURL
+
+function openAssetsDb() {
+    if (_assetsDbPromise) return _assetsDbPromise;
+    _assetsDbPromise = new Promise(function (resolve, reject) {
+        const req = indexedDB.open(ASSETS_DB_NAME, 1);
+        req.onupgradeneeded = function () {
+            if (!req.result.objectStoreNames.contains(ASSETS_STORE)) {
+                req.result.createObjectStore(ASSETS_STORE, { keyPath: 'id' });
+            }
+        };
+        req.onsuccess = function () { resolve(req.result); };
+        req.onerror = function () { reject(req.error); };
+    });
+    return _assetsDbPromise;
+}
+
+const Assets = {
+    // file: a File from <input type="file">. Resolves {id, name, type, size}.
+    save: function (file) {
+        return openAssetsDb().then(function (db) {
+            return new Promise(function (resolve, reject) {
+                const id = genId();
+                const tx = db.transaction(ASSETS_STORE, 'readwrite');
+                tx.objectStore(ASSETS_STORE).put({ id: id, blob: file, name: file.name, type: file.type, size: file.size });
+                tx.oncomplete = function () { resolve({ id: id, name: file.name, type: file.type, size: file.size }); };
+                tx.onerror = function () { reject(tx.error); };
+            });
+        });
+    },
+    // Resolves an asset id to a Blob object URL (or null if missing/no id).
+    url: function (id) {
+        if (!id) return Promise.resolve(null);
+        if (_assetUrlCache[id]) return Promise.resolve(_assetUrlCache[id]);
+        return openAssetsDb().then(function (db) {
+            return new Promise(function (resolve) {
+                const req = db.transaction(ASSETS_STORE, 'readonly').objectStore(ASSETS_STORE).get(id);
+                req.onsuccess = function () {
+                    if (!req.result) { resolve(null); return; }
+                    const url = URL.createObjectURL(req.result.blob);
+                    _assetUrlCache[id] = url;
+                    resolve(url);
+                };
+                req.onerror = function () { resolve(null); };
+            });
+        });
+    },
+    remove: function (id) {
+        if (!id) return Promise.resolve();
+        delete _assetUrlCache[id];
+        return openAssetsDb().then(function (db) {
+            return new Promise(function (resolve) {
+                const tx = db.transaction(ASSETS_STORE, 'readwrite');
+                tx.objectStore(ASSETS_STORE).delete(id);
+                tx.oncomplete = function () { resolve(); };
+                tx.onerror = function () { resolve(); };
+            });
+        });
+    },
+};
+
+// Pages render <img data-asset-id="..."> / <video data-asset-id="..."> tags
+// synchronously (string templates, no async rendering support), then call
+// this once to resolve each one's real Blob URL. Safe to call repeatedly —
+// elements that already resolved are skipped via the cache in Assets.url().
+function hydrateAssetMedia(root) {
+    (root || document).querySelectorAll('[data-asset-id]').forEach(function (el) {
+        const id = el.getAttribute('data-asset-id');
+        if (!id || el.src) return;
+        Assets.url(id).then(function (url) { if (url) el.src = url; });
+    });
+}
 
 function resetDemoData() {
     if (!confirm('Reset demo data? Every change you\'ve made — jobs, bids, time entries, everything — will be discarded and the original seed data reloaded.')) return;
@@ -2151,14 +2236,14 @@ function syncActivityButtons() {
 // Unlike Driving/Lunch/Task, using a material isn't an event with a duration —
 // it's a record of what was consumed. So it opens a picker scoped to kits
 // actually checked out for this job (real kit_checkouts rows, resolved to
-// inventory_kits for display name and kit_items for the material list) instead
-// of starting an ongoing activity.
+// inventory_kits for display name and the kit's materials-table rows for the
+// material list) instead of starting an ongoing activity.
 function getCheckedOutKits() {
     return DB.find('kit_checkouts', function (k) { return k.job_id === state.currentJobId && !k.checked_in_at; })
         .map(function (checkout) {
             const kit = DB.getById('inventory_kits', checkout.kit_id);
             if (!kit) return null;
-            const items = DB.find('kit_items', function (ki) { return ki.kit_id === kit.id; });
+            const items = DB.find('materials', function (m) { return m.kit_id === kit.id && m.item_type === 'material' && !m.deleted_at; });
             return { name: kit.name, materials: items };
         }).filter(Boolean);
 }
@@ -2224,7 +2309,7 @@ function saveMaterialLog() {
         DB.insert('task_materials', {
             company_id: state.currentCompanyId,
             task_id: null, // no active `tasks` row exists yet for in-progress work — see db/tasks.json note
-            material_id: material.material_id || null,
+            material_id: material.id,
             name: material.name,
             quantity: qty,
             unit: 'each',
@@ -2511,7 +2596,7 @@ window.addEventListener('beforeunload', saveState);
 // *this* app's implementation, not some other installed app's same-named one.
 function activate() {
     Object.assign(window, {
-        state, DB, resetDemoData, esc, jsArg,
+        state, DB, resetDemoData, esc, jsArg, Assets, hydrateAssetMedia,
         loadPage, navTo, goBack,
         setRole,
         signIn, afterSignIn, signOut, showSignUp, closeSignUp, submitAccount, goToSignIn,

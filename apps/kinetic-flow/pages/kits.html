@@ -46,8 +46,24 @@
         return order.map(function (name) { return { name: name, kits: byCat[name] }; });
     }
 
+    // Tools/materials that aren't part of any kit — e.g. big shelf tools kept
+    // on a trailer (drills, band saw, batteries) rather than bundled into a
+    // job kit. They still live in the `materials` table (Inventory owns
+    // editing them); this just makes them browsable from the Kits tab too.
+    function loadStandaloneMaterials() {
+        return DB.find('materials', function (m) {
+            return m.company_id === state.currentCompanyId && !m.deleted_at && !m.kit_id;
+        });
+    }
+
+    function locationLabel(loc) {
+        return loc.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+    }
+
     var CATEGORIES = loadCategories();
 
+    // appState.selected is either {ci, ki} (a real kit) or the sentinel
+    // string 'standalone' (the Standalone Tools view below).
     var appState = { expandedCat: null, selected: null, searchQuery: '' };
 
     function clearSearchInput() {
@@ -57,7 +73,11 @@
 
     function renderDrawer() {
         var el = document.getElementById('kit-drawer-list');
-        el.innerHTML = CATEGORIES.map(function (cat, i) {
+        var standaloneHtml = '<div class="kit-drawer-cat">' +
+            '<button class="kit-drawer-cat-btn' + (appState.selected === 'standalone' ? ' expanded' : '') + '" onclick="selectStandalone()">' +
+            '<span>Standalone Tools</span><span class="kit-drawer-chevron">&#9654;</span>' +
+            '</button></div>';
+        el.innerHTML = standaloneHtml + CATEGORIES.map(function (cat, i) {
             var expanded = appState.expandedCat === i;
             var html = '<div class="kit-drawer-cat">' +
                 '<button class="kit-drawer-cat-btn' + (expanded ? ' expanded' : '') + '" onclick="toggleKitDrawerCategory(' + i + ')">' +
@@ -76,7 +96,17 @@
     }
 
     function itemLabel(row) {
-        return row.quantity && row.quantity !== 1 ? (row.name + ' (' + row.quantity + ')') : row.name;
+        return row.stock_qty && row.stock_qty !== 1 ? (row.name + ' (' + row.stock_qty + ')') : row.name;
+    }
+
+    // Same two-tier photo source as Inventory: a user-uploaded image_asset_id
+    // (IndexedDB) wins over a seed-provided image_url (a static path shipped
+    // with the app).
+    function thumbHtml(row) {
+        var style = 'width:32px; height:32px; border-radius:7px; object-fit:cover; background:#f1f5f9; flex-shrink:0; margin-right:10px;';
+        if (row.image_asset_id) return '<img data-asset-id="' + row.image_asset_id + '" style="' + style + '" alt="">';
+        if (row.image_url) return '<img src="' + esc(row.image_url) + '" style="' + style + '" alt="">';
+        return '<div style="' + style + '"></div>';
     }
 
     function listSection(title, kind, rows, addHandler) {
@@ -91,17 +121,15 @@
         html += rows.map(function (r) {
             return '<div class="kit-detail-item" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;" ' +
                 'onclick="openKitItemEditor(\'' + kind + '\',\'' + r.id + '\')">' +
-                '<span>' + itemLabel(r) + '</span><span class="card-arrow">&rsaquo;</span></div>';
+                '<span style="display:flex; align-items:center;">' + thumbHtml(r) + itemLabel(r) + '</span><span class="card-arrow">&rsaquo;</span></div>';
         }).join('');
         html += '</div>';
         return html;
     }
 
     function kitDetailHtml(cat, kit) {
-        var tools = DB.find('kit_tools', function (t) { return t.kit_id === kit.id && !t.deleted_at; })
-            .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
-        var materials = DB.find('kit_items', function (i) { return i.kit_id === kit.id && !i.deleted_at; })
-            .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+        var tools = DB.find('materials', function (m) { return m.kit_id === kit.id && m.item_type === 'tool' && !m.deleted_at; });
+        var materials = DB.find('materials', function (m) { return m.kit_id === kit.id && m.item_type === 'material' && !m.deleted_at; });
 
         var html = '<div class="page-title-sm">' + kit.name + '</div>';
         html += '<div class="page-subtitle mb-4">' + cat.name + '</div>';
@@ -109,17 +137,106 @@
         html += listSection('Materials', 'material', materials, 'addKitEntry(\'material\')');
         html += '<div class="section-header mt-4"><span class="section-title">Videos</span>' +
             '<button class="section-action" onclick="addKitEntry(\'video\')">+ Add</button></div>';
-        var videos = [{ title: kit.name + ' &mdash; Overview', subtitle: 'Training video placeholder' }]
-            .concat((kit.videos || []).map(function (v) { return { title: v.title, subtitle: 'Training video placeholder (added)' }; }));
-        html += videos.map(function (v) {
-            return '<div class="card" onclick="alert(\'Demo — the training video would play here.\')">' +
-                '<div class="card-row"><div class="card-body">' +
-                '<div class="card-title">' + v.title + '</div>' +
-                '<div class="card-subtitle">' + v.subtitle + '</div>' +
-                '</div><span class="card-arrow">&#9654;</span></div></div>';
-        }).join('');
+        var videos = kit.videos || [];
+        if (videos.length === 0) {
+            html += '<div class="kit-empty">No videos uploaded.</div>';
+        } else {
+            html += '<div class="card" style="cursor:default; padding:0 14px;">';
+            html += videos.map(function (v, vi) {
+                return '<div class="kit-detail-item" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;" ' +
+                    'onclick="openKitVideo(' + vi + ')"><span>' + v.title + '</span><span class="card-arrow">&#9654;</span></div>';
+            }).join('');
+            html += '</div>';
+        }
         return html;
     }
+
+    function standaloneDetailHtml() {
+        var materials = loadStandaloneMaterials();
+        var byLoc = {};
+        var order = [];
+        materials.forEach(function (m) {
+            var loc = m.location || 'shop';
+            if (!byLoc[loc]) { byLoc[loc] = []; order.push(loc); }
+            byLoc[loc].push(m);
+        });
+        order.sort();
+
+        var html = '<div class="page-title-sm">Standalone Tools</div>';
+        html += '<div class="page-subtitle mb-4">Shelf tools not bundled into a kit &mdash; edited from Inventory.</div>';
+        if (order.length === 0) {
+            html += '<div class="kit-empty">No standalone tools yet.</div>';
+            return html;
+        }
+        order.forEach(function (loc) {
+            html += '<div class="section-header mt-4"><span class="section-title">' + locationLabel(loc) + '</span></div>';
+            html += '<div class="card" style="cursor:default; padding:0 14px;">';
+            html += byLoc[loc].map(function (m) {
+                return '<div class="kit-detail-item" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;" ' +
+                    'onclick="openStandaloneTool(\'' + m.id + '\')"><span style="display:flex; align-items:center;">' +
+                    thumbHtml(m) + m.name + (m.video_asset_id ? ' &#127916;' : '') +
+                    '</span><span class="card-arrow">&rsaquo;</span></div>';
+            }).join('');
+            html += '</div>';
+        });
+        return html;
+    }
+
+    window.selectStandalone = function () {
+        appState.selected = 'standalone';
+        appState.searchQuery = '';
+        clearSearchInput();
+        closeKitDrawer();
+        render();
+    };
+
+    window.openStandaloneTool = function (materialId) {
+        var m = DB.getById('materials', materialId);
+        if (!m) return;
+        var existing = document.getElementById('kit-standalone-panel');
+        if (existing) existing.remove();
+        var modal = document.createElement('div');
+        modal.id = 'kit-standalone-panel';
+        modal.className = 'modal-overlay';
+        modal.innerHTML =
+            '<div class="modal-sheet">' +
+                '<div class="modal-handle"></div>' +
+                '<div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">' +
+                    (m.image_asset_id || m.image_url
+                        ? '<img ' + (m.image_asset_id ? 'data-asset-id="' + m.image_asset_id + '"' : 'src="' + esc(m.image_url) + '"') +
+                            ' style="width:56px; height:56px; border-radius:10px; object-fit:cover; background:#f1f5f9;" alt="">'
+                        : '') +
+                    '<div><div class="page-title-sm">' + m.name + '</div><div class="page-subtitle">' + locationLabel(m.location || 'shop') + '</div></div>' +
+                '</div>' +
+                (m.video_asset_id ? '<button class="btn btn-outline mt-2" onclick="watchStandaloneVideo(\'' + m.id + '\')">&#9654; Watch Video</button>' : '') +
+                (!m.video_asset_id && m.reference_url ? '<a class="btn btn-outline mt-2" href="' + esc(m.reference_url) + '" target="_blank" rel="noopener" style="display:block; text-align:center; text-decoration:none;">&#128279; Reference Video (YouTube)</a>' : '') +
+                '<button class="btn btn-primary mt-2" onclick="editStandaloneInInventory(\'' + m.id + '\')">Edit in Inventory</button>' +
+                '<button class="btn btn-secondary" onclick="document.getElementById(\'kit-standalone-panel\').remove()">Close</button>' +
+            '</div>';
+        modal.addEventListener('click', function (e) { if (e.target === modal) modal.remove(); });
+        document.getElementById('phone').appendChild(modal);
+        hydrateAssetMedia(modal);
+    };
+
+    // The quick-view sheet is appended to #phone, outside #main — loadPage()
+    // only swaps #main, so it has to be removed explicitly before navigating
+    // away or it's left floating over whichever page loads next.
+    function closeStandalonePanel() {
+        var p = document.getElementById('kit-standalone-panel');
+        if (p) p.remove();
+    }
+
+    window.watchStandaloneVideo = function (materialId) {
+        closeStandalonePanel();
+        state.materialVideoId = materialId;
+        loadPage('material-video');
+    };
+
+    window.editStandaloneInInventory = function (materialId) {
+        closeStandalonePanel();
+        state.inventoryEditMaterialId = materialId;
+        loadPage('inventory');
+    };
 
     function emptyStateHtml() {
         // No kits at all is a different situation from none selected — offer
@@ -206,11 +323,14 @@
         var content = document.getElementById('kit-content');
         if (appState.searchQuery) {
             content.innerHTML = searchResultsHtml(appState.searchQuery);
+        } else if (appState.selected === 'standalone') {
+            content.innerHTML = standaloneDetailHtml();
         } else if (appState.selected) {
             content.innerHTML = kitDetailHtml(CATEGORIES[appState.selected.ci], CATEGORIES[appState.selected.ci].kits[appState.selected.ki]);
         } else {
             content.innerHTML = emptyStateHtml();
         }
+        hydrateAssetMedia(content);
     }
 
     window.openKitDrawer = function () {
@@ -241,10 +361,10 @@
     };
 
     // One shared "add to kit" sheet for tools, materials, and (fake) videos —
-    // the kind is just which table/field the name lands in. The detail view
-    // re-queries kit_tools/kit_items live on every render, and kit.videos is
-    // the same row object held by the CATEGORIES snapshot, so a plain
-    // render() shows the new entry immediately.
+    // for tools/materials, kind just becomes the new materials row's
+    // item_type. The detail view re-queries materials live on every render,
+    // and kit.videos is the same row object held by the CATEGORIES snapshot,
+    // so a plain render() shows the new entry immediately.
     window.addKitEntry = function (kind) {
         if (!appState.selected) return;
         var existing = document.getElementById('kit-add-panel');
@@ -257,11 +377,11 @@
             '<div class="modal-sheet">' +
                 '<div class="modal-handle"></div>' +
                 '<div class="page-title-sm mb-2">' + labels[kind] + '</div>' +
-                '<div class="form-group"><label>' + (kind === 'video' ? 'Video Title' : 'Name') + '</label>' +
+                '<div class="form-group"><label>' + (kind === 'video' ? 'Video Title (optional)' : 'Name') + '</label>' +
                     '<input type="text" id="ka-name" placeholder="' + (kind === 'video' ? 'e.g. Panel Swap Walkthrough' : 'e.g. Torpedo Level') + '"></div>' +
                 (kind !== 'video'
                     ? '<div class="form-group"><label>Quantity</label><input type="number" id="ka-qty" min="1" step="1" value="1"></div>'
-                    : '') +
+                    : '<div class="form-group"><label>Video File</label><input type="file" id="ka-video-file" accept="video/*"></div>') +
                 '<button class="btn btn-primary mt-2" onclick="saveKitEntry(\'' + kind + '\')">Add</button>' +
                 '<button class="btn btn-secondary" onclick="document.getElementById(\'kit-add-panel\').remove()">Cancel</button>' +
             '</div>';
@@ -271,33 +391,102 @@
 
     window.saveKitEntry = function (kind) {
         var name = (document.getElementById('ka-name').value || '').trim();
-        if (!name) { alert('Enter a name.'); return; }
         var kit = CATEGORIES[appState.selected.ci].kits[appState.selected.ki];
-        if (kind === 'tool') {
-            var toolQty = parseInt(document.getElementById('ka-qty').value, 10) || 1;
-            var maxTool = DB.find('kit_tools', function (t) { return t.kit_id === kit.id; }).length;
-            DB.insert('kit_tools', { company_id: kit.company_id, kit_id: kit.id, name: name, quantity: toolQty, sort_order: maxTool });
-        } else if (kind === 'material') {
+        if (kind === 'tool' || kind === 'material') {
+            if (!name) { alert('Enter a name.'); return; }
             var qty = parseInt(document.getElementById('ka-qty').value, 10) || 1;
-            var maxItem = DB.find('kit_items', function (i) { return i.kit_id === kit.id; }).length;
-            DB.insert('kit_items', {
-                company_id: kit.company_id, kit_id: kit.id, material_id: null,
-                name: name, quantity: qty, image_url: null, sort_order: maxItem,
+            DB.insert('materials', {
+                company_id: kit.company_id, name: name, sku: null, unit: 'each', unit_cost: 0,
+                stock_qty: qty, reorder_qty: 0, location: kit.id, kit_id: kit.id, item_type: kind,
+                image_asset_id: null, video_asset_id: null, brand: null, image_url: null, reference_url: null,
             });
+            document.getElementById('kit-add-panel').remove();
+            render();
         } else {
-            DB.update('inventory_kits', kit.id, { videos: (kit.videos || []).concat([{ title: name }]) });
+            var file = document.getElementById('ka-video-file').files[0];
+            if (!file) { alert('Choose a video file.'); return; }
+            Assets.save(file).then(function (asset) {
+                DB.update('inventory_kits', kit.id, {
+                    videos: (kit.videos || []).concat([{ title: name || file.name, video_asset_id: asset.id }]),
+                });
+                document.getElementById('kit-add-panel').remove();
+                render();
+            });
         }
-        document.getElementById('kit-add-panel').remove();
+    };
+
+    window.openKitVideo = function (index) {
+        var kit = CATEGORIES[appState.selected.ci].kits[appState.selected.ki];
+        var video = (kit.videos || [])[index];
+        if (!video) return;
+        var existing = document.getElementById('kit-video-panel');
+        if (existing) existing.remove();
+        var modal = document.createElement('div');
+        modal.id = 'kit-video-panel';
+        modal.className = 'modal-overlay';
+        modal.innerHTML =
+            '<div class="modal-sheet">' +
+                '<div class="modal-handle"></div>' +
+                '<div class="page-title-sm mb-2">' + video.title + '</div>' +
+                '<video id="kv-player" controls autoplay playsinline style="width:100%; border-radius:10px; background:#000;"></video>' +
+                '<button class="btn btn-outline mt-2" style="color:#dc2626; border-color:#fca5a5;" onclick="removeKitVideo(' + index + ')">Remove Video</button>' +
+                '<button class="btn btn-secondary" onclick="document.getElementById(\'kit-video-panel\').remove()">Close</button>' +
+            '</div>';
+        modal.addEventListener('click', function (e) { if (e.target === modal) modal.remove(); });
+        document.getElementById('phone').appendChild(modal);
+        Assets.url(video.video_asset_id).then(function (url) {
+            var player = document.getElementById('kv-player');
+            if (player && url) player.src = url;
+        });
+    };
+
+    window.removeKitVideo = function (index) {
+        var kit = CATEGORIES[appState.selected.ci].kits[appState.selected.ki];
+        var video = (kit.videos || [])[index];
+        if (!video) return;
+        if (!confirm('Remove "' + video.title + '"?')) return;
+        var updatedVideos = kit.videos.slice();
+        updatedVideos.splice(index, 1);
+        Assets.remove(video.video_asset_id);
+        DB.update('inventory_kits', kit.id, { videos: updatedVideos });
+        var panel = document.getElementById('kit-video-panel');
+        if (panel) panel.remove();
         render();
     };
 
     // Tap a tool/material row → edit sheet: rename, change quantity, or
     // remove (soft delete via deleted_at, matching the list queries above).
-    function kindTable(kind) { return kind === 'tool' ? 'kit_tools' : 'kit_items'; }
+    // Both kinds are `materials` rows now — `kind` only picks the sheet's
+    // label and, on remove/re-add, doesn't change which table is touched.
+
+    // Photo staged for the tool/material row currently open in the edit
+    // sheet — held here until Save so Cancel never orphans a blob.
+    var pendingKitItemImageFile = null;
+    var pendingKitItemImageRemoved = false;
+
+    window.handleKitItemPhotoChange = function (input) {
+        var file = input.files && input.files[0];
+        if (!file) return;
+        pendingKitItemImageFile = file;
+        pendingKitItemImageRemoved = false;
+        var preview = document.getElementById('ke-photo-preview');
+        preview.removeAttribute('data-asset-id');
+        preview.src = URL.createObjectURL(file);
+    };
+
+    window.clearKitItemPhoto = function () {
+        pendingKitItemImageFile = null;
+        pendingKitItemImageRemoved = true;
+        var preview = document.getElementById('ke-photo-preview');
+        preview.removeAttribute('data-asset-id');
+        preview.removeAttribute('src');
+    };
 
     window.openKitItemEditor = function (kind, id) {
-        var row = DB.getById(kindTable(kind), id);
+        var row = DB.getById('materials', id);
         if (!row) return;
+        pendingKitItemImageFile = null;
+        pendingKitItemImageRemoved = false;
         var existing = document.getElementById('kit-edit-panel');
         if (existing) existing.remove();
         var modal = document.createElement('div');
@@ -307,6 +496,15 @@
             '<div class="modal-sheet">' +
                 '<div class="modal-handle"></div>' +
                 '<div class="page-title-sm mb-2">' + (kind === 'tool' ? 'Edit Tool' : 'Edit Material') + '</div>' +
+                '<div class="form-group"><label>Photo</label>' +
+                    '<div style="display:flex; align-items:center; gap:10px;">' +
+                        '<img id="ke-photo-preview" ' + (row.image_asset_id ? 'data-asset-id="' + row.image_asset_id + '"' : '') +
+                            ' style="width:56px; height:56px; border-radius:10px; object-fit:cover; background:#f1f5f9;" alt="">' +
+                        '<button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById(\'ke-photo-input\').click()">Choose Photo</button>' +
+                        (row.image_asset_id ? '<button type="button" class="btn btn-outline btn-sm" style="color:#dc2626;" onclick="clearKitItemPhoto()">Remove</button>' : '') +
+                    '</div>' +
+                    '<input type="file" id="ke-photo-input" accept="image/*" style="display:none;" onchange="handleKitItemPhotoChange(this)">' +
+                '</div>' +
                 '<div class="form-group"><label>Name</label><input type="text" id="ke-name"></div>' +
                 '<div class="form-group"><label>Quantity</label><input type="number" id="ke-qty" min="1" step="1"></div>' +
                 '<button class="btn btn-primary mt-2" onclick="saveKitItemEdit(\'' + kind + '\',\'' + id + '\')">Save</button>' +
@@ -315,9 +513,10 @@
             '</div>';
         modal.addEventListener('click', function (e) { if (e.target === modal) modal.remove(); });
         document.getElementById('phone').appendChild(modal);
+        hydrateAssetMedia(modal);
         // Set values via the DOM (not the HTML string) so names with quotes render intact.
         document.getElementById('ke-name').value = row.name || '';
-        document.getElementById('ke-qty').value = row.quantity || 1;
+        document.getElementById('ke-qty').value = row.stock_qty || 1;
     };
 
     window.saveKitItemEdit = function (kind, id) {
@@ -325,15 +524,28 @@
         if (!name) { alert('Enter a name.'); return; }
         var qty = parseInt(document.getElementById('ke-qty').value, 10);
         if (!qty || qty < 1) qty = 1;
-        DB.update(kindTable(kind), id, { name: name, quantity: qty });
-        document.getElementById('kit-edit-panel').remove();
-        render();
+        var patch = { name: name, stock_qty: qty };
+
+        function finish(imageAssetId) {
+            if (imageAssetId !== undefined) patch.image_asset_id = imageAssetId;
+            DB.update('materials', id, patch);
+            document.getElementById('kit-edit-panel').remove();
+            render();
+        }
+
+        if (pendingKitItemImageFile) {
+            Assets.save(pendingKitItemImageFile).then(function (asset) { finish(asset.id); });
+        } else if (pendingKitItemImageRemoved) {
+            finish(null);
+        } else {
+            finish(undefined);
+        }
     };
 
     window.removeKitItem = function (kind, id) {
-        var row = DB.getById(kindTable(kind), id);
+        var row = DB.getById('materials', id);
         if (!confirm('Remove "' + (row ? row.name : 'this item') + '" from the kit?')) return;
-        DB.update(kindTable(kind), id, { deleted_at: new Date().toISOString() });
+        DB.softDelete('materials', id);
         document.getElementById('kit-edit-panel').remove();
         render();
     };

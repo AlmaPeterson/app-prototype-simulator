@@ -1,0 +1,36 @@
+<div class="page" style="padding-bottom:80px;">
+    <button class="btn btn-secondary btn-sm mb-4" onclick="loadPage('inventory')">&larr; Inventory</button>
+
+    <div class="page-title" id="mv-title">Video</div>
+    <div class="page-subtitle mb-4" id="mv-subtitle"></div>
+
+    <video id="mv-player" controls autoplay playsinline style="width:100%; border-radius:10px; background:#000; display:none;"></video>
+    <div class="kit-empty" id="mv-empty" style="display:none;">No video uploaded for this item yet.</div>
+</div>
+
+<script>
+(function () {
+    var material = state.materialVideoId ? DB.getById('materials', state.materialVideoId) : null;
+    var titleEl = document.getElementById('mv-title');
+    var subEl = document.getElementById('mv-subtitle');
+    var player = document.getElementById('mv-player');
+    var empty = document.getElementById('mv-empty');
+
+    titleEl.textContent = material ? material.name : 'Video';
+
+    if (!material || !material.video_asset_id) {
+        empty.innerHTML = 'No video uploaded for this item yet.' +
+            (material && material.reference_url
+                ? ' <a href="' + esc(material.reference_url) + '" target="_blank" rel="noopener">Watch the manufacturer video instead &rarr;</a>'
+                : '');
+        empty.style.display = 'block';
+        return;
+    }
+
+    subEl.textContent = 'How-to video';
+    player.style.display = 'block';
+    Assets.url(material.video_asset_id).then(function (url) {
+        if (url) player.src = url;
+    });
+})();
+</script>

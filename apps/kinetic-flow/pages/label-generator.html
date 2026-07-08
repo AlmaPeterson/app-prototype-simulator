@@ -4,18 +4,19 @@
     <div class="page-title">Labels</div>
     <div class="page-subtitle mb-4">Select kits, tools, or materials and hand them off to the Label Maker app to design and print.</div>
 
-    <!-- Saved templates come from the (separate) Label Maker app — mock
-         previews until that app is installed in this simulator. -->
+    <!-- Templates saved here (uploaded .labeltemplate files + a preview
+         image) — opening one to design/print still hands off to the
+         separate Label Maker app once it's installed in this simulator. -->
     <div class="section-header">
         <span class="section-title">Saved Templates</span>
-        <span class="kit-row-count">from Label Maker</span>
+        <span class="kit-row-count">tap to open, or upload a new one</span>
     </div>
     <div id="label-templates" style="display:flex; gap:10px; overflow-x:auto; padding-bottom:6px; margin-bottom:14px;"></div>
 
     <div class="section-header">
         <span class="section-title">Pick Items to Label</span>
     </div>
-    <input class="search-bar" type="text" id="kit-search" placeholder="Search kits..." oninput="filterLabelKits(this.value)">
+    <input class="search-bar" type="text" id="kit-search" placeholder="Search kits, tools, materials..." oninput="filterLabelKits(this.value)">
 
     <div id="label-list" class="mt-4"></div>
 
@@ -37,8 +38,9 @@
 (function () {
 
     // Group real inventory_kits rows by category, and resolve each kit's
-    // tools/materials from kit_tools/kit_items — same data source as
-    // kits.html, adapted here to add per-tool/per-material checkboxes.
+    // tools/materials from the materials table (kit_id-tagged rows) — same
+    // data source as kits.html, adapted here to add per-tool/per-material
+    // checkboxes.
     function loadCategories() {
         var kits = DB.find('inventory_kits', function (k) {
             return k.company_id === state.currentCompanyId && !k.deleted_at;
@@ -48,19 +50,40 @@
         kits.forEach(function (k) {
             var cat = k.category || 'Uncategorized';
             if (!byCat[cat]) { byCat[cat] = []; order.push(cat); }
-            var tools = DB.find('kit_tools', function (t) { return t.kit_id === k.id; })
-                .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); })
+            var tools = DB.find('materials', function (m) { return m.kit_id === k.id && m.item_type === 'tool' && !m.deleted_at; })
                 .map(function (t) { return t.name; });
-            var materials = DB.find('kit_items', function (i) { return i.kit_id === k.id; })
-                .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); })
-                .map(function (i) { return i.quantity && i.quantity !== 1 ? (i.name + ' (' + i.quantity + ')') : i.name; });
+            var materials = DB.find('materials', function (m) { return m.kit_id === k.id && m.item_type === 'material' && !m.deleted_at; })
+                .map(function (i) { return i.stock_qty && i.stock_qty !== 1 ? (i.name + ' (' + i.stock_qty + ')') : i.name; });
             byCat[cat].push({ id: k.id, name: k.name, tools: tools, materials: materials });
         });
         return order.map(function (name) { return { name: name, kits: byCat[name] }; });
     }
 
+    // Tools/materials that aren't part of any kit — e.g. big shelf tools kept
+    // on a trailer (drills, band saw, batteries) rather than bundled into a
+    // job kit. Grouped by `location` (shop/truck_1/trailer/...) since that's
+    // the only organizing field standalone materials have.
+    function loadStandaloneGroups() {
+        var standalone = DB.find('materials', function (m) {
+            return m.company_id === state.currentCompanyId && !m.deleted_at && !m.kit_id;
+        });
+        var byLoc = {};
+        var order = [];
+        standalone.forEach(function (m) {
+            var loc = m.location || 'shop';
+            if (!byLoc[loc]) { byLoc[loc] = []; order.push(loc); }
+            byLoc[loc].push(m);
+        });
+        return order.sort().map(function (loc) { return { location: loc, items: byLoc[loc] }; });
+    }
+
+    function locationLabel(loc) {
+        return loc.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+    }
+
     var CATEGORIES = loadCategories();
-    var appState = { expandedCats: new Set(), expandedKits: new Set(), searchQuery: '' };
+    var STANDALONE_GROUPS = loadStandaloneGroups();
+    var appState = { expandedCats: new Set(), expandedKits: new Set(), expandedLocations: new Set(), searchQuery: '' };
     var selected = new Map(); // id -> label text
 
     function clearSearchInput() {
@@ -127,8 +150,36 @@
         return html;
     }
 
+    function standaloneGroupHtml(group, gi) {
+        var expanded = appState.expandedLocations.has(gi);
+        var html = '<div class="label-cat">';
+        html += '<div class="label-row label-row-cat">' +
+            '<button class="label-toggle" onclick="toggleLocationExpand(' + gi + ')">' +
+            '<span class="label-name">' + locationLabel(group.location) + '</span>' +
+            '<span class="label-count">' + group.items.length + ' item' + (group.items.length !== 1 ? 's' : '') + '</span>' +
+            '<span class="label-chevron">' + (expanded ? '&#9660;' : '&#9654;') + '</span>' +
+            '</button></div>';
+        if (expanded) {
+            html += '<div class="label-kit-detail">' + group.items.map(function (m) {
+                var id = 'S|' + m.id;
+                var checked = selected.has(id) ? ' checked' : '';
+                return '<div class="label-row label-row-item">' +
+                    '<input type="checkbox"' + checked + ' class="label-checkbox" onclick="toggleStandaloneItem(\'' + m.id + '\')">' +
+                    '<span class="label-name">' + m.name + '</span></div>';
+            }).join('') + '</div>';
+        }
+        html += '</div>';
+        return html;
+    }
+
     function treeHtml() {
-        return '<div class="label-tree">' + CATEGORIES.map(categoryHtml).join('') + '</div>';
+        var html = '<div class="label-tree">' + CATEGORIES.map(categoryHtml).join('') + '</div>';
+        if (STANDALONE_GROUPS.length) {
+            html += '<div class="section-header mt-2"><span class="section-title">Standalone Tools &amp; Materials</span>' +
+                '<span class="kit-row-count">not in a kit</span></div>';
+            html += '<div class="label-tree">' + STANDALONE_GROUPS.map(standaloneGroupHtml).join('') + '</div>';
+        }
+        return html;
     }
 
     function searchResultsHtml(query) {
@@ -139,10 +190,16 @@
                 if (k.name.toLowerCase().indexOf(q) !== -1) results.push({ cat: cat, ci: ci, k: k, ki: ki });
             });
         });
+        var standaloneMatches = [];
+        STANDALONE_GROUPS.forEach(function (group) {
+            group.items.forEach(function (m) {
+                if (m.name.toLowerCase().indexOf(q) !== -1) standaloneMatches.push(m);
+            });
+        });
         var html = '<div class="section-header"><span class="section-title">Search Results</span>' +
-            '<span class="kit-row-count">' + results.length + ' found</span></div>';
-        if (results.length === 0) {
-            html += '<div class="kit-empty">No kits match &quot;' + query + '&quot;.</div>';
+            '<span class="kit-row-count">' + (results.length + standaloneMatches.length) + ' found</span></div>';
+        if (results.length === 0 && standaloneMatches.length === 0) {
+            html += '<div class="kit-empty">No kits, tools, or materials match &quot;' + query + '&quot;.</div>';
             return html;
         }
         html += '<div class="label-tree">' + results.map(function (r) {
@@ -152,6 +209,11 @@
                 '<button class="label-toggle" onclick="jumpToKit(' + r.ci + ',' + r.ki + ')">' +
                 '<span class="label-name">' + r.k.name + '<br><span class="label-subtext">' + r.cat.name + '</span></span>' +
                 '</button></div>';
+        }).join('') + standaloneMatches.map(function (m) {
+            var checked = selected.has('S|' + m.id) ? ' checked' : '';
+            return '<div class="label-row label-row-item">' +
+                '<input type="checkbox"' + checked + ' class="label-checkbox" onclick="toggleStandaloneItem(\'' + m.id + '\')">' +
+                '<span class="label-name">' + m.name + '<br><span class="label-subtext">' + locationLabel(m.location || 'shop') + '</span></span></div>';
         }).join('') + '</div>';
         return html;
     }
@@ -209,6 +271,23 @@
         render();
     };
 
+    window.toggleLocationExpand = function (gi) {
+        if (appState.expandedLocations.has(gi)) appState.expandedLocations.delete(gi);
+        else appState.expandedLocations.add(gi);
+        render();
+    };
+
+    window.toggleStandaloneItem = function (materialId) {
+        var id = 'S|' + materialId;
+        if (selected.has(id)) {
+            selected.delete(id);
+        } else {
+            var m = DB.getById('materials', materialId);
+            selected.set(id, m ? m.name : materialId);
+        }
+        render();
+    };
+
     window.clearLabelSelection = function () {
         selected.clear();
         render();
@@ -226,21 +305,199 @@
             + ' ready — this will open the Label Maker app once it’s installed in this simulator.'], '#1e40af');
     };
 
-    // Mock template previews — stand-ins for real saved templates that will
-    // sync from Label Maker.
-    var MOCK_TEMPLATES = [
-        { name: 'Kit Tools — Avery 5160', size: '30 / sheet' },
-        { name: 'Shelf Tags — 2×4', size: '10 / sheet' },
-        { name: 'Bin Labels — 1×3', size: '30 / sheet' },
-    ];
-    document.getElementById('label-templates').innerHTML = MOCK_TEMPLATES.map(function (t) {
-        return '<div class="card" style="min-width:130px; flex:0 0 auto; margin:0; cursor:pointer;" onclick="sendToLabelMaker()">' +
-            '<div style="border:1px dashed #cbd5e1; border-radius:6px; height:44px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:0.65rem; margin-bottom:6px;">Preview</div>' +
-            '<div style="font-size:0.75rem; font-weight:600;">' + t.name + '</div>' +
-            '<div style="font-size:0.68rem; color:#94a3b8;">' + t.size + '</div>' +
+    // Saved templates come from the real label_templates table now: the seed
+    // row (Avery 5163) plus whatever the user has uploaded here. Template
+    // files are big JSON blobs (label_templates/*.labeltemplate on disk for
+    // seeds, IndexedDB Assets for uploads) — same asset split inventory.html
+    // uses for photos/videos, so neither blows through localStorage's quota.
+    function templateCardHtml(t) {
+        var preview = t.preview_image_asset_id
+            ? '<img data-asset-id="' + t.preview_image_asset_id + '" style="width:100%; height:44px; object-fit:cover; border-radius:6px; margin-bottom:6px; background:#f1f5f9;" alt="">'
+            : '<div style="border:1px dashed #cbd5e1; border-radius:6px; height:44px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:0.65rem; margin-bottom:6px;">Preview</div>';
+        return '<div class="card" style="min-width:130px; flex:0 0 auto; margin:0; cursor:pointer;" onclick="openTemplateActions(\'' + t.id + '\')">' +
+            preview +
+            '<div style="font-size:0.75rem; font-weight:600;">' + esc(t.name) + '</div>' +
+            '<div style="font-size:0.68rem; color:#94a3b8;">' + esc(t.size_label || '') + '</div>' +
         '</div>';
-    }).join('');
+    }
 
+    function uploadTileHtml() {
+        return '<div class="card" style="min-width:100px; flex:0 0 auto; margin:0; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px dashed #cbd5e1;" onclick="openUploadTemplatePanel()">' +
+            '<div style="font-size:1.4rem; color:#94a3b8; line-height:1; margin-bottom:2px;">+</div>' +
+            '<div style="font-size:0.7rem; color:#64748b; text-align:center;">Upload<br>Template</div>' +
+        '</div>';
+    }
+
+    function renderTemplates() {
+        var rows = DB.find('label_templates', function (t) {
+            return t.company_id === state.currentCompanyId && !t.deleted_at;
+        });
+        var el = document.getElementById('label-templates');
+        el.innerHTML = rows.map(templateCardHtml).join('') + uploadTileHtml();
+        hydrateAssetMedia(el);
+    }
+
+    window.openLabelMakerForTemplate = function (templateId) {
+        var t = DB.getById('label_templates', templateId);
+        showToast('Label Maker Handoff', [(t ? '“' + t.name + '”' : 'This template')
+            + ' will open in the Label Maker app once it’s installed in this simulator.'], '#1e40af');
+    };
+
+    window.downloadLabelTemplate = function (templateId) {
+        var t = DB.getById('label_templates', templateId);
+        if (!t) return;
+        var urlPromise = t.template_asset_id
+            ? Assets.url(t.template_asset_id)
+            : fetch('apps/kinetic-flow/db/' + t.template_path).then(function (r) { return r.blob(); }).then(function (blob) { return URL.createObjectURL(blob); });
+        urlPromise.then(function (url) {
+            if (!url) { alert('Template file not found.'); return; }
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = (t.name || 'label-template').replace(/[^a-z0-9\-_ ]/gi, '').trim() + '.labeltemplate';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        });
+    };
+
+    window.removeLabelTemplate = function (templateId) {
+        var t = DB.getById('label_templates', templateId);
+        if (!confirm('Remove ' + (t ? '“' + t.name + '”' : 'this template') + '? This can\'t be undone.')) return;
+        DB.softDelete('label_templates', templateId);
+        var sheet = document.getElementById('lt-action-sheet');
+        if (sheet) sheet.remove();
+        renderTemplates();
+    };
+
+    window.openTemplateActions = function (templateId) {
+        var t = DB.getById('label_templates', templateId);
+        if (!t) return;
+        var existing = document.getElementById('lt-action-sheet');
+        if (existing) existing.remove();
+        var modal = document.createElement('div');
+        modal.id = 'lt-action-sheet';
+        modal.className = 'modal-overlay';
+        modal.innerHTML =
+            '<div class="modal-sheet">' +
+                '<div class="modal-handle"></div>' +
+                '<div class="page-title-sm mb-2">' + esc(t.name) + '</div>' +
+                '<div class="card-subtitle mb-4">' + esc(t.size_label || '') + '</div>' +
+                '<button class="btn btn-primary" onclick="document.getElementById(\'lt-action-sheet\').remove(); openLabelMakerForTemplate(\'' + t.id + '\')">Open in Label Maker</button>' +
+                '<button class="btn btn-outline" onclick="downloadLabelTemplate(\'' + t.id + '\')">Download Template File</button>' +
+                '<button class="btn btn-secondary" style="color:#dc2626;" onclick="removeLabelTemplate(\'' + t.id + '\')">Remove Template</button>' +
+                '<button class="btn btn-secondary" onclick="document.getElementById(\'lt-action-sheet\').remove()">Cancel</button>' +
+            '</div>';
+        modal.addEventListener('click', function (e) { if (e.target === modal) modal.remove(); });
+        document.getElementById('phone').appendChild(modal);
+    };
+
+    // Upload flow — file staged here until Save, same pattern as
+    // inventory.html's pendingImageFile (Assets.save() only happens once, on
+    // submit, so Cancel never leaves an orphaned blob in IndexedDB).
+    var pendingTemplateFile = null;
+    var pendingTemplatePreviewFile = null;
+
+    window.handleTemplateFileChange = function (input) {
+        var file = input.files && input.files[0];
+        if (!file) return;
+        pendingTemplateFile = file;
+        document.getElementById('lt-file-name').textContent = file.name;
+        var nameField = document.getElementById('lt-name');
+        var sizeField = document.getElementById('lt-size');
+        var reader = new FileReader();
+        reader.onload = function () {
+            // Best-effort autofill from a Label Designer .labeltemplate's
+            // own metadata — falls back to manual entry for any file this
+            // shape doesn't match (or isn't JSON at all).
+            try {
+                var parsed = JSON.parse(reader.result);
+                var tpl = parsed && parsed.design && parsed.design.template;
+                if (tpl) {
+                    if (!nameField.value && tpl.name) nameField.value = tpl.name;
+                    if (!sizeField.value) {
+                        var perSheet = (tpl.rows && tpl.columns) ? (tpl.rows * tpl.columns) + '/sheet' : '';
+                        sizeField.value = [tpl.description, perSheet].filter(Boolean).join(' — ');
+                    }
+                }
+            } catch (e) { /* not introspectable — user fills in name/size manually */ }
+        };
+        reader.readAsText(file);
+    };
+
+    window.handleTemplatePreviewChange = function (input) {
+        var file = input.files && input.files[0];
+        if (!file) return;
+        pendingTemplatePreviewFile = file;
+        var preview = document.getElementById('lt-preview-img');
+        preview.src = URL.createObjectURL(file);
+        preview.style.display = 'block';
+        document.getElementById('lt-preview-empty').style.display = 'none';
+    };
+
+    window.openUploadTemplatePanel = function () {
+        pendingTemplateFile = null;
+        pendingTemplatePreviewFile = null;
+        var existing = document.getElementById('lt-upload-panel');
+        if (existing) existing.remove();
+        var modal = document.createElement('div');
+        modal.id = 'lt-upload-panel';
+        modal.className = 'modal-overlay';
+        modal.innerHTML =
+            '<div class="modal-sheet">' +
+                '<div class="modal-handle"></div>' +
+                '<div class="page-title-sm mb-2">Upload Template</div>' +
+                '<div class="form-group"><label>Template File</label>' +
+                    '<div style="display:flex; align-items:center; gap:10px;">' +
+                        '<button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById(\'lt-file-input\').click()">Choose File</button>' +
+                        '<span id="lt-file-name" style="font-size:0.78rem; color:#64748b;">No file chosen</span>' +
+                    '</div>' +
+                    '<input type="file" id="lt-file-input" accept=".labeltemplate,.json,application/json" style="display:none;" onchange="handleTemplateFileChange(this)">' +
+                '</div>' +
+                '<div class="form-group"><label>Preview Image (optional)</label>' +
+                    '<div style="display:flex; align-items:center; gap:10px;">' +
+                        '<img id="lt-preview-img" style="width:56px; height:56px; border-radius:8px; object-fit:cover; background:#f1f5f9; display:none;" alt="">' +
+                        '<span id="lt-preview-empty" style="font-size:0.78rem; color:#94a3b8;">No image</span>' +
+                        '<button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById(\'lt-preview-input\').click()">Choose Image</button>' +
+                    '</div>' +
+                    '<input type="file" id="lt-preview-input" accept="image/*" style="display:none;" onchange="handleTemplatePreviewChange(this)">' +
+                '</div>' +
+                '<div class="form-group"><label>Name</label><input type="text" id="lt-name" placeholder="e.g. Avery 5163"></div>' +
+                '<div class="form-group"><label>Size / Description</label><input type="text" id="lt-size" placeholder="e.g. Shipping Labels (2&quot; × 4&quot;) — 10/sheet"></div>' +
+                '<button class="btn btn-primary mt-2" onclick="saveLabelTemplate()">Save Template</button>' +
+                '<button class="btn btn-secondary" onclick="document.getElementById(\'lt-upload-panel\').remove()">Cancel</button>' +
+            '</div>';
+        modal.addEventListener('click', function (e) { if (e.target === modal) modal.remove(); });
+        document.getElementById('phone').appendChild(modal);
+    };
+
+    window.saveLabelTemplate = function () {
+        if (!pendingTemplateFile) { alert('Choose a template file to upload.'); return; }
+        var name = (document.getElementById('lt-name').value || '').trim();
+        if (!name) { alert('Enter a name for this template.'); return; }
+        var sizeLabel = (document.getElementById('lt-size').value || '').trim();
+
+        var templateAssetDone = Assets.save(pendingTemplateFile).then(function (asset) { return asset.id; });
+        var previewAssetDone = pendingTemplatePreviewFile
+            ? Assets.save(pendingTemplatePreviewFile).then(function (asset) { return asset.id; })
+            : Promise.resolve(null);
+
+        Promise.all([templateAssetDone, previewAssetDone]).then(function (ids) {
+            DB.insert('label_templates', {
+                company_id: state.currentCompanyId,
+                name: name,
+                size_label: sizeLabel,
+                template_path: null,
+                template_asset_id: ids[0],
+                preview_image_asset_id: ids[1],
+            });
+            var panel = document.getElementById('lt-upload-panel');
+            if (panel) panel.remove();
+            renderTemplates();
+            showToast('Template Added', [name + ' is now available in Saved Templates.'], '#16a34a');
+        });
+    };
+
+    renderTemplates();
     render();
 })();
 </script>
