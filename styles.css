@@ -310,16 +310,17 @@ body.fullscreen-mode #resize-grip {
 }
 
 #home-icons {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, 64px);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
     gap: 24px 16px;
-    justify-content: start;
     direction: ltr;
     width: 100%;
 }
 
 .home-icon-slot {
     display: flex;
+    flex: 0 0 64px;
     flex-direction: column;
     align-items: center;
     direction: ltr;
