@@ -45,6 +45,7 @@ import {
 import { generateBulkPDF } from '../../lib/export.js';
 import { checkMissingReferences } from '../../lib/referenceChecker.js';
 import { showImageFixDialog } from './ImageFixDialog.js';
+import { showColumnFixDialog } from './ColumnFixDialog.js';
 import { getPortalRoot, isDesignerVisible } from '../../lib/portal.js';
 
 // ============================================================================
@@ -501,10 +502,27 @@ export function createToolbar(container) {
     refIndicator.addEventListener('blur', hideRefTooltip);
     refIndicator.addEventListener('click', () => {
         hideRefTooltip();
-        // Missing images are the one issue with an actual fix flow — jump
-        // straight there instead of burying it as the last, easy-to-miss
-        // item in a dropdown otherwise full of disabled/informational rows.
-        // Missing columns/data (no fix flow yet) still fall back to the list.
+        // Missing images and missing columns each have an actual fix flow —
+        // jump straight there instead of burying it as an easy-to-miss item
+        // in a dropdown otherwise full of disabled/informational rows.
+        // Prefer whichever dialog has something it can actually fix: a
+        // "static" missing image (a placeholder's fallback imageName, not
+        // tied to any data column) has no fix flow at all — ImageFixDialog
+        // can only resolve data-bound ones (entries with a columnId) — so a
+        // template whose placeholder just has a stale default imageName
+        // would otherwise permanently shadow the Column dialog even after
+        // every real column binding is fixed. Missing data (no fix flow
+        // yet) still falls back to the plain list.
+        const hasFixableImages = !!lastRefResult && lastRefResult.missingImages.some((m) => m.columnId != null);
+        const hasFixableColumns = !!lastRefResult && lastRefResult.missingColumns.length > 0;
+        if (hasFixableImages) {
+            showImageFixDialog();
+            return;
+        }
+        if (hasFixableColumns) {
+            showColumnFixDialog();
+            return;
+        }
         if (lastRefResult && lastRefResult.missingImages.length > 0) {
             showImageFixDialog();
             return;
@@ -655,44 +673,15 @@ function scheduleMissingRefsCheck() {
     }, 400);
 }
 
-/** Cap on how many individual named entries to list per category before summarizing. */
-const REF_LIST_LIMIT = 5;
-
-/**
- * Build dropdown items naming the specific missing things (image filenames,
- * column names) rather than just a bare count — "3 missing images" doesn't
- * tell you which ones to go fix.
- * @param {string} heading
- * @param {string[]} names - already deduplicated
- * @returns {Array}
- */
-function buildNamedRefItems(heading, names) {
-    const unique = Array.from(new Set(names));
-    const items = [{ label: `${heading} (${unique.length})`, disabled: true }];
-    for (const name of unique.slice(0, REF_LIST_LIMIT)) {
-        items.push({ label: `  ${name}`, disabled: true });
-    }
-    if (unique.length > REF_LIST_LIMIT) {
-        items.push({ label: `  +${unique.length - REF_LIST_LIMIT} more`, disabled: true });
-    }
-    return items;
-}
-
 function showRefIndicatorDropdown(trigger) {
     if (!lastRefResult || lastRefResult.totalCount === 0) return;
 
-    // Missing images are handled by jumping straight to the fix dialog (see
-    // the click handler above), so this list only ever needs to cover the
-    // issues that don't have a dedicated fix flow.
+    // Missing images and missing columns are both handled by jumping
+    // straight to their fix dialogs (see the click handler above), so this
+    // list only ever needs to cover missing data — the one issue left
+    // without a dedicated fix flow.
     const items = [];
-    if (lastRefResult.missingColumns.length > 0) {
-        if (items.length > 0) items.push({ divider: true });
-        items.push(
-            ...buildNamedRefItems('Missing columns', lastRefResult.missingColumns.map((m) => m.columnName)),
-        );
-    }
     if (lastRefResult.missingData.length > 0) {
-        if (items.length > 0) items.push({ divider: true });
         items.push({ label: `Missing data (${lastRefResult.missingData.length} entries)`, disabled: true });
     }
 
@@ -765,9 +754,16 @@ function buildRefTooltipContent() {
 
     const hint = document.createElement('div');
     hint.className = 'toolbar-ref-tooltip-hint';
-    hint.textContent = lastRefResult.missingImages.length > 0
-        ? 'Click to fix missing images →'
-        : 'Click to view details →';
+    const hasFixableImages = lastRefResult.missingImages.some((m) => m.columnId != null);
+    if (hasFixableImages) {
+        hint.textContent = 'Click to fix missing images →';
+    } else if (lastRefResult.missingColumns.length > 0) {
+        hint.textContent = 'Click to fix missing columns →';
+    } else if (lastRefResult.missingImages.length > 0) {
+        hint.textContent = 'Click to fix missing images →';
+    } else {
+        hint.textContent = 'Click to view details →';
+    }
     frag.appendChild(hint);
 
     return frag;

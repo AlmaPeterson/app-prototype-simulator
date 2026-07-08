@@ -12,7 +12,8 @@
  * @module app
  */
 
-import { getState, setViewMode } from './store/designStore.js';
+import { getState, setViewMode, setTemplate, setMasterLabel } from './store/designStore.js';
+import { setColumns as setDataColumns, setRows as setDataRows } from './store/dataStore.js';
 import { initializeAssets } from './lib/assets.js';
 import { createCanvasRenderer } from './components/canvas/CanvasRenderer.js';
 import { createToolbar, destroyToolbar } from './components/ui/Toolbar.js';
@@ -20,6 +21,8 @@ import { createElementTools } from './components/ui/ElementTools.js';
 import { createPropertyPanel, destroyPropertyPanel } from './components/ui/PropertyPanel.js';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts.js';
 import { isDropdownOpen, closeDropdown } from './components/ui/DropdownMenu.js';
+import { deserializeDesignOnly } from './lib/fileFormat.js';
+import { createDataColumn, createDataRow } from './types.js';
 
 // ============================================================================
 // Styles
@@ -322,6 +325,60 @@ export async function mountLabelDesigner(container) {
     currentInstance = new LabelDesigner(container);
     await currentInstance.init();
     return currentInstance;
+}
+
+/**
+ * Load a design (and optional data rows) handed off by another app in the
+ * shell — e.g. Kinetic Flow's Labels page sending a saved template plus the
+ * kit/inventory items the user picked. Call after mountLabelDesigner(); the
+ * module-level stores it writes to are the same ones the Toolbar's own
+ * Load-file menu items use, so this is just that same load path minus the
+ * file-picker dialog.
+ *
+ * `design`, if given, is a full parsed `.labeltemplate` JSON object (the
+ * design-only file format — template + masterLabel + labelOverrides).
+ * `records`, if given, is an array of plain `{ ColumnName: value }` objects;
+ * one DataColumn is created per distinct key seen across all records. Text
+ * elements bind to columns by name at render time, so this alone is enough
+ * for `{ColumnName}` text placeholders — image/QR placeholders baked into
+ * the design reference a specific columnId and will show up in the
+ * Toolbar's missing-reference check for the user to rebind by hand, same as
+ * loading any mismatched design+data pair.
+ *
+ * @param {{ design?: object, records?: Array<Record<string, any>> }} handoff
+ */
+export function loadHandoff(handoff) {
+    if (!handoff) return;
+
+    if (handoff.design) {
+        try {
+            const result = deserializeDesignOnly(handoff.design);
+            setTemplate(result.template);
+            setMasterLabel(result.masterLabel);
+        } catch (err) {
+            console.error('Label Designer: failed to load handed-off template', err);
+        }
+    }
+
+    if (Array.isArray(handoff.records) && handoff.records.length > 0) {
+        const columnNames = [];
+        handoff.records.forEach((record) => {
+            Object.keys(record).forEach((key) => {
+                if (columnNames.indexOf(key) === -1) columnNames.push(key);
+            });
+        });
+        const columns = columnNames.map((name) => createDataColumn({ name }));
+        const rows = handoff.records.map((record) => {
+            const row = createDataRow();
+            columns.forEach((col) => {
+                const value = record[col.name];
+                if (value !== undefined && value !== null && value !== '') row[col.id] = value;
+            });
+            return row;
+        });
+        setDataColumns(columns);
+        setDataRows(rows);
+    }
 }
 
 /**

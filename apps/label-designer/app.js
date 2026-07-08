@@ -53,8 +53,15 @@
             const main = document.getElementById('main');
             main.innerHTML = '<div id="ld-root"></div>';
             const root = document.getElementById('ld-root');
+            // Another app (Kinetic Flow's Labels page) can stage a template +
+            // data handoff on window.LabelDesignerHandoff just before calling
+            // openApp('label-designer') — consumed once, here, so a later
+            // plain re-open of this app doesn't replay stale data.
+            const handoff = window.LabelDesignerHandoff || null;
+            window.LabelDesignerHandoff = null;
             loadModule()
                 .then(() => mod.mountLabelDesigner(root))
+                .then(() => { if (handoff) mod.loadHandoff(handoff); })
                 .catch((err) => {
                     console.error('Label Designer failed to start:', err);
                     root.innerHTML =
