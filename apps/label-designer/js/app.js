@@ -145,6 +145,28 @@ function injectAppStyles() {
         #ld-root.ld-narrow #property-panel.ld-drawer-open {
             transform: translateX(0);
         }
+
+        /*
+         * The sidebars' Resizable wrapper (see Resizable.js) keeps its own
+         * inline pixel width from desktop use, and drawers aren't meant to
+         * be user-resizable at all — but nothing stopped the drag handle
+         * from still working here. Dragging it grows the wrapper past the
+         * drawer's clipped width, which shoves the handle itself out of the
+         * visible/hit-testable area, so a second drag to shrink it back
+         * can't grab anything: the panel gets stuck oversized. Force the
+         * wrapper to just fill the drawer and hide the handle instead.
+         */
+        #ld-root.ld-narrow #element-tools .resizable-wrapper,
+        #ld-root.ld-narrow #property-panel .resizable-wrapper {
+            width: 100% !important;
+            min-width: 0 !important;
+            max-width: none !important;
+        }
+
+        #ld-root.ld-narrow #element-tools .resizable-handle,
+        #ld-root.ld-narrow #property-panel .resizable-handle {
+            display: none;
+        }
     `;
     document.head.appendChild(style);
 }
