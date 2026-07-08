@@ -15,7 +15,7 @@
 // apps/label-designer's in-memory stores.
 (function () {
 const KITS_URL = 'apps/kinetic-flow/db/inventory_kits.json';
-const TOOLS_URL = 'apps/kinetic-flow/db/kit_tools.json';
+const MATERIALS_URL = 'apps/kinetic-flow/db/materials.json';
 
 const CATEGORY_ICONS = {
     'Electrical': '⚡',
@@ -66,7 +66,7 @@ const FEATURED_IDS = [
 
 // ── Catalog (loaded once, cached in module scope) ───────────────────────────
 let KITS = null;
-let TOOLS = null;
+let MATERIALS = null;
 let CATEGORIES = null; // [{ name, kits: [kit,...] }] in first-seen order
 let loadPromise = null;
 
@@ -74,10 +74,10 @@ function loadCatalog() {
     if (loadPromise) return loadPromise;
     loadPromise = Promise.all([
         fetch(KITS_URL).then(r => r.json()),
-        fetch(TOOLS_URL).then(r => r.json()),
-    ]).then(([kits, tools]) => {
+        fetch(MATERIALS_URL).then(r => r.json()),
+    ]).then(([kits, materials]) => {
         KITS = kits;
-        TOOLS = tools;
+        MATERIALS = materials;
         const byCat = {};
         const order = [];
         kits.forEach(k => {
@@ -92,8 +92,7 @@ function loadCatalog() {
 
 function getKit(id) { return KITS && KITS.find(k => k.id === id); }
 function toolsForKit(id) {
-    return (TOOLS || []).filter(t => t.kit_id === id)
-        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    return (MATERIALS || []).filter(m => m.kit_id === id && m.item_type === 'tool' && !m.deleted_at);
 }
 function categoryIcon(cat) { return CATEGORY_ICONS[cat] || '🧰'; }
 function pricingFor(kit) {
