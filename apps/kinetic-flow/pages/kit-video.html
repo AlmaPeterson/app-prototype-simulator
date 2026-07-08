@@ -1,0 +1,48 @@
+<div class="page" style="padding-bottom:80px;">
+    <button class="btn btn-secondary btn-sm mb-4" onclick="loadPage('kits')">&larr; Kit</button>
+
+    <div class="page-title" id="kv-title">Video</div>
+    <div class="page-subtitle mb-4" id="kv-subtitle"></div>
+
+    <video id="kv-player" controls autoplay playsinline style="width:100%; border-radius:10px; background:#000; display:none;"></video>
+    <div class="kit-empty" id="kv-empty" style="display:none;">Video not found.</div>
+
+    <button class="btn btn-outline mt-4" id="kv-remove-btn" style="color:#dc2626; border-color:#fca5a5; display:none;" onclick="removeKitVideo()">Remove Video</button>
+</div>
+
+<script>
+(function () {
+    var kit = state.kitVideoId ? DB.getById('inventory_kits', state.kitVideoId) : null;
+    var video = kit ? (kit.videos || []).find(function (v) { return v.video_asset_id === state.kitVideoEntryId; }) : null;
+
+    var titleEl = document.getElementById('kv-title');
+    var subEl = document.getElementById('kv-subtitle');
+    var player = document.getElementById('kv-player');
+    var empty = document.getElementById('kv-empty');
+    var removeBtn = document.getElementById('kv-remove-btn');
+
+    titleEl.textContent = video ? video.title : 'Video';
+    subEl.textContent = kit ? kit.name : '';
+
+    if (!video) {
+        empty.style.display = 'block';
+        return;
+    }
+
+    player.style.display = 'block';
+    removeBtn.style.display = 'block';
+    Assets.url(video.video_asset_id).then(function (url) {
+        if (url) player.src = url;
+    });
+
+    window.removeKitVideo = function () {
+        if (!confirm('Remove "' + video.title + '"?')) return;
+        var updatedVideos = kit.videos.filter(function (v) { return v.video_asset_id !== video.video_asset_id; });
+        Assets.remove(video.video_asset_id);
+        DB.update('inventory_kits', kit.id, { videos: updatedVideos });
+        // kits.html re-selects this kit via kitVideoReturnKitId (set when we
+        // navigated here), so the removed video is simply gone from its list.
+        loadPage('kits');
+    };
+})();
+</script>

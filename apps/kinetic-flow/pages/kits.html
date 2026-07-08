@@ -142,9 +142,9 @@
             html += '<div class="kit-empty">No videos uploaded.</div>';
         } else {
             html += '<div class="card" style="cursor:default; padding:0 14px;">';
-            html += videos.map(function (v, vi) {
+            html += videos.map(function (v) {
                 return '<div class="kit-detail-item" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;" ' +
-                    'onclick="openKitVideo(' + vi + ')"><span>' + v.title + '</span><span class="card-arrow">&#9654;</span></div>';
+                    'onclick="openKitVideo(\'' + jsArg(v.video_asset_id) + '\')"><span>' + esc(v.title) + '</span><span class="card-arrow">&#9654;</span></div>';
             }).join('');
             html += '</div>';
         }
@@ -415,43 +415,18 @@
         }
     };
 
-    window.openKitVideo = function (index) {
+    // A kit can have multiple videos (unlike a material's single
+    // video_asset_id), so the handoff needs both which kit and which video
+    // entry — video_asset_id is already unique per upload, so it doubles as
+    // the entry identifier without a separate id field. kitVideoReturnKitId
+    // lets kits.html re-select this kit when the video page navigates back,
+    // same as material-video.html's material-id handoff but round-trip.
+    window.openKitVideo = function (videoAssetId) {
         var kit = CATEGORIES[appState.selected.ci].kits[appState.selected.ki];
-        var video = (kit.videos || [])[index];
-        if (!video) return;
-        var existing = document.getElementById('kit-video-panel');
-        if (existing) existing.remove();
-        var modal = document.createElement('div');
-        modal.id = 'kit-video-panel';
-        modal.className = 'modal-overlay';
-        modal.innerHTML =
-            '<div class="modal-sheet">' +
-                '<div class="modal-handle"></div>' +
-                '<div class="page-title-sm mb-2">' + video.title + '</div>' +
-                '<video id="kv-player" controls autoplay playsinline style="width:100%; border-radius:10px; background:#000;"></video>' +
-                '<button class="btn btn-outline mt-2" style="color:#dc2626; border-color:#fca5a5;" onclick="removeKitVideo(' + index + ')">Remove Video</button>' +
-                '<button class="btn btn-secondary" onclick="document.getElementById(\'kit-video-panel\').remove()">Close</button>' +
-            '</div>';
-        modal.addEventListener('click', function (e) { if (e.target === modal) modal.remove(); });
-        document.getElementById('phone').appendChild(modal);
-        Assets.url(video.video_asset_id).then(function (url) {
-            var player = document.getElementById('kv-player');
-            if (player && url) player.src = url;
-        });
-    };
-
-    window.removeKitVideo = function (index) {
-        var kit = CATEGORIES[appState.selected.ci].kits[appState.selected.ki];
-        var video = (kit.videos || [])[index];
-        if (!video) return;
-        if (!confirm('Remove "' + video.title + '"?')) return;
-        var updatedVideos = kit.videos.slice();
-        updatedVideos.splice(index, 1);
-        Assets.remove(video.video_asset_id);
-        DB.update('inventory_kits', kit.id, { videos: updatedVideos });
-        var panel = document.getElementById('kit-video-panel');
-        if (panel) panel.remove();
-        render();
+        state.kitVideoId = kit.id;
+        state.kitVideoEntryId = videoAssetId;
+        state.kitVideoReturnKitId = kit.id;
+        loadPage('kit-video');
     };
 
     // Tap a tool/material row → edit sheet: rename, change quantity, or
@@ -559,6 +534,19 @@
         render();
     };
 
+    // Landed here from kit-video.html navigating back (see openKitVideo
+    // above) — re-select the kit the user was viewing instead of the bare
+    // "no kit selected" state, same idea as inventory.html's
+    // inventoryEditMaterialId handoff.
+    if (state.kitVideoReturnKitId) {
+        var returnKitId = state.kitVideoReturnKitId;
+        state.kitVideoReturnKitId = null;
+        CATEGORIES.forEach(function (cat, ci) {
+            cat.kits.forEach(function (k, ki) {
+                if (k.id === returnKitId) { appState.selected = { ci: ci, ki: ki }; appState.expandedCat = ci; }
+            });
+        });
+    }
     render();
 })();
 </script>

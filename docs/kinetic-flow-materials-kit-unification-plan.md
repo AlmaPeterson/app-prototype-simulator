@@ -155,15 +155,22 @@ string, disconnected from its "real" counterpart (if one even exists) in Invento
   `DB.find('materials', m => !m.kit_id && ...)` — no more cross-referencing
   `kit_items.material_id`.
 
-### C. New page: kit video (dedicated, replacing the modal)
-- Model on `pages/material-video.html`. Kits can have *multiple* videos
-  (`inventory_kits.videos` is an array), unlike materials (`video_asset_id` is
-  singular) — so this page needs a video identifier, not just a kit id. Recommend
-  giving each entry in `kit.videos` its own generated `id` (instead of relying on
-  array index, which breaks under reordering/deletion) — e.g.
-  `{id, title, video_asset_id}`. Set `state.kitVideoId` + `state.kitVideoEntryId`
-  before `loadPage('kit-video')`, same handoff pattern `material-video.html` uses
-  for `state.materialVideoId`.
+### C. New page: kit video (dedicated, replacing the modal) — BUILT 2026-07-08
+- Built as `pages/kit-video.html`, modeled on `pages/material-video.html`, plus a
+  Remove Video button (the old modal had one; the dedicated page needed to keep
+  that capability). `kits.html`'s `openKitVideo()` sets `state.kitVideoId` (kit)
+  + `state.kitVideoEntryId` before `loadPage('kit-video')`.
+- Used `video_asset_id` itself as the per-entry identifier instead of adding a
+  new `id` field to `kit.videos[]` entries — it's already unique per upload
+  (`Assets.save()` mints a fresh id every time), so no schema addition was
+  needed.
+- Added `state.kitVideoReturnKitId`: since converting the video view from a
+  modal (no navigation) to a full page necessarily means leaving `kits.html`
+  (which resets its local `appState.selected` on every load), this field lets
+  `kits.html` re-select the kit the user came from when navigating back —
+  otherwise "watch a video" would silently drop the user's kit selection, a
+  regression vs. the old modal. Same idea as `inventory.html`'s
+  `inventoryEditMaterialId` handoff, but round-trip.
 
 ### D. `apps/kinetic-flow/pages/label-generator.html`
 - `loadCategories()`: switch from `kit_tools`/`kit_items` queries to

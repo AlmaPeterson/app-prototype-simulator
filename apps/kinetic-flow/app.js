@@ -46,6 +46,9 @@ const state = {
     rankSeen: null,           // { userId, companyId, rank } — your scoreboard rank the last time you looked at the scoreboard; drives the header's ▲ improved-rank chip
     materialVideoId: null,    // materials.id being watched on material-video.html (set by openMaterialVideo() in inventory.html)
     inventoryEditMaterialId: null, // materials.id to auto-open the edit sheet for on landing in inventory.html (set by kits.html's "Edit in Inventory")
+    kitVideoId: null,         // inventory_kits.id whose video is being watched on kit-video.html (set by openKitVideo() in kits.html)
+    kitVideoEntryId: null,    // the specific kit.videos[].video_asset_id being watched (a kit can have several videos)
+    kitVideoReturnKitId: null, // inventory_kits.id to re-select on landing back in kits.html after kit-video.html
 };
 
 // ── Mock DB ──────────────────────────────────────────────────────────────
