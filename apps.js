@@ -30,4 +30,10 @@ const APPS = [
         icon: '📝',
         script: 'apps/pulse-notes/app.js',
     },
+    {
+        id: 'label-designer',
+        name: 'Label Designer',
+        icon: '🏷️',
+        script: 'apps/label-designer/app.js',
+    },
 ];

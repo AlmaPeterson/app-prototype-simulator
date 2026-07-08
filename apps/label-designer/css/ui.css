@@ -1,0 +1,403 @@
+/* Scoped under #ld-root (App Simulator shares one document across apps). */
+#ld-root {
+.toolbar {
+    min-height: var(--toolbar-height);
+    height: var(--toolbar-height);
+    background-color: var(--color-bg-primary);
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    gap: var(--spacing-md);
+    flex-shrink: 0;
+    overflow-x: auto;
+    overflow-y: visible;
+    position: relative;
+    z-index: 100;
+}
+
+.toolbar-section {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-shrink: 0;
+    white-space: nowrap;
+    flex-wrap: nowrap;
+}
+
+.toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    flex-shrink: 0;
+}
+
+.toolbar-group-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0 var(--spacing-xs);
+    white-space: nowrap;
+}
+
+.toolbar-divider {
+    width: 1px;
+    height: 40px;
+    background-color: var(--color-border-light);
+    flex-shrink: 0;
+    margin: 0 var(--spacing-xs);
+}
+
+/* ============================================================================
+   Dropdown Menu
+   ============================================================================ */
+
+.dropdownMenu {
+    position: relative;
+    display: inline-block;
+    z-index: 1000;
+}
+
+.dropdownMenuButton {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: transparent;
+    border: none;
+    color: var(--color-text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background-color 0.2s;
+    white-space: nowrap;
+}
+
+.dropdownMenuButton:hover:not(:disabled) {
+    background-color: var(--color-bg-secondary);
+}
+
+.dropdownMenuButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.dropdownMenuButton:focus {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+}
+
+.dropdownMenuArrow {
+    font-size: 10px;
+    color: var(--color-text-tertiary);
+    transition: transform 0.2s;
+}
+
+.dropdownMenuPanel {
+    position: absolute;
+    min-width: 200px;
+    background-color: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    z-index: 10001;
+    padding: 4px 0;
+    overflow: hidden;
+}
+
+.dropdownMenuItem {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: transparent;
+    border: none;
+    color: var(--color-text-primary);
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    gap: var(--spacing-sm);
+}
+
+.dropdownMenuItem:hover:not(:disabled) {
+    background-color: var(--color-bg-secondary);
+}
+
+.dropdownMenuItem:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.dropdownMenuItemFocused {
+    background-color: var(--color-bg-secondary);
+}
+
+.dropdownMenuItemLabel {
+    flex: 1;
+}
+
+.dropdownMenuIcon {
+    width: 20px;
+    text-align: center;
+    font-size: 16px;
+}
+
+.dropdownMenuShortcut {
+    color: var(--color-text-tertiary);
+    font-size: 12px;
+    font-family: var(--font-mono);
+    margin-left: auto;
+}
+
+.dropdownMenuDivider {
+    height: 1px;
+    background-color: var(--color-border-light);
+    margin: 4px 0;
+}
+
+.logo {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-accent);
+}
+
+/* ============================================================================
+   Sidebar
+   ============================================================================ */
+
+.sidebar {
+    background-color: var(--color-bg-secondary);
+    border-right: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+    height: 100%;
+}
+
+.sidebar-section {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.sidebar-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.tool-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
+}
+
+.tool-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-md);
+    background-color: white;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}
+
+.tool-button:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    background-color: var(--color-selection-bg);
+}
+
+.tool-icon {
+    font-size: 24px;
+}
+
+/* ============================================================================
+   Property Panel
+   ============================================================================ */
+
+.property-panel {
+    background-color: var(--color-bg-secondary);
+    border-left: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.property-section {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.property-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+}
+
+.property-row:last-child {
+    margin-bottom: 0;
+}
+
+.property-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    flex-shrink: 0;
+}
+
+.property-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.property-group {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+/* ============================================================================
+   Modal
+   ============================================================================ */
+
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: var(--spacing-lg);
+}
+
+.modal {
+    background-color: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    max-width: 600px;
+    width: 100%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.modal-title {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.modal-body {
+    padding: var(--spacing-lg);
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-footer {
+    padding: var(--spacing-lg);
+    border-top: 1px solid var(--color-border-light);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+}
+
+/* ============================================================================
+   Template Grid
+   ============================================================================ */
+
+.template-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.template-card {
+    background-color: white;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.template-card:hover {
+    border-color: var(--color-accent);
+    box-shadow: var(--shadow-md);
+}
+
+.template-card.selected {
+    border-color: var(--color-accent);
+    background-color: var(--color-selection-bg);
+}
+
+.template-name {
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+}
+
+.template-description {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.template-specs {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    font-family: var(--font-mono);
+}
+
+/* ============================================================================
+   Empty State
+   ============================================================================ */
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xl);
+    text-align: center;
+    color: var(--color-text-tertiary);
+    flex: 1;
+    height: 100%;
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    margin-bottom: var(--spacing-md);
+    opacity: 0.5;
+}
+
+.empty-state-text {
+    font-size: 14px;
+    margin-bottom: var(--spacing-sm);
+}
+
+}

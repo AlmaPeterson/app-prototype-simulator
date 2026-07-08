@@ -1,0 +1,249 @@
+/* Scoped under #ld-root (App Simulator shares one document across apps). */
+#ld-root {
+.canvasContainer {
+    position: relative;
+    flex: 1 1 auto;
+    width: 0;
+    min-width: 0;
+    overflow: hidden;
+    background-color: var(--color-canvas-bg);
+    background-image:
+        linear-gradient(var(--color-grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--color-grid-line) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+.canvasWrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+}
+
+.canvasWrapper.panning {
+    cursor: grabbing;
+}
+
+.canvas {
+    display: block;
+}
+
+/* ============================================================================
+   Label Grid
+   ============================================================================ */
+
+.label-grid {
+    position: absolute;
+}
+
+.label {
+    position: absolute;
+    background-color: var(--color-label-bg);
+    border: 1px solid var(--color-label-border);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.15s ease;
+}
+
+.label.selected {
+    border-color: var(--color-selection);
+    box-shadow: 0 0 0 2px var(--color-selection-bg);
+}
+
+.label.has-override {
+    border-color: var(--color-warning);
+}
+
+.label.has-override::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    background-color: var(--color-warning);
+    border-radius: 50%;
+}
+
+/* ============================================================================
+   Elements
+   ============================================================================ */
+
+.element {
+    position: absolute;
+    cursor: move;
+}
+
+.element.selected {
+    outline: 2px solid var(--color-selection);
+    outline-offset: 2px;
+}
+
+.element.locked {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* ============================================================================
+   Transform Controls
+   ============================================================================ */
+
+.transform-controls {
+    position: absolute;
+    pointer-events: none;
+}
+
+.resize-handle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background-color: white;
+    border: 2px solid var(--color-selection);
+    border-radius: 50%;
+    pointer-events: all;
+    cursor: pointer;
+}
+
+.resize-handle.nw {
+    top: -4px;
+    left: -4px;
+    cursor: nw-resize;
+}
+
+.resize-handle.n {
+    top: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: n-resize;
+}
+
+.resize-handle.ne {
+    top: -4px;
+    right: -4px;
+    cursor: ne-resize;
+}
+
+.resize-handle.e {
+    top: 50%;
+    right: -4px;
+    transform: translateY(-50%);
+    cursor: e-resize;
+}
+
+.resize-handle.se {
+    bottom: -4px;
+    right: -4px;
+    cursor: se-resize;
+}
+
+.resize-handle.s {
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: s-resize;
+}
+
+.resize-handle.sw {
+    bottom: -4px;
+    left: -4px;
+    cursor: sw-resize;
+}
+
+.resize-handle.w {
+    top: 50%;
+    left: -4px;
+    transform: translateY(-50%);
+    cursor: w-resize;
+}
+
+.rotate-handle {
+    position: absolute;
+    top: -24px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 16px;
+    height: 16px;
+    background-color: white;
+    border: 2px solid var(--color-selection);
+    border-radius: 50%;
+    pointer-events: all;
+    cursor: grab;
+}
+
+.rotate-handle:active {
+    cursor: grabbing;
+}
+
+/* ============================================================================
+   Alignment Guides
+   ============================================================================ */
+
+.guide-line {
+    position: absolute;
+    background-color: var(--color-guide-line);
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.guide-line.vertical {
+    width: 1px;
+    height: 100%;
+}
+
+.guide-line.horizontal {
+    width: 100%;
+    height: 1px;
+}
+
+.guide-label {
+    position: absolute;
+    background-color: var(--color-guide-line);
+    color: white;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+/* ============================================================================
+   Zoom Controls
+   ============================================================================ */
+
+.zoom-controls {
+    position: absolute;
+    bottom: var(--spacing-md);
+    right: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    background-color: white;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-xs);
+    box-shadow: var(--shadow-md);
+}
+
+.zoom-display {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    padding: var(--spacing-xs);
+    color: var(--color-text-secondary);
+}
+
+/* ============================================================================
+   Selection Box
+   ============================================================================ */
+
+.selection-box {
+    position: absolute;
+    border: 2px dashed var(--color-selection);
+    background-color: var(--color-selection-bg);
+    pointer-events: none;
+    z-index: 999;
+}
+
+}
