@@ -2,57 +2,68 @@
     <div class="flex-between mb-4">
         <div>
             <div class="page-title">Schedule</div>
-            <div class="page-subtitle" id="schedule-week-label">Week of Jun 29, 2026</div>
+            <!-- Sticky job context made visible (same pattern as job-home): this
+                 scopes to your current job until you switch it; tap to jump to
+                 the jobs list. Blank when there's no job in context yet, e.g. a
+                 supplier who hasn't opened one — then every job's tasks show. -->
+            <div class="page-subtitle" id="schedule-job-subtitle" onclick="loadPage('jobs')" style="cursor:pointer; display:none;"></div>
         </div>
         <button class="btn btn-primary btn-sm" onclick="showCreateSchedule()">+ Add</button>
     </div>
 
-    <!-- Week nav -->
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
-        <button class="btn btn-secondary btn-sm" style="width:auto; padding:6px 12px;" onclick="shiftScheduleWeek(-1)" title="Previous week">&larr;</button>
-        <!-- Work days only (QA note): no Sunday — Kinetic Flow locks on the
-             day of rest, so nothing can be scheduled or completed then. -->
-        <div style="display:flex; gap:6px;">
-            <div id="day-mon" class="chip" onclick="selectDay('mon')">Mon</div>
-            <div id="day-tue" class="chip" onclick="selectDay('tue')">Tue</div>
-            <div id="day-wed" class="chip selected" onclick="selectDay('wed')">Wed</div>
-            <div id="day-thu" class="chip" onclick="selectDay('thu')">Thu</div>
-            <div id="day-fri" class="chip" onclick="selectDay('fri')">Fri</div>
-            <div id="day-sat" class="chip" onclick="selectDay('sat')">Sat</div>
-        </div>
-        <button class="btn btn-secondary btn-sm" style="width:auto; padding:6px 12px;" onclick="shiftScheduleWeek(1)" title="Next week">&rarr;</button>
-    </div>
-
-    <!-- View toggle -->
+    <!-- Range toggle: Week (current 5-day work week, paged with arrows) vs
+         Full (every scheduled weekday from the earliest to the latest event
+         on file — usually well under a month, so this isn't a fixed
+         calendar-month grid, just "however much is actually scheduled."
+         Can run wider than the screen, so it scrolls horizontally. -->
     <div style="display:flex; gap:6px; margin-bottom:14px;">
-        <div id="view-day" class="chip selected" onclick="setScheduleView('day')">Day List</div>
-        <div id="view-grid" class="chip" onclick="setScheduleView('grid')">Task Grid</div>
+        <div id="sched-range-week" class="chip selected" onclick="setScheduleRange('week')">Week</div>
+        <div id="sched-range-full" class="chip" onclick="setScheduleRange('full')">Full</div>
     </div>
 
-    <div class="schedule-day" id="schedule-day-view">
-        <div class="schedule-day-label" id="schedule-day-label">Wednesday, Jul 1</div>
-        <div id="schedule-day-list"></div>
+    <!-- Week nav: back/forward a week. Hidden in Full range, since that view
+         isn't paged. Work days only (QA note): no Saturday or Sunday —
+         Kinetic Flow locks on both weekend days, so nothing can be
+         scheduled or completed then. -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+        <button id="sched-prev" class="btn btn-secondary btn-sm" style="width:auto; padding:6px 12px;" onclick="shiftScheduleWeek(-1)" title="Previous week">&larr;</button>
+        <div id="schedule-week-label" style="font-size:0.83rem; font-weight:700; color:#0f172a;">Week of Jun 29 &ndash; Jul 3, 2026</div>
+        <button id="sched-next" class="btn btn-secondary btn-sm" style="width:auto; padding:6px 12px;" onclick="shiftScheduleWeek(1)" title="Next week">&rarr;</button>
     </div>
 
     <!-- Task grid: one row per task, one column per day; a colored block
-         marks each day the task is scheduled to be worked on. -->
-    <div id="schedule-grid-view" style="display:none; overflow-x:auto; border:1px solid #e2e8f0;">
-        <div id="schedule-grid"></div>
+         marks each day the task is scheduled to be worked on. In Week
+         range, columns are 1fr and always fit the page exactly (no
+         horizontal scroll). In Full range, columns are fixed-width and the
+         grid can exceed the page width, so this wrapper scrolls — the two
+         edge overlays fade in/out (via updateScheduleFade) to hint that
+         there's more off to that side. -->
+    <div style="position:relative;">
+        <div id="schedule-grid-view" style="border:1px solid #e2e8f0; border-radius:8px; overflow-x:auto;" onscroll="updateScheduleFade()">
+            <div id="schedule-grid"></div>
+        </div>
+        <!-- Starts after the sticky Task column (below its header, so it
+             doesn't wash out the header text — just a slim shadow over the
+             day cells) — that column never scrolls, so a fade behind it
+             would never be visible where the actually-scrolling cells are. -->
+        <div id="schedule-fade-left" style="position:absolute; bottom:0; left:100px; width:14px; background:linear-gradient(to right, rgba(71,85,105,0.22), rgba(71,85,105,0.06) 60%, rgba(71,85,105,0) 100%); pointer-events:none; opacity:0; transition:opacity 0.15s;"></div>
+        <div id="schedule-fade-right" style="position:absolute; bottom:0; right:0; width:14px; background:linear-gradient(to left, rgba(71,85,105,0.22), rgba(71,85,105,0.06) 60%, rgba(71,85,105,0) 100%); pointer-events:none; opacity:0; transition:opacity 0.15s;"></div>
     </div>
 </div>
 
 <script>
 (function () {
     // Week anchored on the Monday before the seeded schedule_events cluster
-    // (Jun 24 – Jul 8, 2026) so the day chips land on real data instead of
+    // (Jun 24 – Jul 8, 2026) so the grid lands on real data instead of
     // needing a "today" concept the seed data doesn't consistently support.
-    // Work days only: Monday–Saturday — Sunday is the locked day of rest.
+    // Work days only: Monday–Friday — Saturday and Sunday are locked days of rest.
     var WEEK_START = new Date('2026-06-29T00:00:00');
-    var DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-    var DAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    var DAYS = ['mon', 'tue', 'wed', 'thu', 'fri'];
+    var DAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    var DOW_SHORT = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+    var TASK_COL_WIDTH = 100;
     var weekOffset = 0;
-    var selectedDay = 'wed';
-    var viewMode = 'day';
+    var rangeMode = 'week'; // 'week' | 'full'
 
     function currentWeekStart() {
         var d = new Date(WEEK_START);
@@ -66,127 +77,196 @@
     }
     function isoDateOnly(d) { return d.toISOString().slice(0, 10); }
     function fmtShort(d) { return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+    function currentViewType() { return state.role === 'customer' ? 'customer' : 'worker'; }
 
-    function fmtRange(e) {
-        if (e.start_date === e.end_date) return fmtShort(new Date(e.start_date + 'T00:00:00'));
-        return fmtShort(new Date(e.start_date + 'T00:00:00')) + ' – ' + fmtShort(new Date(e.end_date + 'T00:00:00'));
+    // Scopes the grid to the sticky current job (see job-home) when one is
+    // set — this is a job-detail "Schedule" button most of the time, so
+    // showing every other job's tasks alongside it was just noise.
+    function jobFilter(e) {
+        return !state.currentJobId || e.job_id === state.currentJobId;
     }
 
-    function renderDay(day) {
-        var d = dateForDay(day);
-        var iso = isoDateOnly(d);
-        document.getElementById('schedule-day-label').textContent = DAY_LABELS[DAYS.indexOf(day)] + ', ' + fmtShort(d);
-        var ws = currentWeekStart();
-        document.getElementById('schedule-week-label').textContent = 'Week of ' + fmtShort(ws) + ', ' + ws.getFullYear();
+    function updateJobSubtitle() {
+        var el = document.getElementById('schedule-job-subtitle');
+        if (!el) return;
+        var job = state.currentJobId ? DB.getById('jobs', state.currentJobId) : null;
+        if (job) {
+            el.textContent = job.name + ' — switch job';
+            el.style.display = '';
+        } else {
+            el.style.display = 'none';
+        }
+    }
 
-        // Worker/supplier roles see crew-facing events; the customer role
-        // (which also has a Schedule tab, see customerNav in app.js) sees the
-        // customer-facing subset instead.
-        var viewType = state.role === 'customer' ? 'customer' : 'worker';
+    // Every Mon–Fri date between two dates (inclusive), skipping weekends.
+    function weekdaysBetween(start, end) {
+        var days = [];
+        var d = new Date(start);
+        while (d <= end) {
+            var dow = d.getDay();
+            if (dow !== 0 && dow !== 6) days.push(new Date(d));
+            d.setDate(d.getDate() + 1);
+        }
+        return days;
+    }
 
-        var events = DB.find('schedule_events', function (e) {
-            return e.company_id === state.currentCompanyId
-                && e.view_type === viewType
-                && e.start_date <= iso && e.end_date >= iso;
-        });
-
-        document.getElementById('schedule-day-list').innerHTML = events.map(function (e) {
-            var job = e.job_id ? DB.getById('jobs', e.job_id) : null;
-            var assignee = e.assigned_to ? DB.getById('users', e.assigned_to) : null;
-            var clickAttr = job ? ' onclick="openJob(\'' + esc(job.id) + '\')"' : '';
-            return '<div class="schedule-slot"' + clickAttr + '>' +
-                '<div class="slot-title">' + esc(e.title) + '</div>' +
-                '<div class="slot-time">' + fmtRange(e) + ' &bull; ' + (assignee ? esc(assignee.full_name) : 'Unassigned') + '</div>' +
+    // One grid row for an event: a sticky task-name cell (stays put during
+    // horizontal scroll in Full range) plus one cell per day in dayIsos.
+    // The title wraps instead of truncating — these names run long (e.g.
+    // "Rough-In Supply & Drain Lines") and a single ellipsized line hid too
+    // much of them to be useful.
+    function eventRowHtml(e, dayIsos) {
+        var job = e.job_id ? DB.getById('jobs', e.job_id) : null;
+        // Skip the per-row job name once the grid is already scoped to one
+        // job (see jobFilter) — it'd just repeat the subtitle on every row.
+        var showJobName = job && job.id !== state.currentJobId;
+        var cellStyle = 'padding:8px 6px; border-bottom:1px solid #f1f5f9; min-width:0; position:sticky; left:0; z-index:1; background:#fff;' + (job ? ' cursor:pointer;' : '');
+        var clickAttr = job ? ' onclick="openJob(\'' + esc(job.id) + '\')"' : '';
+        var html = '<div' + clickAttr + ' style="' + cellStyle + '">' +
+            '<div style="font-weight:600; line-height:1.25; word-break:break-word;">' + esc(e.title) + '</div>' +
+            (showJobName ? '<div style="color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(job.name) + '</div>' : '') +
             '</div>';
-        }).join('') || '<div style="font-size:0.8rem; color:#94a3b8; padding:8px 0;">No jobs scheduled</div>';
+        dayIsos.forEach(function (iso) {
+            var active = e.start_date <= iso && e.end_date >= iso;
+            html += '<div style="border-bottom:1px solid #f1f5f9; border-left:1px solid #f1f5f9; padding:6px 3px;">' +
+                (active ? '<div style="height:100%; min-height:22px; border-radius:4px; background:' + (e.color || '#2563eb') + '; opacity:0.85;"></div>' : '') +
+                '</div>';
+        });
+        return html;
     }
 
-    // ── Task grid (Gantt-style): rows = this week's events, columns = days ──
-    function renderGrid() {
+    // ── Week range: this week's events, columns = Mon–Fri, fits exactly ──
+    function renderWeekGrid() {
         var ws = currentWeekStart();
-        document.getElementById('schedule-week-label').textContent = 'Week of ' + fmtShort(ws) + ', ' + ws.getFullYear();
+        var we = dateForDay('fri');
+        document.getElementById('schedule-week-label').textContent =
+            'Week of ' + fmtShort(ws) + ' – ' + fmtShort(we) + ', ' + we.getFullYear();
         var weekIsos = DAYS.map(function (day) { return isoDateOnly(dateForDay(day)); });
-        var viewType = state.role === 'customer' ? 'customer' : 'worker';
+        var viewType = currentViewType();
 
         var events = DB.find('schedule_events', function (e) {
             return e.company_id === state.currentCompanyId
                 && e.view_type === viewType
+                && jobFilter(e)
                 && e.start_date <= weekIsos[weekIsos.length - 1] && e.end_date >= weekIsos[0];
         }).sort(function (a, b) { return a.start_date < b.start_date ? -1 : 1; });
 
         var grid = document.getElementById('schedule-grid');
         if (!events.length) {
-            grid.innerHTML = '<div style="font-size:0.8rem; color:#94a3b8; padding:12px;">No tasks scheduled this week</div>';
+            grid.innerHTML = '<div style="font-size:0.8rem; color:#94a3b8; padding:12px;">No tasks scheduled this week' + (state.currentJobId ? ' for this job' : '') + '</div>';
             return;
         }
 
-        // Header row: blank task column + short day labels with dates.
-        var html = '<div style="display:grid; grid-template-columns:120px repeat(' + DAYS.length + ', minmax(34px, 1fr)); min-width:380px; font-size:0.72rem;">';
-        html += '<div style="padding:8px 6px; border-bottom:1px solid #e2e8f0; font-weight:600;">Task</div>';
+        // Columns are 1fr so the grid always fits the page width exactly — no horizontal scroll.
+        var html = '<div style="display:grid; grid-template-columns:' + TASK_COL_WIDTH + 'px repeat(' + DAYS.length + ', 1fr); font-size:0.7rem;">';
+        html += '<div id="schedule-grid-header-cell" style="padding:8px 6px; border-bottom:1px solid #e2e8f0; font-weight:600; position:sticky; left:0; z-index:2; background:#fff;">Task</div>';
         DAYS.forEach(function (day, di) {
             var d = dateForDay(day);
             html += '<div style="padding:8px 2px; border-bottom:1px solid #e2e8f0; border-left:1px solid #f1f5f9; text-align:center;">' +
                 DAY_LABELS[di].slice(0, 2) + '<br><span style="color:#94a3b8;">' + d.getDate() + '</span></div>';
         });
-
-        events.forEach(function (e) {
-            var job = e.job_id ? DB.getById('jobs', e.job_id) : null;
-            var clickAttr = job ? ' onclick="openJob(\'' + esc(job.id) + '\')" style="cursor:pointer;"' : '';
-            html += '<div' + clickAttr + '><div style="padding:8px 6px; border-bottom:1px solid #f1f5f9;">' +
-                '<div style="font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + esc(e.title) + '">' + esc(e.title) + '</div>' +
-                (job ? '<div style="color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(job.name) + '</div>' : '') +
-                '</div></div>';
-            weekIsos.forEach(function (iso) {
-                var active = e.start_date <= iso && e.end_date >= iso;
-                html += '<div style="border-bottom:1px solid #f1f5f9; border-left:1px solid #f1f5f9; padding:6px 3px;">' +
-                    (active ? '<div style="height:100%; min-height:22px; border-radius:4px; background:' + (e.color || '#2563eb') + '; opacity:0.85;"></div>' : '') +
-                    '</div>';
-            });
-        });
+        events.forEach(function (e) { html += eventRowHtml(e, weekIsos); });
         html += '</div>';
         grid.innerHTML = html;
     }
 
-    function render() {
-        if (viewMode === 'grid') renderGrid();
-        else renderDay(selectedDay);
+    // ── Full range: every scheduled weekday from the earliest to the
+    // latest event on file, not a fixed calendar month — so a short job
+    // list stays short. Fixed-width columns; the wrapper scrolls sideways
+    // once it's wider than the phone. ──
+    function renderFullGrid() {
+        var viewType = currentViewType();
+        var events = DB.find('schedule_events', function (e) {
+            return e.company_id === state.currentCompanyId && e.view_type === viewType && jobFilter(e);
+        }).sort(function (a, b) { return a.start_date < b.start_date ? -1 : 1; });
+
+        var grid = document.getElementById('schedule-grid');
+        if (!events.length) {
+            document.getElementById('schedule-week-label').textContent = 'No scheduled work on file';
+            grid.innerHTML = '<div style="font-size:0.8rem; color:#94a3b8; padding:12px;">No tasks scheduled' + (state.currentJobId ? ' for this job' : '') + '</div>';
+            return;
+        }
+
+        var minStart = events.reduce(function (m, e) { return e.start_date < m ? e.start_date : m; }, events[0].start_date);
+        var maxEnd = events.reduce(function (m, e) { return e.end_date > m ? e.end_date : m; }, events[0].end_date);
+        var rangeStart = new Date(minStart + 'T00:00:00');
+        var rangeEnd = new Date(maxEnd + 'T00:00:00');
+        document.getElementById('schedule-week-label').textContent =
+            fmtShort(rangeStart) + ' – ' + fmtShort(rangeEnd) + ', ' + rangeEnd.getFullYear();
+
+        var days = weekdaysBetween(rangeStart, rangeEnd);
+        var dayIsos = days.map(isoDateOnly);
+        var colWidth = 34;
+
+        var html = '<div style="display:grid; grid-template-columns:' + TASK_COL_WIDTH + 'px repeat(' + days.length + ', ' + colWidth + 'px); min-width:' + (TASK_COL_WIDTH + days.length * colWidth) + 'px; font-size:0.68rem;">';
+        html += '<div id="schedule-grid-header-cell" style="padding:8px 6px; border-bottom:1px solid #e2e8f0; font-weight:600; position:sticky; left:0; z-index:2; background:#fff;">Task</div>';
+        days.forEach(function (d) {
+            html += '<div style="padding:8px 2px; border-bottom:1px solid #e2e8f0; border-left:1px solid #f1f5f9; text-align:center;">' +
+                DOW_SHORT[d.getDay()] + '<br><span style="color:#94a3b8;">' + d.getDate() + '</span></div>';
+        });
+        events.forEach(function (e) { html += eventRowHtml(e, dayIsos); });
+        html += '</div>';
+        grid.innerHTML = html;
     }
 
-    window.setScheduleView = function (mode) {
-        viewMode = mode;
-        document.getElementById('view-day').classList.toggle('selected', mode === 'day');
-        document.getElementById('view-grid').classList.toggle('selected', mode === 'grid');
-        document.getElementById('schedule-day-view').style.display = mode === 'day' ? '' : 'none';
-        document.getElementById('schedule-grid-view').style.display = mode === 'grid' ? '' : 'none';
-        // Day chips only matter in day view — the grid always shows the whole week.
-        document.querySelectorAll('[id^="day-"]').forEach(function (el) {
-            el.style.opacity = mode === 'day' ? '' : '0.35';
-        });
-        render();
+    // Shows/hides the left/right edge fades based on how much of the grid
+    // is actually scrolled off-screen — in Week range the grid never
+    // overflows, so both stay hidden automatically.
+    window.updateScheduleFade = function () {
+        var el = document.getElementById('schedule-grid-view');
+        var fadeLeft = document.getElementById('schedule-fade-left');
+        var fadeRight = document.getElementById('schedule-fade-right');
+        if (!el || !fadeLeft || !fadeRight) return;
+        var maxScroll = el.scrollWidth - el.clientWidth;
+        fadeLeft.style.opacity = el.scrollLeft > 4 ? '1' : '0';
+        fadeRight.style.opacity = (maxScroll - el.scrollLeft) > 4 ? '1' : '0';
     };
 
-    window.selectDay = function (day) {
-        selectedDay = day;
-        document.querySelectorAll('[id^="day-"]').forEach(function (el) { el.classList.remove('selected'); });
-        document.getElementById('day-' + day).classList.add('selected');
-        if (viewMode !== 'day') { window.setScheduleView('day'); return; }
-        renderDay(day);
+    // Keeps the fades clear of the header row — they only shadow the day
+    // cells below it, so they read as an edge effect on the data rather
+    // than a highlight on whichever header happens to sit at the boundary.
+    function positionScheduleFade() {
+        var headerCell = document.getElementById('schedule-grid-header-cell');
+        var top = headerCell ? headerCell.offsetHeight : 0;
+        var fadeLeft = document.getElementById('schedule-fade-left');
+        var fadeRight = document.getElementById('schedule-fade-right');
+        if (fadeLeft) fadeLeft.style.top = top + 'px';
+        if (fadeRight) fadeRight.style.top = top + 'px';
+    }
+
+    function renderGrid() {
+        updateJobSubtitle();
+        if (rangeMode === 'full') renderFullGrid();
+        else renderWeekGrid();
+        positionScheduleFade();
+        window.updateScheduleFade();
+    }
+
+    window.setScheduleRange = function (mode) {
+        rangeMode = mode;
+        document.getElementById('sched-range-week').classList.toggle('selected', mode === 'week');
+        document.getElementById('sched-range-full').classList.toggle('selected', mode === 'full');
+        document.getElementById('sched-prev').style.display = mode === 'week' ? '' : 'none';
+        document.getElementById('sched-next').style.display = mode === 'week' ? '' : 'none';
+        renderGrid();
     };
 
     window.shiftScheduleWeek = function (delta) {
         weekOffset += delta;
-        render();
+        renderGrid();
     };
 
     // Real insert path: a bottom sheet that writes a schedule_events row the
-    // same shape as the seeded ones, defaulting to the selected day.
+    // same shape as the seeded ones, defaulting to the Monday of the
+    // currently viewed week (no "today" concept — see WEEK_START note above).
     window.showCreateSchedule = function () {
         var existing = document.getElementById('schedule-create-modal');
         if (existing) existing.remove();
-        var defaultDate = isoDateOnly(dateForDay(selectedDay));
+        var defaultDate = isoDateOnly(dateForDay(DAYS[0]));
         var jobs = DB.find('jobs', function (j) { return j.company_id === state.currentCompanyId && !j.deleted_at; });
         var jobOptions = '<option value="">No job (general)</option>' + jobs.map(function (j) {
-            return '<option value="' + esc(j.id) + '">' + esc(j.name) + '</option>';
+            var selectedAttr = j.id === state.currentJobId ? ' selected' : '';
+            return '<option value="' + esc(j.id) + '"' + selectedAttr + '>' + esc(j.name) + '</option>';
         }).join('');
         var modal = document.createElement('div');
         modal.id = 'schedule-create-modal';
@@ -235,9 +315,9 @@
             status: 'scheduled',
         });
         window.closeCreateSchedule();
-        render();
+        renderGrid();
     };
 
-    renderDay('wed');
+    renderGrid();
 })();
 </script>
