@@ -121,6 +121,12 @@
         return row.stock_qty && row.stock_qty !== 1 ? (row.name + ' (' + row.stock_qty + ')') : row.name;
     }
 
+    // Every label's URL column — same link for every item for now (no
+    // per-item pages yet), but breaking it out as a column rather than a
+    // literal means templates can already bind a {URL} text field or QR
+    // value to it today and it'll start varying per item later for free.
+    var LABEL_URL = 'https://almapeterson.github.io/app-prototype-simulator/index.html';
+
     // What gets handed off per selected item — one row per label, shaped as
     // plain { ColumnName: value } so Label Designer can bind {Name}/{SKU}/…
     // text placeholders directly, no schema negotiation needed on this end.
@@ -133,11 +139,12 @@
             Qty: row.stock_qty != null ? row.stock_qty : '',
             Location: row.location || '',
             QR: row.id,
+            URL: LABEL_URL,
         }, extra);
     }
 
     function kitRecord(kit, categoryName) {
-        return { Name: kit.name, Type: 'Kit', Category: categoryName, QR: kit.id };
+        return { Name: kit.name, Type: 'Kit', Category: categoryName, QR: kit.id, URL: LABEL_URL };
     }
 
     function itemGroupHtml(title, kind, ci, ki, items) {
