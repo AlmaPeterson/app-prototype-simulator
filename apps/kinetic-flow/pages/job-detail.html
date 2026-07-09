@@ -125,8 +125,7 @@
         box.innerHTML = candidates.map(function (u, i) {
             var isLast = i === candidates.length - 1;
             return '<div class="list-item" style="padding:8px 0;' + (isLast ? ' border-bottom:none;' : '') + ' cursor:pointer;" onclick="jdAddMember(\'' + u.id + '\')">' +
-                '<div class="list-item-body"><div class="list-item-title">' + u.full_name + '</div>' +
-                '<div class="list-item-sub">Tap to add to this job</div></div>' +
+                '<div class="list-item-body"><div class="list-item-title">' + u.full_name + '</div></div>' +
                 '<span class="badge">+ Add</span>' +
             '</div>';
         }).join('') ||

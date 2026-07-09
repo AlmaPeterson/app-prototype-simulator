@@ -3,7 +3,6 @@
     <div class="page-subtitle mb-2">What to say to the customer, ready to copy</div>
 
     <div class="alert mb-4" style="font-size:0.8rem;">
-        Copy a message below, then paste and send it from your phone's messaging app.
         Kinetic Flow does not send texts itself.
     </div>
 
@@ -68,7 +67,7 @@
         var text = document.getElementById('tmpl-body-' + i).value;
         var btn = document.getElementById('tmpl-copy-' + i);
         function done() {
-            btn.textContent = 'Copied — paste into your messaging app';
+            btn.textContent = 'Copied!';
             setTimeout(function () { btn.textContent = 'Copy Message'; }, 2500);
         }
         if (navigator.clipboard && navigator.clipboard.writeText) {
