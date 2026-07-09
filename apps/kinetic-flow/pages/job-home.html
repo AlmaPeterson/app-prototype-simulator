@@ -8,18 +8,6 @@
 
     <button class="btn btn-primary mb-4" id="job-home-clock-btn" onclick="openFieldClock()">Clock In / Out</button>
 
-    <!-- Prep for Tomorrow (QA note): training videos for this job's upcoming
-         scheduled tasks, watchable the night before. A fresh watch (today or
-         yesterday) satisfies the on-site video gate, so the next work day
-         starts with the task itself, not a video. -->
-    <div id="prep-section" style="display:none; margin-bottom:16px;">
-        <div class="section-header">
-            <span class="section-title">Prep for Tomorrow</span>
-        </div>
-        <p style="font-size:0.78rem; color:#64748b; margin:0 0 8px 0;">Watch tonight &mdash; start the task on-site without stopping for videos.</p>
-        <div id="prep-list"></div>
-    </div>
-
     <div class="section-header">
         <span class="section-title">Quick Actions</span>
     </div>
@@ -28,6 +16,29 @@
         <button class="btn btn-secondary" style="margin:0;" onclick="openKits()">Kits</button>
         <button class="btn btn-secondary" style="margin:0;" id="job-home-bid-btn" onclick="openBid()">View Bid</button>
         <button class="btn btn-secondary" style="margin:0;" onclick="openTimeSheet()">Time Sheet</button>
+    </div>
+
+    <!-- Today's Required Training (JIT Training QA note): every item due
+         today must be watched before Clock In is allowed — toggleClock()
+         redirects here if any are pending. -->
+    <div id="training-today-section" style="display:none; margin-bottom:16px;">
+        <div class="section-header">
+            <span class="section-title">Today's Required Training</span>
+        </div>
+        <p style="font-size:0.78rem; color:#64748b; margin:0 0 8px 0;">Complete these before you clock in.</p>
+        <div id="training-today-list"></div>
+    </div>
+
+    <!-- Prep for the next work day (QA note): training videos for this job's
+         upcoming scheduled tasks, watchable the night before. A fresh watch
+         (today or yesterday) satisfies the on-site video gate, so the next
+         work day starts with the task itself, not a video. -->
+    <div id="training-next-section" style="display:none; margin-bottom:16px;">
+        <div class="section-header">
+            <span class="section-title" id="training-next-title">Prep for Tomorrow</span>
+        </div>
+        <p style="font-size:0.78rem; color:#64748b; margin:0 0 8px 0;">Watch tonight &mdash; start the task on-site without stopping for videos.</p>
+        <div id="training-next-list"></div>
     </div>
 
     <div class="card" onclick="openJob(state.currentJobId)">
@@ -58,47 +69,51 @@
         + ' &bull; <span style="color:#2563eb;">Switch job</span>';
     if (bidBtn) bidBtn.textContent = isNoBid ? '+ Create Bid' : 'View Bid';
 
-    // ── Prep for Tomorrow ────────────────────────────────────────────────
-    // This job's scheduled tasks that aren't complete yet and have a
-    // training video. Prefer the signed-in user's own assignments; if none
-    // are theirs, show the job's upcoming tasks anyway (in the demo seed
-    // most events belong to other role accounts, and an empty section
-    // teaches nothing). "Upcoming, not complete" rather than strictly
-    // tomorrow's date, for the same reason.
+    // ── JIT Training: today (required to clock in) + next work day (prep) ──
+    // trainingDueForJobOnDate() (app.js) scopes each list to a real calendar
+    // date; nextWorkDayIso() skips Saturday and Sunday (see schedule.html).
     if (job && !userIsSupplier()) {
-        var events = DB.find('schedule_events', function (e) {
-            return !e.deleted_at && e.job_id === job.id && e.task_module_id && e.status !== 'complete';
-        });
-        var mine = events.filter(function (e) { return e.assigned_to === state.currentUserId; });
-        if (mine.length) events = mine;
-
         var today = new Date().toISOString().slice(0, 10);
-        var cards = events.map(function (e) {
-            var training = DB.findOne('training_modules', function (m) {
-                return !m.deleted_at && m.task_module_id === e.task_module_id;
-            });
-            if (!training) return '';
-            var fresh = trainingFreshlyViewed(e.task_module_id);
-            var when = e.start_date > today
-                ? 'Scheduled ' + new Date(e.start_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                : 'In progress';
-            return '<div class="card" style="margin-bottom:8px;' + (fresh ? ' cursor:default;' : '') + '"' +
-                (fresh ? '' : ' onclick="openPrepVideo(\'' + e.task_module_id + '\')"') + '>' +
-                '<div class="card-row">' +
-                    '<div class="card-body">' +
-                        '<div class="card-title">' + esc(e.title) + '</div>' +
-                        '<div class="card-subtitle">' + when + (fresh
-                            ? ' &bull; watched &mdash; no video needed on-site'
-                            : ' &bull; ' + esc(training.title)) + '</div>' +
-                    '</div>' +
-                    '<span class="badge ' + (fresh ? 'badge-green' : 'badge-gray') + '">' + (fresh ? 'Ready' : 'Watch') + '</span>' +
-                '</div>' +
-            '</div>';
-        }).join('');
+        var nextWorkDay = nextWorkDayIso(today);
 
-        if (cards) {
-            document.getElementById('prep-list').innerHTML = cards;
-            document.getElementById('prep-section').style.display = 'block';
+        var todayTraining = trainingDueForJobOnDate(job, today);
+        if (todayTraining.length) {
+            document.getElementById('training-today-list').innerHTML = todayTraining.map(function (t) {
+                return '<div class="card" style="margin-bottom:8px;' + (t.fresh ? ' cursor:default;' : '') + '"' +
+                    (t.fresh ? '' : ' onclick="openPrepVideo(\'' + t.taskModuleId + '\')"') + '>' +
+                    '<div class="card-row">' +
+                        '<div class="card-body">' +
+                            '<div class="card-title">' + esc(t.eventTitle) + '</div>' +
+                            '<div class="card-subtitle">' + (t.fresh
+                                ? 'Watched &mdash; ready to clock in'
+                                : esc(t.trainingTitle)) + '</div>' +
+                        '</div>' +
+                        '<span class="badge ' + (t.fresh ? 'badge-green' : 'badge-gray') + '">' + (t.fresh ? 'Done' : 'Pending') + '</span>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+            document.getElementById('training-today-section').style.display = 'block';
+        }
+
+        var nextTraining = trainingDueForJobOnDate(job, nextWorkDay);
+        if (nextTraining.length) {
+            var nextLabel = new Date(nextWorkDay + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' });
+            document.getElementById('training-next-title').textContent = 'Prep for ' + nextLabel;
+            document.getElementById('training-next-list').innerHTML = nextTraining.map(function (t) {
+                return '<div class="card" style="margin-bottom:8px;' + (t.fresh ? ' cursor:default;' : '') + '"' +
+                    (t.fresh ? '' : ' onclick="openPrepVideo(\'' + t.taskModuleId + '\')"') + '>' +
+                    '<div class="card-row">' +
+                        '<div class="card-body">' +
+                            '<div class="card-title">' + esc(t.eventTitle) + '</div>' +
+                            '<div class="card-subtitle">' + (t.fresh
+                                ? 'watched &mdash; no video needed on-site'
+                                : esc(t.trainingTitle)) + '</div>' +
+                        '</div>' +
+                        '<span class="badge ' + (t.fresh ? 'badge-green' : 'badge-gray') + '">' + (t.fresh ? 'Ready' : 'Watch') + '</span>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+            document.getElementById('training-next-section').style.display = 'block';
         }
     }
 })();

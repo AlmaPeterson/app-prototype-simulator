@@ -94,7 +94,7 @@
                 <input type="number" id="sched-build" min="0">
             </div>
         </div>
-        <p style="font-size:0.75rem; color:#64748b; margin:6px 0 0 0;">On-site days auto-sum from division sheets; est. completion auto-calculates from start + procurement + on-site working days (Mon&ndash;Sat). Override either if needed.</p>
+        <p style="font-size:0.75rem; color:#64748b; margin:6px 0 0 0;">On-site days auto-sum from division sheets; est. completion auto-calculates from start + procurement + on-site working days (Mon&ndash;Fri). Override either if needed.</p>
     </div>
 
     <!-- Schedule of Payments -->
@@ -231,8 +231,8 @@
         if (customer) DB.update('customers', customer.id, { email: this.value });
     });
     // ── Est. completion auto-calc ─────────────────────────────────────────
-    // completion = start + procurement + on-site days, counting Mon–Sat as
-    // working days (Sunday off). On-site days fall back to the auto-sum from
+    // completion = start + procurement + on-site days, counting Mon–Fri as
+    // working days (Saturday and Sunday off). On-site days fall back to the auto-sum from
     // the division sheets when the override field is blank — same rule
     // bid-proposal.html uses. Recomputed whenever start/procurement/on-site
     // or the division list changes; the field stays hand-editable, and a
@@ -252,7 +252,7 @@
         var left = days;
         while (left > 0) {
             d.setDate(d.getDate() + 1);
-            if (d.getDay() !== 0) left--;
+            if (d.getDay() !== 0 && d.getDay() !== 6) left--;
         }
         return d.toISOString().slice(0, 10);
     }

@@ -17,7 +17,7 @@ const STORAGE_KEY = 'kineticFlow.state';
 // Bump whenever db/*.json seed data or table shapes change: restoreState()
 // discards localStorage DB snapshots from older versions and re-fetches the
 // fresh seeds, so users don't need a manual "Reset Demo Data".
-const DB_VERSION = 11;
+const DB_VERSION = 12;
 
 // ── App State ──────────────────────────────────────────────────────────────
 const state = {
@@ -1704,6 +1704,51 @@ function trainingFreshlyViewed(taskModuleId) {
     return viewedDay === today || viewedDay === yesterday;
 }
 
+// Kinetic Flow's work week is Monday–Friday (see schedule.html) — Saturday
+// joined Sunday as a locked day of rest, so "next work day" skips both.
+function nextWorkDayIso(fromIso) {
+    const d = new Date(fromIso + 'T12:00:00');
+    do {
+        d.setDate(d.getDate() + 1);
+    } while (d.getDay() === 0 || d.getDay() === 6);
+    return d.toISOString().slice(0, 10);
+}
+
+// This job's training due on a given calendar date: schedule_events for that
+// job/date with a task_module_id that has a matching training_modules row.
+// Prefers the signed-in user's own assignments; falls back to the job's
+// events so an empty section doesn't hide training nobody's been assigned yet.
+function trainingDueForJobOnDate(job, iso) {
+    if (!job) return [];
+    let events = DB.find('schedule_events', function (e) {
+        return !e.deleted_at && e.job_id === job.id && e.task_module_id
+            && e.status !== 'complete' && e.start_date <= iso && e.end_date >= iso;
+    });
+    const mine = events.filter(function (e) { return e.assigned_to === state.currentUserId; });
+    if (mine.length) events = mine;
+    return events.map(function (e) {
+        const training = DB.findOne('training_modules', function (m) {
+            return !m.deleted_at && m.task_module_id === e.task_module_id;
+        });
+        if (!training) return null;
+        return {
+            taskModuleId: e.task_module_id,
+            eventTitle: e.title,
+            trainingTitle: training.title,
+            fresh: trainingFreshlyViewed(e.task_module_id),
+        };
+    }).filter(Boolean);
+}
+
+// Clock-in gate (JIT Training QA note): every training item due today must
+// be watched before the shift can start — checked from toggleClock().
+function pendingRequiredTraining(jobId) {
+    const job = jobId ? DB.getById('jobs', jobId) : null;
+    if (!job) return [];
+    const today = new Date().toISOString().slice(0, 10);
+    return trainingDueForJobOnDate(job, today).filter(function (t) { return !t.fresh; });
+}
+
 function selectClockInTask(taskModuleId, level, isHighHazard) {
     closeTaskSelectModal();
     // A prep watch abandoned via Back would otherwise hijack this chain's
@@ -1958,6 +2003,17 @@ function toggleClock() {
         alert('Select a job first so this shift is recorded against it.');
         loadPage('jobs');
         return;
+    }
+
+    if (!clockedIn) {
+        // JIT Training QA note: today's required training must be watched
+        // before the shift starts — send them to job-home, where it's shown.
+        const pendingTraining = pendingRequiredTraining(state.currentJobId);
+        if (pendingTraining.length) {
+            alert('Complete today\'s required training before you can clock in.');
+            loadPage('job-home');
+            return;
+        }
     }
 
     if (clockedIn) {
@@ -2656,7 +2712,7 @@ function activate() {
         openScorecard, openMyScorecard, submitScorecard, isManagerOrAdmin, pendingSelfScorecard,
         computeProductionSpeed,
         openTaskSelect, closeTaskSelectModal, selectClockInTask, trainingVideoComplete, showCoSignModal, closeCoSignModal, confirmCoSign,
-        openPrepVideo, trainingFreshlyViewed,
+        openPrepVideo, trainingFreshlyViewed, nextWorkDayIso, trainingDueForJobOnDate, pendingRequiredTraining,
         recordPpeVideo, ppeVideoComplete,
         toggleClock, addActivity,
         openMaterialLog, closeMaterialModal, saveMaterialLog,

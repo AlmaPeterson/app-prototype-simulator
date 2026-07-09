@@ -90,6 +90,24 @@
     "sync_status": "synced"
   },
   {
+    "id": "event-200a-panel-replacement",
+    "company_id": "company-kineticflow",
+    "branch_id": "branch-slc",
+    "job_id": "job-westgate-electrical",
+    "bid_division_id": null,
+    "task_module_id": "taskmod-200a-panel-replacement",
+    "assigned_to": "user-manager",
+    "title": "200A Panel Replacement",
+    "start_date": "2026-07-09",
+    "end_date": "2026-07-10",
+    "view_type": "worker",
+    "color": "#2563eb",
+    "status": "in_progress",
+    "created_at": "2026-07-01T12:00:00Z",
+    "updated_at": "2026-07-01T12:00:00Z",
+    "sync_status": "synced"
+  },
+  {
     "id": "event-summit-commercial-wiring-kic",
     "company_id": "company-kineticflow",
     "branch_id": "branch-slc",

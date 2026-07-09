@@ -57,15 +57,6 @@
         </div>
     </div>
 
-    <!-- JIT Training — real training_modules for this company, with the
-         signed-in user's training_assignments telling Done from Pending.
-         Watching happens through the Task gate chain (Task button below),
-         so a pending card just points there. -->
-    <div class="section-header mt-4" id="fc-training-header">
-        <span class="section-title">JIT Training</span>
-    </div>
-    <div id="fc-training-list" style="margin-bottom:16px;"></div>
-
     <!-- Activity Log -->
     <div class="section-header">
         <span class="section-title">Record Activity</span>
@@ -153,32 +144,6 @@
         '</div>';
     }).join('') :
         '<div class="list-item" id="activity-empty" style="border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">No activity recorded yet today.</div></div>';
-
-    // JIT Training list.
-    var modules = DB.find('training_modules', function (m) {
-        return !m.deleted_at && m.company_id === state.currentCompanyId;
-    });
-    var trainingHtml = modules.map(function (m, i) {
-        var mod = m.task_module_id ? DB.getById('task_modules', m.task_module_id) : null;
-        var viewed = DB.findOne('training_assignments', function (a) {
-            return a.user_id === state.currentUserId && a.module_id === m.id && a.viewed_at;
-        });
-        var title = m.title || (mod ? mod.task_name : 'Training Module');
-        return '<div class="card" style="margin-bottom:8px;' + (viewed ? ' cursor:default;' : '') + '"' +
-            (viewed ? '' : ' onclick="addActivity(\'task\')"') + '>' +
-            '<div class="card-row">' +
-                '<div class="card-body">' +
-                    '<div class="card-title">' + esc(title) + '</div>' +
-                    '<div class="card-subtitle">' + (viewed
-                        ? 'Watched ' + new Date(viewed.viewed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                        : 'Plays automatically when you start this task') + '</div>' +
-                '</div>' +
-                '<span class="badge badge-gray">' + (viewed ? 'Done' : 'Pending') + '</span>' +
-            '</div>' +
-        '</div>';
-    }).join('');
-    document.getElementById('fc-training-list').innerHTML = trainingHtml;
-    if (!trainingHtml) document.getElementById('fc-training-header').style.display = 'none';
 
     // Simulated kit-photo capture for the clock-out gate — same pattern as
     // the PPE video: no real camera, but the gate is earned, not just ticked.
