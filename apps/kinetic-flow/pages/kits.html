@@ -3,7 +3,10 @@
         <div class="page-title">Kits &amp; Tools</div>
         <div class="page-subtitle">Browse kits by category to see tools, materials, and training videos.</div>
     </div>
-    <button class="btn btn-outline btn-sm mb-4" onclick="loadPage('label-generator')">Labels</button>
+    <div class="flex-between mb-4">
+        <button class="btn btn-outline btn-sm" onclick="loadPage('label-generator')">Labels</button>
+        <button class="btn btn-primary btn-sm" onclick="openCreateKit()">+ New Kit</button>
+    </div>
 
     <div class="kit-search-row">
         <button class="icon-btn" onclick="openKitDrawer()" aria-label="Browse kit categories">
@@ -270,9 +273,11 @@
                 '<div class="modal-handle"></div>' +
                 '<div class="page-title-sm mb-2">New Kit</div>' +
                 '<div class="form-group"><label>Kit Name</label><input type="text" id="kc-name" placeholder="e.g. Basic Electrical Kit"></div>' +
-                '<div class="form-group"><label>Category</label><input type="text" id="kc-category" placeholder="e.g. Electrical"></div>' +
+                '<div class="form-group"><label>Category</label><input type="text" id="kc-category" list="kc-category-list" placeholder="Search or type a category"><datalist id="kc-category-list">' +
+                    CATEGORIES.map(function (cat) { return '<option value="' + esc(cat.name) + '">'; }).join('') +
+                    '</datalist></div>' +
                 '<div class="form-group"><label>Description</label><input type="text" id="kc-description" placeholder="What this kit is for"></div>' +
-                '<div class="form-group"><label>Location</label><input type="text" id="kc-location" list="kc-location-list" value="shop" placeholder="Search or type a new location"><datalist id="kc-location-list">' +
+                '<div class="form-group"><label>Location</label><input type="text" id="kc-location" list="kc-location-list" placeholder="Search or type a location"><datalist id="kc-location-list">' +
                     companyLocations(state.currentCompanyId).map(function (l) { return '<option value="' + esc(l.name) + '">'; }).join('') +
                     '</datalist></div>' +
                 '<button class="btn btn-primary mt-2" onclick="saveNewKit()">Create Kit</button>' +

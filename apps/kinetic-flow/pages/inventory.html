@@ -52,6 +52,27 @@
         return SKU_CATEGORY[prefix] || 'Other';
     }
 
+    // Brands aren't a managed list like locations — just whatever's already
+    // been typed somewhere in this company's materials (kit-owned rows
+    // included, so "Milwaukee" used on a kit tool still suggests itself here)
+    // — so this is a plain live query, not a table to keep in sync.
+    function companyBrands() {
+        var seen = {};
+        DB.find('materials', function (m) { return m.company_id === state.currentCompanyId && !m.deleted_at && m.brand; })
+            .forEach(function (m) { seen[m.brand] = true; });
+        return Object.keys(seen).sort();
+    }
+
+    // A standalone item can also live "with" a kit (e.g. a spare battery kept
+    // in the kit bag) without being one of the kit's official contents (that's
+    // kit_id, set from Kits, not this). Kit names are suggested alongside real
+    // locations but never written into the locations table — they're read
+    // live off inventory_kits so a rename here can't leave a stale copy.
+    function companyKitNames() {
+        return DB.find('inventory_kits', function (k) { return k.company_id === state.currentCompanyId && !k.deleted_at; })
+            .map(function (k) { return k.name; });
+    }
+
     var appState = { activeTab: 'All', searchQuery: '' };
 
     // Kit-owned rows (kit_id set) are browsed/edited from Kits, not here —
@@ -271,9 +292,12 @@
                     '<div class="form-group"><label>SKU</label><input type="text" id="ii-sku" value="' + (m ? m.sku : '') + '" placeholder="ELE-PNL-200"></div>' +
                     '<div class="form-group"><label>Unit</label><input type="text" id="ii-unit" value="' + (m ? (m.unit || 'each') : 'each') + '"></div>' +
                 '</div>' +
-                '<div class="form-group"><label>Brand</label><input type="text" id="ii-brand" value="' + (m && m.brand ? esc(m.brand) : '') + '" placeholder="e.g. Milwaukee"></div>' +
-                '<div class="form-group"><label>Location</label><input type="text" id="ii-location" list="ii-location-list" value="' + (m ? (m.location || 'shop') : 'shop') + '" placeholder="Search or type a new location"><datalist id="ii-location-list">' +
+                '<div class="form-group"><label>Brand</label><input type="text" id="ii-brand" list="ii-brand-list" value="' + (m && m.brand ? esc(m.brand) : '') + '" placeholder="Search or type a brand"><datalist id="ii-brand-list">' +
+                    companyBrands().map(function (b) { return '<option value="' + esc(b) + '">'; }).join('') +
+                    '</datalist></div>' +
+                '<div class="form-group"><label>Location</label><input type="text" id="ii-location" list="ii-location-list" value="' + (m ? esc(m.location || 'shop') : '') + '" placeholder="Search or type a location"><datalist id="ii-location-list">' +
                     companyLocations(state.currentCompanyId).map(function (l) { return '<option value="' + esc(l.name) + '">'; }).join('') +
+                    companyKitNames().map(function (name) { return '<option value="' + esc(name) + '">'; }).join('') +
                     '</datalist></div>' +
                 '<div class="form-row">' +
                     '<div class="form-group"><label>In Stock</label><input type="number" id="ii-stock" min="0" step="1" value="' + (m ? m.stock_qty : 0) + '"></div>' +
@@ -301,12 +325,19 @@
         var name = (document.getElementById('ii-name').value || '').trim();
         if (!name) { alert('Enter an item name.'); return; }
         var locationName = (document.getElementById('ii-location').value || '').trim() || 'shop';
+        // A location matching a live kit name resolves to that kit's own
+        // name rather than going through findOrCreateLocation — it's not a
+        // physical place to add to the locations list, just "stored with
+        // this kit" (see companyKitNames() above).
+        var matchingKit = DB.findOne('inventory_kits', function (k) {
+            return k.company_id === state.currentCompanyId && !k.deleted_at && k.name.toLowerCase() === locationName.toLowerCase();
+        });
         var patch = {
             name: name,
             sku: (document.getElementById('ii-sku').value || '').trim().toUpperCase(),
             unit: (document.getElementById('ii-unit').value || 'each').trim(),
             brand: (document.getElementById('ii-brand').value || '').trim() || null,
-            location: findOrCreateLocation(state.currentCompanyId, locationName).name,
+            location: matchingKit ? matchingKit.name : findOrCreateLocation(state.currentCompanyId, locationName).name,
             stock_qty: Math.max(0, parseInt(document.getElementById('ii-stock').value, 10) || 0),
             reorder_qty: Math.max(0, parseInt(document.getElementById('ii-reorder').value, 10) || 0),
             unit_cost: Math.max(0, parseFloat(document.getElementById('ii-cost').value) || 0),
