@@ -282,6 +282,7 @@ function categoryViewHtml() {
     const cat = CATEGORIES.find(c => c.name === state.activeCategory);
     if (!cat) return categoriesViewHtml();
     return `
+        <div class="section-action tr-back-btn" onclick="goBack()">‹ Back</div>
         <div class="page-header">
             <div class="page-title">${categoryIcon(cat.name)} ${cat.name}</div>
             <div class="page-subtitle">${cat.kits.length} kit${cat.kits.length === 1 ? '' : 's'} available to rent</div>
@@ -296,6 +297,7 @@ function kitViewHtml() {
     const tools = toolsForKit(kit.id);
     const pricing = pricingFor(kit);
     return `
+        <div class="section-action tr-back-btn" onclick="goBack()">‹ Back</div>
         <div class="page-header">
             <div class="page-logo">${categoryIcon(kit.category)}</div>
             <div class="page-title" style="text-align:center;">${kit.name}</div>
@@ -520,6 +522,7 @@ function ensureTheme() {
         }
         #tr-root .tr-icon-circle { background:#dcfce7; color:#15803d; }
         #tr-root .tr-price-tag { color:#15803d; }
+        #tr-root .tr-back-btn { display:inline-block; margin-bottom:12px; cursor:pointer; }
     `;
     document.head.appendChild(style);
 }
