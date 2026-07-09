@@ -342,6 +342,11 @@ body.fullscreen-mode #resize-grip {
 
 .home-icon:active { transform: scale(0.92); }
 
+.home-icon-slot--filler {
+    visibility: hidden;
+    pointer-events: none;
+}
+
 .home-icon-label {
     margin-top: 10px;
     font-size: 0.75rem;

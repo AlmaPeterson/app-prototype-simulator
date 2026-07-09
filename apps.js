@@ -18,18 +18,19 @@ const APPS = [
         icon: '⚡',
         script: 'apps/kinetic-flow/app.js',
     },
-    {
-        id: 'flavor-hub',
-        name: 'Flavor Hub',
-        icon: '🍔',
-        script: 'apps/flavor-hub/app.js',
-    },
-    {
-        id: 'pulse-notes',
-        name: 'Pulse Notes',
-        icon: '📝',
-        script: 'apps/pulse-notes/app.js',
-    },
+    // Temporarily hidden — re-add to restore to home screen.
+    // {
+    //     id: 'flavor-hub',
+    //     name: 'Flavor Hub',
+    //     icon: '🍔',
+    //     script: 'apps/flavor-hub/app.js',
+    // },
+    // {
+    //     id: 'pulse-notes',
+    //     name: 'Pulse Notes',
+    //     icon: '📝',
+    //     script: 'apps/pulse-notes/app.js',
+    // },
     {
         id: 'label-designer',
         name: 'Label Designer',

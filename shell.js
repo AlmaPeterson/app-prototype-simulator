@@ -46,7 +46,42 @@ function renderHomeScreen() {
             <div class="home-icon-label">${app.name}</div>
         </div>
     `).join('');
+    padHomeIconsToTwoRows(container);
 }
+
+// #home-icons uses justify-content: space-between, so a short row of icons
+// (fewer than fill one row) gets stretched across the full row width. Pad
+// the grid with invisible filler slots — appended after the real icons, so
+// they never bump a real icon to a new row — until the icons wrap onto a
+// second row. That gives space-between a full row's worth of items to
+// distribute, so the real icons sit at fixed spacing instead of spreading.
+function padHomeIconsToTwoRows(container) {
+    container.querySelectorAll('.home-icon-slot--filler').forEach(el => el.remove());
+    const realSlots = Array.from(container.children);
+    if (realSlots.length === 0) return;
+    const firstTop = realSlots[0].offsetTop;
+    const lastTop = realSlots[realSlots.length - 1].offsetTop;
+    if (lastTop > firstTop) return; // real icons already span 2+ rows
+
+    let guard = 0;
+    while (container.lastElementChild.offsetTop === firstTop && guard++ < 200) {
+        const filler = document.createElement('div');
+        filler.className = 'home-icon-slot home-icon-slot--filler';
+        filler.setAttribute('aria-hidden', 'true');
+        filler.innerHTML = '<div class="home-icon"></div><div class="home-icon-label">&nbsp;</div>';
+        container.appendChild(filler);
+    }
+}
+
+// The phone frame is resizable (see initResize below), which changes how
+// many icons fit per row — recompute the filler padding whenever
+// #home-icons itself changes size (including going from display:none to
+// visible at boot).
+(function watchHomeIconsResize() {
+    const container = document.getElementById('home-icons');
+    if (!container || typeof ResizeObserver === 'undefined') return;
+    new ResizeObserver(() => padHomeIconsToTwoRows(container)).observe(container);
+})();
 
 // ── OS Shell (boot screen / home screen / running app) ──────────────────────
 function showScreen(which) {
