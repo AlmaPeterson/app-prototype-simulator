@@ -17,7 +17,7 @@ const STORAGE_KEY = 'kineticFlow.state';
 // Bump whenever db/*.json seed data or table shapes change: restoreState()
 // discards localStorage DB snapshots from older versions and re-fetches the
 // fresh seeds, so users don't need a manual "Reset Demo Data".
-const DB_VERSION = 10;
+const DB_VERSION = 11;
 
 // ── App State ──────────────────────────────────────────────────────────────
 const state = {
@@ -62,7 +62,7 @@ const state = {
 const TABLES = [
     'companies', 'branches', 'users', 'roles', 'user_roles', 'customers',
     'addresses', 'jobs', 'bids', 'bid_divisions', 'bid_line_items', 'divisions',
-    'materials', 'inventory_kits', 'kit_checkouts',
+    'materials', 'inventory_kits', 'kit_checkouts', 'locations',
     'job_assignments', 'task_modules', 'tasks', 'task_materials', 'task_photos',
     'time_entries', 'time_entry_edits', 'schedule_events',
     'message_templates', 'scorecard_entries', 'worker_task_competency',
@@ -1018,6 +1018,45 @@ const COMPETENCY_LEVELS = [
 ];
 
 function openCompanyDivisions() { loadPage('company-divisions'); }
+
+// ── Inventory Locations ─────────────────────────────────────────────────────
+// Where tools/materials/kits physically live (shop, truck_1, truck_2,
+// trailer, ...) used to be a bare free-text field on materials/inventory_kits
+// — no shared list, so every typed value was a fresh chance for a typo (a
+// stray "Truck 1" vs "truck_1" would silently split a location in two).
+// This gives inventory.html and kits.html a real per-company list to search
+// against, following the exact same lazy-seed pattern as companyDivisions()
+// above. findOrCreateLocation() lets users still type a brand-new location
+// (a new job trailer, say) — it just also registers it so it shows up as a
+// suggestion next time, instead of only living inside one material's string.
+const LOCATIONS = ['shop', 'truck_1', 'truck_2', 'trailer'];
+
+function companyLocations(companyId) {
+    function rows() {
+        return DB.find('locations', function (l) { return l.company_id === companyId && !l.deleted_at; })
+            .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+    }
+    let result = rows();
+    if (!result.length && companyId) {
+        LOCATIONS.forEach(function (name, i) {
+            DB.insert('locations', { company_id: companyId, name: name, sort_order: i, is_active: true });
+        });
+        result = rows();
+    }
+    return result;
+}
+
+// Case-insensitive match against the existing list so "Shop" and "shop"
+// converge on one entry instead of silently forking — returns the existing
+// row's own casing when it matches, or inserts+returns a new one.
+function findOrCreateLocation(companyId, rawValue) {
+    const name = (rawValue || '').trim();
+    if (!name) return null;
+    const existing = companyLocations(companyId).find(function (l) { return l.name.toLowerCase() === name.toLowerCase(); });
+    if (existing) return existing;
+    const maxOrder = companyLocations(companyId).reduce(function (m, l) { return Math.max(m, l.sort_order || 0); }, -1);
+    return DB.insert('locations', { company_id: companyId, name: name, sort_order: maxOrder + 1, is_active: true });
+}
 
 // ── Jobs Flow ───────────────────────────────────────────────────────────────
 function openJob(jobId) {
@@ -2609,6 +2648,7 @@ function activate() {
         selectCompany, manageCompany, companyMemberUsers, userIsSupplier,
         LEVELS, COMPETENCY_LEVELS, companyDivisions,
         openCompanyDivisions,
+        companyLocations, findOrCreateLocation,
         openJob, createJob, submitJob,
         openBid, submitBid, recalcBidTotals, sendBidToCustomer, downloadBidPdf, nextBidNumber,
         openDivision, saveDivision, previewProposal,

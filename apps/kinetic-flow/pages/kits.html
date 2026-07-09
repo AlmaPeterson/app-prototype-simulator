@@ -131,8 +131,12 @@
         var tools = DB.find('materials', function (m) { return m.kit_id === kit.id && m.item_type === 'tool' && !m.deleted_at; });
         var materials = DB.find('materials', function (m) { return m.kit_id === kit.id && m.item_type === 'material' && !m.deleted_at; });
 
-        var html = '<div class="page-title-sm">' + kit.name + '</div>';
-        html += '<div class="page-subtitle mb-4">' + cat.name + '</div>';
+        var html = '<div class="flex-between">' +
+            '<div class="page-title-sm">' + esc(kit.name) + '</div>' +
+            '<button class="btn btn-outline btn-sm" onclick="openEditKit(\'' + kit.id + '\')">Edit Kit</button>' +
+            '</div>';
+        html += '<div class="page-subtitle mb-2">' + esc(cat.name) + (kit.location ? ' &bull; ' + esc(locationLabel(kit.location)) : '') + '</div>';
+        if (kit.description) html += '<div style="font-size:0.82rem; color:#475569; margin-bottom:14px;">' + esc(kit.description) + '</div>';
         html += listSection('Tools', 'tool', tools, 'addKitEntry(\'tool\')');
         html += listSection('Materials', 'material', materials, 'addKitEntry(\'material\')');
         html += '<div class="section-header mt-4"><span class="section-title">Videos</span>' +
@@ -267,6 +271,10 @@
                 '<div class="page-title-sm mb-2">New Kit</div>' +
                 '<div class="form-group"><label>Kit Name</label><input type="text" id="kc-name" placeholder="e.g. Basic Electrical Kit"></div>' +
                 '<div class="form-group"><label>Category</label><input type="text" id="kc-category" placeholder="e.g. Electrical"></div>' +
+                '<div class="form-group"><label>Description</label><input type="text" id="kc-description" placeholder="What this kit is for"></div>' +
+                '<div class="form-group"><label>Location</label><input type="text" id="kc-location" list="kc-location-list" value="shop" placeholder="Search or type a new location"><datalist id="kc-location-list">' +
+                    companyLocations(state.currentCompanyId).map(function (l) { return '<option value="' + esc(l.name) + '">'; }).join('') +
+                    '</datalist></div>' +
                 '<button class="btn btn-primary mt-2" onclick="saveNewKit()">Create Kit</button>' +
                 '<button class="btn btn-secondary" onclick="document.getElementById(\'kit-create-panel\').remove()">Cancel</button>' +
             '</div>';
@@ -278,9 +286,12 @@
         var name = (document.getElementById('kc-name').value || '').trim();
         if (!name) { alert('Enter a kit name.'); return; }
         var category = (document.getElementById('kc-category').value || '').trim() || 'Uncategorized';
+        var description = (document.getElementById('kc-description').value || '').trim();
+        var locationName = (document.getElementById('kc-location').value || '').trim() || 'shop';
         var kit = DB.insert('inventory_kits', {
-            company_id: state.currentCompanyId, name: name, description: '',
-            image_url: null, location: 'shop', division_number: null, category: category,
+            company_id: state.currentCompanyId, name: name, description: description,
+            image_url: null, location: findOrCreateLocation(state.currentCompanyId, locationName).name,
+            division_number: null, category: category,
         });
         document.getElementById('kit-create-panel').remove();
         CATEGORIES = loadCategories();
@@ -291,6 +302,137 @@
             });
         });
         if (appState.selected) appState.expandedCat = appState.selected.ci;
+        render();
+    };
+
+    // Kit-level photo staged in the edit sheet, held here until Save so
+    // Cancel never orphans a blob — separate from pendingKitItemImageFile
+    // below (that one's for an individual tool/material row, not the kit
+    // itself, and both sheets can't be open at once but keep them distinct
+    // for clarity).
+    var pendingKitImageFile = null;
+    var pendingKitImageRemoved = false;
+
+    window.handleKitPhotoChange = function (input) {
+        var file = input.files && input.files[0];
+        if (!file) return;
+        pendingKitImageFile = file;
+        pendingKitImageRemoved = false;
+        var preview = document.getElementById('kf-photo-preview');
+        preview.removeAttribute('data-asset-id');
+        preview.src = URL.createObjectURL(file);
+    };
+
+    window.clearKitPhoto = function () {
+        pendingKitImageFile = null;
+        pendingKitImageRemoved = true;
+        var preview = document.getElementById('kf-photo-preview');
+        preview.removeAttribute('data-asset-id');
+        preview.removeAttribute('src');
+    };
+
+    // Edit the kit shell itself (name/category/description/location/photo) —
+    // separate from addKitEntry/openKitItemEditor above, which only ever
+    // touch the tools/materials *inside* a kit. Until this existed, a kit's
+    // own fields were fixed at creation with no way to fix a typo or add a
+    // description/photo/location later.
+    window.openEditKit = function (kitId) {
+        var kit = DB.getById('inventory_kits', kitId);
+        if (!kit) return;
+        pendingKitImageFile = null;
+        pendingKitImageRemoved = false;
+        var existing = document.getElementById('kit-edit-shell-panel');
+        if (existing) existing.remove();
+        var modal = document.createElement('div');
+        modal.id = 'kit-edit-shell-panel';
+        modal.className = 'modal-overlay';
+        modal.innerHTML =
+            '<div class="modal-sheet">' +
+                '<div class="modal-handle"></div>' +
+                '<div class="page-title-sm mb-2">Edit Kit</div>' +
+                '<div class="form-group"><label>Photo</label>' +
+                    '<div style="display:flex; align-items:center; gap:10px;">' +
+                        '<img id="kf-photo-preview" ' + (kit.image_asset_id ? 'data-asset-id="' + kit.image_asset_id + '"' : (kit.image_url ? 'src="' + esc(kit.image_url) + '"' : '')) +
+                            ' style="width:56px; height:56px; border-radius:10px; object-fit:cover; background:#f1f5f9;" alt="">' +
+                        '<button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById(\'kf-photo-input\').click()">Choose Photo</button>' +
+                        (kit.image_asset_id || kit.image_url ? '<button type="button" class="btn btn-outline btn-sm" style="color:#dc2626;" onclick="clearKitPhoto()">Remove</button>' : '') +
+                    '</div>' +
+                    '<input type="file" id="kf-photo-input" accept="image/*" style="display:none;" onchange="handleKitPhotoChange(this)">' +
+                '</div>' +
+                '<div class="form-group"><label>Kit Name</label><input type="text" id="kf-name" value="' + esc(kit.name) + '"></div>' +
+                '<div class="form-group"><label>Category</label><input type="text" id="kf-category" value="' + esc(kit.category || '') + '"></div>' +
+                '<div class="form-group"><label>Description</label><input type="text" id="kf-description" value="' + esc(kit.description || '') + '" placeholder="What this kit is for"></div>' +
+                '<div class="form-group"><label>Location</label><input type="text" id="kf-location" list="kf-location-list" value="' + esc(kit.location || 'shop') + '" placeholder="Search or type a new location"><datalist id="kf-location-list">' +
+                    companyLocations(state.currentCompanyId).map(function (l) { return '<option value="' + esc(l.name) + '">'; }).join('') +
+                    '</datalist></div>' +
+                '<button class="btn btn-primary mt-2" onclick="saveEditKit(\'' + kit.id + '\')">Save Changes</button>' +
+                '<button class="btn btn-outline" style="color:#dc2626; border-color:#fca5a5;" onclick="removeKit(\'' + kit.id + '\')">Delete Kit</button>' +
+                '<button class="btn btn-secondary" onclick="document.getElementById(\'kit-edit-shell-panel\').remove()">Cancel</button>' +
+            '</div>';
+        modal.addEventListener('click', function (e) { if (e.target === modal) modal.remove(); });
+        document.getElementById('phone').appendChild(modal);
+        hydrateAssetMedia(modal);
+    };
+
+    function closeEditKitPanel() {
+        var p = document.getElementById('kit-edit-shell-panel');
+        if (p) p.remove();
+    }
+
+    window.saveEditKit = function (kitId) {
+        var name = (document.getElementById('kf-name').value || '').trim();
+        if (!name) { alert('Enter a kit name.'); return; }
+        var category = (document.getElementById('kf-category').value || '').trim() || 'Uncategorized';
+        var description = (document.getElementById('kf-description').value || '').trim();
+        var locationName = (document.getElementById('kf-location').value || '').trim() || 'shop';
+        var patch = {
+            name: name, category: category, description: description,
+            location: findOrCreateLocation(state.currentCompanyId, locationName).name,
+        };
+
+        function finish(imageAssetId) {
+            if (imageAssetId !== undefined) patch.image_asset_id = imageAssetId;
+            DB.update('inventory_kits', kitId, patch);
+            closeEditKitPanel();
+            CATEGORIES = loadCategories();
+            CATEGORIES.forEach(function (cat, ci) {
+                cat.kits.forEach(function (k, ki) {
+                    if (k.id === kitId) appState.selected = { ci: ci, ki: ki };
+                });
+            });
+            if (appState.selected) appState.expandedCat = appState.selected.ci;
+            render();
+        }
+
+        if (pendingKitImageFile) {
+            Assets.save(pendingKitImageFile).then(function (asset) { finish(asset.id); });
+        } else if (pendingKitImageRemoved) {
+            finish(null);
+        } else {
+            finish(undefined);
+        }
+    };
+
+    // Deleting a kit shell shouldn't take its tools/materials down with it —
+    // someone may want to fold them into a different kit or just leave them
+    // on the shelf. So this releases them to standalone stock instead of
+    // deleting: kit_id cleared (the same "no kit" state as anything added
+    // straight from Inventory) and location changed from the kit's id
+    // (kit-owned rows are keyed to it, see materials/kits unification notes)
+    // to the kit's own last known physical location, so they land wherever
+    // the kit itself was rather than defaulting blindly to the shop.
+    window.removeKit = function (kitId) {
+        var kit = DB.getById('inventory_kits', kitId);
+        if (!confirm('Delete "' + (kit ? kit.name : 'this kit') + '"? Its tools and materials will move to Standalone Tools, not be deleted.')) return;
+        var releaseLocation = (kit && kit.location) || 'shop';
+        DB.find('materials', function (m) { return m.kit_id === kitId && !m.deleted_at; }).forEach(function (m) {
+            DB.update('materials', m.id, { kit_id: null, location: releaseLocation });
+        });
+        DB.softDelete('inventory_kits', kitId);
+        closeEditKitPanel();
+        CATEGORIES = loadCategories();
+        appState.selected = null;
+        appState.expandedCat = null;
         render();
     };
 

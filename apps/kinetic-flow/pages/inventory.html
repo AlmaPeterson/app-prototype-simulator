@@ -272,7 +272,9 @@
                     '<div class="form-group"><label>Unit</label><input type="text" id="ii-unit" value="' + (m ? (m.unit || 'each') : 'each') + '"></div>' +
                 '</div>' +
                 '<div class="form-group"><label>Brand</label><input type="text" id="ii-brand" value="' + (m && m.brand ? esc(m.brand) : '') + '" placeholder="e.g. Milwaukee"></div>' +
-                '<div class="form-group"><label>Location</label><input type="text" id="ii-location" value="' + (m ? (m.location || 'shop') : 'shop') + '" placeholder="shop / truck_1 / trailer"></div>' +
+                '<div class="form-group"><label>Location</label><input type="text" id="ii-location" list="ii-location-list" value="' + (m ? (m.location || 'shop') : 'shop') + '" placeholder="Search or type a new location"><datalist id="ii-location-list">' +
+                    companyLocations(state.currentCompanyId).map(function (l) { return '<option value="' + esc(l.name) + '">'; }).join('') +
+                    '</datalist></div>' +
                 '<div class="form-row">' +
                     '<div class="form-group"><label>In Stock</label><input type="number" id="ii-stock" min="0" step="1" value="' + (m ? m.stock_qty : 0) + '"></div>' +
                     '<div class="form-group"><label>Reorder At</label><input type="number" id="ii-reorder" min="0" step="1" value="' + (m ? m.reorder_qty : 1) + '"></div>' +
@@ -298,12 +300,13 @@
     window.saveInventoryItem = function (materialId) {
         var name = (document.getElementById('ii-name').value || '').trim();
         if (!name) { alert('Enter an item name.'); return; }
+        var locationName = (document.getElementById('ii-location').value || '').trim() || 'shop';
         var patch = {
             name: name,
             sku: (document.getElementById('ii-sku').value || '').trim().toUpperCase(),
             unit: (document.getElementById('ii-unit').value || 'each').trim(),
             brand: (document.getElementById('ii-brand').value || '').trim() || null,
-            location: (document.getElementById('ii-location').value || 'shop').trim(),
+            location: findOrCreateLocation(state.currentCompanyId, locationName).name,
             stock_qty: Math.max(0, parseInt(document.getElementById('ii-stock').value, 10) || 0),
             reorder_qty: Math.max(0, parseInt(document.getElementById('ii-reorder').value, 10) || 0),
             unit_cost: Math.max(0, parseFloat(document.getElementById('ii-cost').value) || 0),
