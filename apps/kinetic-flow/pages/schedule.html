@@ -8,7 +8,13 @@
                  supplier who hasn't opened one — then every job's tasks show. -->
             <div class="page-subtitle" id="schedule-job-subtitle" onclick="loadPage('jobs')" style="cursor:pointer; display:none;"></div>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="showCreateSchedule()">+ Add</button>
+        <div style="display:flex; gap:6px;">
+            <!-- Shown only when the current job has a bid: re-derives this
+                 job's rows from the bid sheets (see generateScheduleFromBid)
+                 after the bid changes. Manual + Add entries survive a sync. -->
+            <button class="btn btn-secondary btn-sm" id="sched-sync-bid" style="display:none; width:auto;" onclick="syncScheduleFromBid()">Sync from Bid</button>
+            <button class="btn btn-primary btn-sm" onclick="showCreateSchedule()">+ Add</button>
+        </div>
     </div>
 
     <!-- Range toggle: Week (current 5-day work week, paged with arrows) vs
@@ -145,7 +151,8 @@
         var viewType = currentViewType();
 
         var events = DB.find('schedule_events', function (e) {
-            return e.company_id === state.currentCompanyId
+            return !e.deleted_at
+                && e.company_id === state.currentCompanyId
                 && e.view_type === viewType
                 && jobFilter(e)
                 && e.start_date <= weekIsos[weekIsos.length - 1] && e.end_date >= weekIsos[0];
@@ -177,7 +184,7 @@
     function renderFullGrid() {
         var viewType = currentViewType();
         var events = DB.find('schedule_events', function (e) {
-            return e.company_id === state.currentCompanyId && e.view_type === viewType && jobFilter(e);
+            return !e.deleted_at && e.company_id === state.currentCompanyId && e.view_type === viewType && jobFilter(e);
         }).sort(function (a, b) { return a.start_date < b.start_date ? -1 : 1; });
 
         var grid = document.getElementById('schedule-grid');
@@ -318,6 +325,30 @@
         renderGrid();
     };
 
-    renderGrid();
+    // Auto-generate from the bid (QA note 2026-07-13): a job with a bid gets
+    // its worker schedule derived from the bid sheets the first time anyone
+    // opens this page for it, instead of starting empty — the bid already
+    // fixed each task's day count (hours ÷ 8 × crew). After bid edits, the
+    // Sync from Bid button re-derives explicitly. Either way the view jumps
+    // to Full so the whole generated run is visible even when it starts
+    // outside the anchored week.
+    var currentJob = state.currentJobId ? DB.getById('jobs', state.currentJobId) : null;
+    if (currentJob && currentJob.bid_id && state.role !== 'customer') {
+        document.getElementById('sched-sync-bid').style.display = '';
+        var hasBidRows = !!DB.findOne('schedule_events', function (e) {
+            return !e.deleted_at && e.job_id === currentJob.id && e.view_type === 'worker' && e.bid_division_id;
+        });
+        if (!hasBidRows && generateScheduleFromBid(currentJob.id)) rangeMode = 'full';
+    }
+
+    window.syncScheduleFromBid = function () {
+        if (!generateScheduleFromBid(state.currentJobId)) {
+            alert("This job's bid has no included labor tasks to schedule yet.");
+            return;
+        }
+        setScheduleRange('full');
+    };
+
+    setScheduleRange(rangeMode);
 })();
 </script>

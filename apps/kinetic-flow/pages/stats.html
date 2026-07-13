@@ -2,12 +2,18 @@
     <div class="page-title">Task Statistics</div>
     <div class="page-subtitle mb-4" id="stats-subtitle">All Jobs</div>
 
-    <div class="tab-bar">
+    <div class="tab-bar mb-2">
         <button class="tab-btn active" id="stats-tab-month" onclick="selectStatsPeriod('month')">This Month</button>
         <button class="tab-btn" id="stats-tab-quarter" onclick="selectStatsPeriod('quarter')">Quarter</button>
         <button class="tab-btn" id="stats-tab-year" onclick="selectStatsPeriod('year')">Year</button>
     </div>
 
+    <div class="tab-bar mb-4">
+        <button class="tab-btn active" id="stats-view-overview" onclick="selectStatsView('overview')">Overview</button>
+        <button class="tab-btn" id="stats-view-tasks" onclick="selectStatsView('tasks')">By Task</button>
+    </div>
+
+    <div id="stats-panel-overview">
     <!-- Top Stats -->
     <div class="stats-grid" style="margin-bottom:16px;">
         <div class="stat-card">
@@ -70,6 +76,12 @@
             <div class="stat-label">Complaints</div>
         </div>
     </div>
+    </div>
+
+    <div id="stats-panel-tasks" style="display:none;">
+        <input class="search-bar mb-4" type="text" id="task-stats-search" placeholder="Search tasks by name or division..." oninput="filterTaskStats(this.value)">
+        <div id="stats-task-list"></div>
+    </div>
 </div>
 
 <script>
@@ -104,6 +116,9 @@
         if (period === 'quarter') return 90;
         return 365; // year
     }
+
+    var currentPeriod = 'month';
+    var currentTaskQuery = '';
 
     // ── Jobs Completed / Labour Hours — same aggregation style as
     // scoreboard.html/review-time.html: derive from time_entries rather than
@@ -158,13 +173,84 @@
         }).join('') || '<div class="list-item" style="border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">No scorecards recorded yet.</div></div>';
     }
 
+    // ── By Task — task_modules (the named-task catalog used for bidding and
+    // training) joined to actual logged hours from `tasks`, the same
+    // estimated-vs-actual pairing computeProductionSpeed() in app.js uses for
+    // scorecards. Filterable by task name or division, so a bid can be
+    // checked against how long that task has actually taken historically.
+    function renderTaskStats(period, query) {
+        var cutoff = new Date(Date.now() - cutoffDaysFor(period) * 86400000);
+        var q = (query || '').trim().toLowerCase();
+
+        var modules = DB.find('task_modules', function (m) { return m.company_id === state.currentCompanyId; });
+        if (q) {
+            modules = modules.filter(function (m) {
+                return m.task_name.toLowerCase().indexOf(q) !== -1 ||
+                    (m.division_name || '').toLowerCase().indexOf(q) !== -1;
+            });
+        }
+
+        var rows = modules.map(function (m) {
+            var instances = DB.find('tasks', function (t) {
+                return t.task_module_id === m.id && t.started_at && t.ended_at && new Date(t.started_at) >= cutoff;
+            });
+            var totalHrs = instances.reduce(function (sum, t) {
+                return sum + (new Date(t.ended_at) - new Date(t.started_at)) / 3600000;
+            }, 0);
+            var avgHrs = instances.length ? totalHrs / instances.length : null;
+            return { module: m, count: instances.length, avgHrs: avgHrs };
+        }).sort(function (a, b) {
+            if (a.count !== b.count) return b.count - a.count;
+            return a.module.task_name.localeCompare(b.module.task_name);
+        });
+
+        document.getElementById('stats-task-list').innerHTML = rows.map(function (r, i) {
+            var isLast = i === rows.length - 1;
+            var est = Number(r.module.estimated_hours) || 0;
+            var right;
+            if (r.count) {
+                var delta = r.avgHrs - est;
+                var deltaColor = delta > 0.05 ? '#dc2626' : (delta < -0.05 ? '#16a34a' : '#64748b');
+                var deltaLabel = Math.abs(delta) < 0.05 ? 'On estimate' :
+                    (delta > 0 ? '+' + delta.toFixed(1) + ' hrs over' : delta.toFixed(1) + ' hrs under');
+                right = '<div style="font-size:0.85rem;">Avg ' + r.avgHrs.toFixed(1) + ' hrs</div>' +
+                    '<div style="font-size:0.72rem; color:' + deltaColor + ';">' + deltaLabel + '</div>';
+            } else {
+                right = '<div style="font-size:0.85rem; color:#94a3b8;">Not logged</div>';
+            }
+            return '<div class="list-item"' + (isLast ? ' style="border-bottom:none;"' : '') + '>' +
+                '<div class="list-item-body">' +
+                    '<div class="list-item-title">' + r.module.task_name + '</div>' +
+                    '<div class="list-item-sub">' + (r.module.division_name || '') + ' &bull; ' + r.count + ' logged &bull; Est. ' + est.toFixed(1) + ' hrs</div>' +
+                '</div>' +
+                '<div style="text-align:right;">' + right + '</div>' +
+            '</div>';
+        }).join('') || '<div class="list-item" style="border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">No tasks match that search.</div></div>';
+    }
+
+    window.filterTaskStats = function (query) {
+        currentTaskQuery = query;
+        renderTaskStats(currentPeriod, currentTaskQuery);
+    };
+
+    window.selectStatsView = function (view) {
+        document.getElementById('stats-view-overview').classList.toggle('active', view === 'overview');
+        document.getElementById('stats-view-tasks').classList.toggle('active', view === 'tasks');
+        document.getElementById('stats-panel-overview').style.display = view === 'overview' ? '' : 'none';
+        document.getElementById('stats-panel-tasks').style.display = view === 'tasks' ? '' : 'none';
+        if (view === 'tasks') renderTaskStats(currentPeriod, currentTaskQuery);
+    };
+
     window.selectStatsPeriod = function (period) {
+        currentPeriod = period;
         ['month', 'quarter', 'year'].forEach(function (key) {
             document.getElementById('stats-tab-' + key).classList.toggle('active', key === period);
         });
         renderPeriod(period);
+        renderTaskStats(period, currentTaskQuery);
     };
 
     renderPeriod('month');
+    renderTaskStats('month', '');
 })();
 </script>

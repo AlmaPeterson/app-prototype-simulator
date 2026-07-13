@@ -1140,6 +1140,82 @@ function openBid() {
 }
 function submitBid() { loadPage('job-detail'); }
 
+// ── Schedule auto-generation from the bid (QA note 2026-07-13) ──────────────
+// The proposal already commits to a per-division day count (task hours ÷ 8 ×
+// crew size), so nobody should have to retype that into the Schedule tab.
+// Every included labor task on the job's bid becomes one worker
+// schedule_events row; tasks run back-to-back in proposal order (division
+// order, then sheet row order), Monday–Friday only, starting on the bid's
+// start date — falling back to the job's scheduled start. Rows are colored
+// per division so the grid reads in the same chunks as the proposal.
+// Re-running replaces prior bid-derived rows (bid_division_id set) but leaves
+// manual "+ Add" entries (bid_division_id null) alone.
+const SCHEDULE_DIVISION_COLORS = ['#2563eb', '#7c3aed', '#0d9488', '#d97706', '#db2777', '#475569'];
+
+function generateScheduleFromBid(jobId) {
+    const job = DB.getById('jobs', jobId);
+    const bid = job && job.bid_id ? DB.getById('bids', job.bid_id) : null;
+    if (!bid) return 0;
+
+    const tasks = [];
+    DB.find('bid_divisions', function (d) { return d.bid_id === bid.id && !d.deleted_at; })
+        .forEach(function (div, di) {
+            const guys = (div.form_data && div.form_data.guys) || 1;
+            DB.find('bid_line_items', function (li) {
+                return li.bid_division_id === div.id && !li.deleted_at
+                    && li.type === 'labor' && li.task_included !== false;
+            }).sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); })
+                .forEach(function (li) {
+                    tasks.push({
+                        divisionId: div.id,
+                        title: li.description || div.division_name,
+                        days: Math.max(1, Math.ceil((li.quantity || 0) / (8 * guys))),
+                        color: SCHEDULE_DIVISION_COLORS[di % SCHEDULE_DIVISION_COLORS.length],
+                    });
+                });
+        });
+    if (!tasks.length) return 0;
+
+    DB.find('schedule_events', function (e) {
+        return !e.deleted_at && e.job_id === jobId && e.view_type === 'worker' && e.bid_division_id;
+    }).forEach(function (e) { DB.softDelete('schedule_events', e.id); });
+
+    // First workday: bid start date, else the job's scheduled start, snapped
+    // forward off a weekend (Sat/Sun are locked days of rest).
+    const startIso = bid.start_date || (job.scheduled_start || '').slice(0, 10)
+        || new Date().toISOString().slice(0, 10);
+    const d0 = new Date(startIso + 'T12:00:00');
+    while (d0.getDay() === 0 || d0.getDay() === 6) d0.setDate(d0.getDate() + 1);
+    let cursor = d0.toISOString().slice(0, 10);
+
+    tasks.forEach(function (t) {
+        let end = cursor;
+        for (let i = 1; i < t.days; i++) end = nextWorkDayIso(end);
+        // Bid tasks are free-text, but when a name matches a task module the
+        // JIT training gate (job-home) should fire for the generated row too.
+        const mod = DB.findOne('task_modules', function (m) {
+            return m.company_id === job.company_id
+                && (m.task_name || '').toLowerCase() === t.title.toLowerCase();
+        });
+        DB.insert('schedule_events', {
+            company_id: job.company_id,
+            branch_id: job.branch_id,
+            job_id: job.id,
+            bid_division_id: t.divisionId,
+            task_module_id: mod ? mod.id : null,
+            assigned_to: job.lead_id || null,
+            title: t.title,
+            start_date: cursor,
+            end_date: end,
+            view_type: 'worker',
+            color: t.color,
+            status: 'scheduled',
+        });
+        cursor = nextWorkDayIso(end);
+    });
+    return tasks.length;
+}
+
 // The customer never sees the app (QA note): everything they need — bid,
 // schedule, payment plan — leaves as one generated PDF. Mirrors
 // bid-proposal.html's math (10% contingency per division, auto-summed
@@ -2632,7 +2708,7 @@ function activate() {
         openJob, createJob, submitJob,
         openBid, submitBid, recalcBidTotals, sendBidToCustomer, downloadBidPdf, nextBidNumber,
         openDivision, saveDivision, previewProposal,
-        openSchedule, openTimeSheet, openKits, openLabelGenerator, openFieldClock, openInventory,
+        openSchedule, generateScheduleFromBid, openTimeSheet, openKits, openLabelGenerator, openFieldClock, openInventory,
         openScorecard, openMyScorecard, submitScorecard, isManagerOrAdmin, pendingSelfScorecard,
         computeProductionSpeed,
         openTaskSelect, closeTaskSelectModal, selectClockInTask, trainingVideoComplete, showCoSignModal, closeCoSignModal, confirmCoSign,
