@@ -22,29 +22,21 @@
 </div>
 
 <div class="form-group">
-    <label>I am a</label>
+    <label>Requested Position</label>
+    <!-- Options are the company's real positions, filled by showSignUp()
+         (this fragment's scripts never execute — it's injected via innerHTML). -->
     <select id="signup-role">
-        <option value="">Select your role...</option>
-        <option>Worker / Technician</option>
-        <option>Manager / Supervisor</option>
-        <option>Customer</option>
-        <option>Supplier / Vendor</option>
-        <option>Admin</option>
+        <option value="">Select a position...</option>
     </select>
 </div>
 
 <div class="form-group">
-    <label>Company Name (optional)</label>
-    <input type="text" id="signup-company" placeholder="Acme Corp">
-</div>
-
-<div class="form-group">
     <label>Notes / Why you need access</label>
-    <textarea placeholder="Briefly describe your role..."></textarea>
+    <textarea id="signup-notes" placeholder="Briefly describe your role..."></textarea>
 </div>
 
 <div class="alert">
-    Your request will be reviewed. You'll receive an email once approved.
+    An admin will review your request and can adjust the position you're given. You'll receive an email once approved.
 </div>
 
 <button class="btn btn-primary" onclick="submitAccount()">Submit Request</button>

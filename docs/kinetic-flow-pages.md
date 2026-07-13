@@ -1,6 +1,6 @@
 # Kinetic Flow — Page Reference
 
-Accurate as of 2026-07-08. One entry per file in `apps/kinetic-flow/pages/`.
+Accurate as of 2026-07-13. One entry per file in `apps/kinetic-flow/pages/`.
 Each entry says what information the page shows, what you can edit, and what
 actions you can take. All data comes from the in-memory mock DB (seeded from
 `db/*.json`, persisted to localStorage); "saves" below mean DB writes in that
@@ -16,46 +16,37 @@ sense — nothing hits a server.
 - **Do:** Sign In / Google (both call `signIn()`; a pending-approval email routes to account-pending; an empty or unknown email shows an inline error and does **not** sign in — no demo fallback). "Request Access" opens the sign-up sheet (the only path to a new account — the old header Existing/New Account toggle is gone).
 
 ### sign-up.html (bottom-sheet modal over sign-in)
-- **See:** "Request an Account" form and a note that requests are reviewed.
-- **Edit:** First/last name, email, phone, role dropdown (Worker/Manager/Customer/Supplier/Admin), optional company name, notes.
-- **Do:** Submit Request — creates a `users` row with `approval_status: 'pending'` and lands on account-pending. Cancel closes the sheet.
+- **See:** "Request an Account" form and a note that an admin reviews requests and can adjust the granted position.
+- **Edit:** First/last name, email, phone, requested position (dropdown of the company's real roles — Admin/Manager/Employee/Supplier — filled by `showSignUp()` since injected fragments' scripts never run), notes.
+- **Do:** Submit Request — creates a `users` row with `approval_status: 'pending'` (the note saved as `request_note`) plus a pending `user_roles` row holding the requested position, and lands on account-pending. Cancel closes the sheet.
 
 ### account-pending.html
 - **See:** "Request Sent" confirmation; explanation that an admin must approve the account.
 - **Edit:** Nothing.
 - **Do:** Back to Sign In.
 
-### admin-approvals.html (admin's landing page after sign-in)
-- **See:** "Pending Accounts" list — each pending user's name, email, company, phone, plus a pending count.
-- **Edit:** Nothing directly.
-- **Do:** Approve (sets `approval_status: 'approved'` so the user can sign in) or Reject (confirm dialog, soft-deletes the user). Sign Out.
-
 ---
 
-## Companies
+## Company (single-company model)
 
-### companies.html (landing page after sign-in — workers and supplier-role users alike)
-- **See:** Only companies you belong to — your home company or any you hold a `user_roles` row in (pending join requests included, with their Pending badge). Each card shows name, member count, and your membership badge. Empty state with a centered + button when there are none.
-- **Edit:** Nothing directly.
-- **Do:** Tap a company to select it and go to Jobs — or Inventory when your only active role there is supplier (a Pending membership just alerts that the owner hasn't accepted yet). + button dropdown → Join a Company / Create a Company. "Manage" button (only on companies where you have an active role) → company-setup. Sign Out.
+> **Single-company refactor (2026-07-13):** Kinetic Flow is built for one
+> company; branches are the only org structure. The company picker
+> (companies.html), join-company, new-company, and the platform-admin
+> account (admin@gmail.com) with its admin-approvals page are all gone.
+> Signing in lands straight on Jobs (Inventory for supplier-role users).
+> "Admin" is not an account type — it's the `manage_users` permission on
+> whatever position (or per-member override) a user holds. Anyone with it
+> gets a **Manage Users** entry in the ⋯ menu plus a red dot on the ⋯
+> button (and a count pill on the menu row) whenever sign-up requests are
+> pending.
 
-### join-company.html
-- **See:** Company filter box ("Type to filter companies..."), a live "Showing X of Y companies" count, matching company cards (name + member count, "Selected" badge) with a query-echoing empty state, a role dropdown showing the selected company's real positions, an optional message field.
-- **Edit:** Search text, selected company (tap to toggle), requested role, message to admin.
-- **Do:** Send Join Request — creates a pending `user_roles` row (the chosen role is stored on it, so accepting needs no further input). Cancel/Back → companies.
-
-### new-company.html
-- **See:** Create-a-company form.
-- **Edit:** Company name, industry dropdown, business address, city, province/state, company size, phone, optional website.
-- **Do:** Create Company — inserts the company + address, seeds default roles (admin/manager/employee), makes you admin, and continues to company-setup. Cancel → companies.
-
-### company-setup.html (reached via "Manage" on a company card)
-- **See:** Position chips; branch cards (name, address, Primary badge); Company Configuration: a Bid Divisions card (with active count) plus a read-only card listing the fixed Guild and Competency ladders (badged "Fixed" — same for every company, not configurable); a Permissions list summarizing each position's finance access / manage-users / manage-bids; pending Join Requests (name, email, requested role, message) when any exist; Team Members list (name, position, branch) with a user search box.
+### manage-users.html (⋯ menu → Manage Users; gated by the manage_users permission)
+- **See:** Account Requests (pending sign-ups: name, email/phone, note, a position dropdown prefilled with what they requested — Employee when they didn't pick); position chips; branch cards (name, address, Primary badge); Company Configuration: Bid Divisions card plus the fixed Guild/Competency ladders (badged "Fixed"); a Permissions list summarizing each position's finance access / manage-users / manage-bids; Team Members list (name, position, branch — pending accounts excluded).
 - **Edit:** Everything above through bottom-sheet panels:
   - Position panel (+ Add or tap a chip/permission row): name, finance access (none/job/branch/nationwide), manage-users and manage-bids toggles; Remove Position (blocked-with-confirm if members hold it; admin can't be removed).
   - Branch panel (+ Add): name, street, city, state (first branch becomes Primary). Remove non-primary branches (unassigns their members).
   - Member panel (tap a member): branch, position, per-member finance access override, manage-users / manage-bids toggles.
-- **Do:** Accept / Decline join requests (accept flips the `user_roles` row to active). Search any user and + Add them as an employee. Remove a member. Tap a branch card → branch-detail. Open Bid Divisions. Continue to Jobs / Skip for Now.
+- **Do:** Approve an account request (sets `approval_status: 'approved'` and activates their `user_roles` row at whichever position is selected — the approver can change it) or Reject (confirm dialog, soft-deletes the user; they can request again). Remove a member (deletes their account — new members only arrive via Request Access, so there is no separate add-user search). Tap a branch card → branch-detail. Open Bid Divisions. Done → back.
 
 ### branch-detail.html
 - **See:** Branch name, Primary badge, address, manager, manager's phone, active-job count, branch member list (name + guild level) with a search box scoped to company members.
@@ -80,10 +71,10 @@ sense — nothing hits a server.
 
 ## Jobs
 
-### jobs.html
-- **See:** Job list for the selected company (scoped to the current branch when one is set): name, bid total or "No Bid", address + start date, job type • priority • lead. Company/branch subtitle. Empty states for no jobs / no search matches.
+### jobs.html (landing page after sign-in for non-supplier users)
+- **See:** Job list (scoped to the current branch when one is set): name, bid total or "No Bid", address + start date, job type • priority • lead. Company/branch subtitle. Empty states for no jobs / no search matches. Shows the app header and bottom nav (it's a main-app page now that it's the landing screen).
 - **Edit:** Search text — filters live on name, address, job type, and lead.
-- **Do:** Tap a job → job-home (sets it as the current job; the bottom nav appears from there on). + → create-job (hidden for supplier-role users, who browse jobs for material planning only). ← Companies. Browsing this list does **not** clear the current job — only opening a different one changes it.
+- **Do:** Tap a job → job-home (sets it as the current job). + → create-job (hidden for supplier-role users, who browse jobs for material planning only). Browsing this list does **not** clear the current job — only opening a different one changes it.
 
 ### create-job.html
 - **See:** New-job form; team chips scoped to the current branch.
@@ -185,7 +176,7 @@ sense — nothing hits a server.
 - **Edit:** The selection (check kits and/or individual items); search filters kits.
 - **Do:** "Open in Label Maker" — hands the selection off to the user's separate Label Maker app; until that app is installed in this simulator it's an honest stub (toast). This page deliberately does **not** generate labels itself (QA note 2026-07-06). Clear selection. ← Kits.
 
-### inventory.html (supplier-role landing page after picking a company; also ⋯ menu → Stock Inventory)
+### inventory.html (supplier-role landing page after sign-in; also ⋯ menu → Stock Inventory)
 
 > **Supplier role:** supplier is a company role (seeded as `supplier@kineticflow.com`;
 > every company gets a default `supplier` role), not an account type — the old header
@@ -222,8 +213,8 @@ sense — nothing hits a server.
 
 ### App header (not a page — persistent bar above every main-app page)
 The More tab and more.html were removed; a slim header now sits above `#main`
-on exactly the pages that show the bottom nav (never on sign-in/companies,
-never in Customer mode). Left: initials avatar + your name + current company —
+on exactly the pages that show the bottom nav (never on sign-in, never in
+Customer mode). Left: initials avatar + your name + company —
 tap it for the profile sheet (name, email, position • company, guild-level
 badge, a Scoreboard Rank card with your monthly rank + points → scoreboard,
 Sign Out). Right: a green "▲ #N" chip that appears **only when your monthly
@@ -232,9 +223,12 @@ scoreboard, which re-baselines it; `state.rankSeen` persists the baseline —
 deliberately never an always-on rank, so a low rank isn't rubbed in all day),
 then a ⋯ button opening a dropdown with the old More content — Dashboards (My Scorecard, Scoreboard, Task Statistics, Finance
 Dashboard, Customer Home Details, Message Templates), Management (Team
-Timesheets, Company & Branches, Stock Inventory), Preview (Sabbath Lock), and
-Account (Sign Out). Both bottom navs are four tabs now — worker: Home /
-Schedule / Field / Kits; supplier: Inventory / Jobs / Schedule / Kits.
+Timesheets, Manage Users — only for users with the manage_users permission,
+with a "N pending" pill when sign-up requests are waiting — and Stock
+Inventory), Preview (Sabbath Lock), and Account (Sign Out). The ⋯ button
+itself carries a red dot for those users while any request is pending. Both
+bottom navs are four tabs — worker: Home / Schedule / Field / Kits; supplier:
+Inventory / Jobs / Schedule / Kits.
 (Resetting demo data lives in the website header's Reset Data button, not in
 the app.)
 

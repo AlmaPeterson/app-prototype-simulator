@@ -38,45 +38,5 @@
       "manage_users": false,
       "manage_bids": false
     }
-  },
-  {
-    "id": "role-oc-admin",
-    "company_id": "company-other",
-    "name": "admin",
-    "permissions": {
-      "finance": "nationwide",
-      "manage_users": true,
-      "manage_bids": true
-    }
-  },
-  {
-    "id": "role-oc-manager",
-    "company_id": "company-other",
-    "name": "manager",
-    "permissions": {
-      "finance": "branch",
-      "manage_users": true,
-      "manage_bids": true
-    }
-  },
-  {
-    "id": "role-oc-employee",
-    "company_id": "company-other",
-    "name": "employee",
-    "permissions": {
-      "finance": "job",
-      "manage_users": false,
-      "manage_bids": false
-    }
-  },
-  {
-    "id": "role-oc-supplier",
-    "company_id": "company-other",
-    "name": "supplier",
-    "permissions": {
-      "finance": "none",
-      "manage_users": false,
-      "manage_bids": false
-    }
   }
 ]

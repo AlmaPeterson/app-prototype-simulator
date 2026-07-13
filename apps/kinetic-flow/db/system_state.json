@@ -14,13 +14,5 @@
     "value": "false",
     "updated_at": "2026-05-18T12:00:00Z",
     "updated_by": "user-master"
-  },
-  {
-    "id": "sys-sabbath-lock-2",
-    "company_id": "company-other",
-    "key": "sabbath_lock",
-    "value": "false",
-    "updated_at": "2026-06-30T12:00:00Z",
-    "updated_by": null
   }
 ]

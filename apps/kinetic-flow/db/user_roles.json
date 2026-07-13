@@ -42,20 +42,6 @@
     "status": "active"
   },
   {
-    "id": "userrole-other-master",
-    "user_id": "user-other-master",
-    "role_id": "role-oc-admin",
-    "assigned_at": "2024-09-22T12:00:00Z",
-    "status": "active"
-  },
-  {
-    "id": "userrole-other-employee",
-    "user_id": "user-other-employee",
-    "role_id": "role-oc-employee",
-    "assigned_at": "2025-09-05T12:00:00Z",
-    "status": "active"
-  },
-  {
     "id": "userrole-supplier",
     "user_id": "user-supplier",
     "role_id": "role-kf-supplier",

@@ -20,16 +20,5 @@
     "created_at": "2024-11-09T12:00:00Z",
     "updated_at": "2026-05-03T12:00:00Z",
     "deleted_at": null
-  },
-  {
-    "id": "branch-denver",
-    "company_id": "company-other",
-    "name": "Denver",
-    "address_id": "addr-office-denver",
-    "manager_id": "user-other-master",
-    "is_primary": true,
-    "created_at": "2025-05-18T12:00:00Z",
-    "updated_at": "2026-04-03T12:00:00Z",
-    "deleted_at": null
   }
 ]

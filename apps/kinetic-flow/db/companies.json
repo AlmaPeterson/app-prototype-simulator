@@ -6,13 +6,5 @@
     "created_at": "2024-04-03T12:00:00Z",
     "updated_at": "2026-06-29T12:00:00Z",
     "deleted_at": null
-  },
-  {
-    "id": "company-other",
-    "name": "Other Company LLC",
-    "slug": "other-company-llc",
-    "created_at": "2025-05-18T12:00:00Z",
-    "updated_at": "2026-05-23T12:00:00Z",
-    "deleted_at": null
   }
 ]

@@ -27,16 +27,6 @@
     "to_level": "master",
     "promoted_by": null,
     "promoted_at": "2025-02-17T12:00:00Z",
-    "reason": "Elite project lead promotion — board approved"
-  },
-  {
-    "id": "levelhist-4",
-    "company_id": "company-other",
-    "user_id": "user-other-employee",
-    "from_level": "apprentice",
-    "to_level": "fellow_craft",
-    "promoted_by": null,
-    "promoted_at": "2026-03-29T12:00:00Z",
-    "reason": "30-day trailing average achieved"
+    "reason": "Elite project lead promotion \u2014 board approved"
   }
 ]

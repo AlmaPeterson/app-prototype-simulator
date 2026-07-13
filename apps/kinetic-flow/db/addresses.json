@@ -26,19 +26,6 @@
     "sync_status": "synced"
   },
   {
-    "id": "addr-office-denver",
-    "company_id": "company-other",
-    "street": "1400 Blake St",
-    "city": "Denver",
-    "state": "CO",
-    "zip": "80202",
-    "lat": 39.7508,
-    "lng": -104.9963,
-    "created_at": "2025-08-25T12:00:00Z",
-    "updated_at": "2026-06-25T12:00:00Z",
-    "sync_status": "synced"
-  },
-  {
     "id": "addr-job-riverside",
     "company_id": "company-kineticflow",
     "street": "123 Riverside Dr",

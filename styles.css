@@ -624,6 +624,33 @@ body.fullscreen-mode #resize-grip {
 
 .app-header-more:hover { background: #f1f5f9; }
 
+/* Red "requests waiting" dot on the ⋯ button — shown only to users with the
+   manage-users permission while sign-up requests are pending. */
+.app-header-pending-dot {
+    position: absolute;
+    top: 7px;
+    right: 7px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #dc2626;
+    border: 2px solid #fff;
+    box-sizing: content-box;
+}
+
+/* Pending-count pill on the ⋯ menu's Manage Users row. */
+.header-menu-pill {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #fef2f2;
+    color: #dc2626;
+    font-size: 0.68rem;
+    font-weight: 700;
+    vertical-align: 1px;
+}
+
 /* The header's ⋯ dropdown — dimmed full-phone overlay with a panel anchored
    under the header's right edge (84px ≈ status bar + header height). */
 .header-menu-overlay {

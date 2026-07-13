@@ -28,35 +28,5 @@
     "can_view_job": true,
     "updated_at": "2026-03-24T12:00:00Z",
     "updated_by": "user-master"
-  },
-  {
-    "id": "finperm-4",
-    "company_id": "company-other",
-    "role_id": "role-oc-admin",
-    "can_view_nationwide": true,
-    "can_view_branch": true,
-    "can_view_job": true,
-    "updated_at": "2026-04-13T12:00:00Z",
-    "updated_by": "user-other-master"
-  },
-  {
-    "id": "finperm-5",
-    "company_id": "company-other",
-    "role_id": "role-oc-manager",
-    "can_view_nationwide": false,
-    "can_view_branch": true,
-    "can_view_job": true,
-    "updated_at": "2026-04-13T12:00:00Z",
-    "updated_by": "user-other-master"
-  },
-  {
-    "id": "finperm-6",
-    "company_id": "company-other",
-    "role_id": "role-oc-employee",
-    "can_view_nationwide": false,
-    "can_view_branch": false,
-    "can_view_job": true,
-    "updated_at": "2026-04-13T12:00:00Z",
-    "updated_by": "user-other-master"
   }
 ]

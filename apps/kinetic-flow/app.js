@@ -17,7 +17,7 @@ const STORAGE_KEY = 'kineticFlow.state';
 // Bump whenever db/*.json seed data or table shapes change: restoreState()
 // discards localStorage DB snapshots from older versions and re-fetches the
 // fresh seeds, so users don't need a manual "Reset Demo Data".
-const DB_VERSION = 12;
+const DB_VERSION = 13;
 
 // ── App State ──────────────────────────────────────────────────────────────
 const state = {
@@ -287,9 +287,12 @@ const supplierNav = [
     { icon: NAV_ICONS.box,      label: 'Kits',      page: 'kits' },
 ];
 
-// Pages that show the bottom nav and the app header
+// Pages that show the bottom nav and the app header. 'jobs' is included
+// because it's the post-sign-in landing page now that the company picker is
+// gone — without the header there'd be no ⋯ menu (or pending-account dot)
+// until a job was opened.
 const mainAppPages = [
-    'schedule', 'field-clock', 'kits', 'label-generator', 'message-templates',
+    'jobs', 'schedule', 'field-clock', 'kits', 'label-generator', 'message-templates',
     'inventory', 'stats', 'finance', 'customer-home', 'scoreboard',
     'job-home', 'job-detail', 'job-detail-nobid', 'create-job',
 ];
@@ -461,6 +464,11 @@ function updateAppHeader() {
         }
     }
 
+    // Red dot on the ⋯ button while account requests are waiting — only for
+    // users who can actually act on them (manage-users permission).
+    const pendingDot = (canManageUsers() && pendingAccountCount() > 0)
+        ? '<span class="app-header-pending-dot"></span>' : '';
+
     el.innerHTML =
         '<button class="app-header-id" onclick="showProfileSheet()" title="View profile">' +
             '<span class="app-header-avatar">' + esc(userInitials(name)) + '</span>' +
@@ -470,7 +478,7 @@ function updateAppHeader() {
             '</span>' +
         '</button>' +
         '<span class="app-header-actions">' + rankChip +
-            '<button class="app-header-more" onclick="showHeaderMenu()" title="More" aria-label="More">' + NAV_ICONS.more + '</button>' +
+            '<button class="app-header-more" style="position:relative;" onclick="showHeaderMenu()" title="More" aria-label="More">' + NAV_ICONS.more + pendingDot + '</button>' +
         '</span>';
 }
 
@@ -497,7 +505,13 @@ function showHeaderMenu() {
             item('Message Templates', "loadPage('message-templates')") +
             '<div class="header-menu-section">Management</div>' +
             item('Team Timesheets', 'openTeamTime()') +
-            item('Company &amp; Branches', "loadPage('companies')") +
+            // Manage Users only shows for someone whose position (or member
+            // override) carries the manage_users permission; the count pill
+            // is the "requests waiting" nudge behind the header's red dot.
+            (canManageUsers()
+                ? item('Manage Users' + (pendingAccountCount() > 0
+                    ? ' <span class="header-menu-pill">' + pendingAccountCount() + ' pending</span>' : ''), 'openManageUsers()')
+                : '') +
             item('Stock Inventory', "loadPage('inventory')") +
             '<div class="header-menu-section">Preview</div>' +
             item('Sabbath Lock', 'showSabbathLock()') +
@@ -629,8 +643,8 @@ function signIn() {
         return;
     }
     // Accounts created through sign-up start as approval_status 'pending' and
-    // stay locked out until the platform admin (admin@gmail.com) approves them
-    // on admin-approvals. Seeded users have no approval_status — treated as
+    // stay locked out until someone with the manage-users permission approves
+    // them on manage-users. Seeded users have no approval_status — treated as
     // approved.
     if (user.approval_status === 'pending') {
         loadPage('account-pending');
@@ -644,7 +658,6 @@ function signIn() {
 // email, or position. Picking one just fills the input — signIn() still does
 // the actual lookup.
 function accountPositionLabel(user) {
-    if (user.is_platform_admin) return 'Platform Admin';
     const parts = [];
     const ur = DB.findOne('user_roles', function (r) { return r.user_id === user.id && r.status === 'active'; });
     const role = ur && DB.getById('roles', ur.role_id);
@@ -697,21 +710,15 @@ function afterSignIn(user) {
     state.signedIn = true;
     if (user) {
         state.currentUserId = user.id;
-        state.currentCompanyId = user.company_id;
+        state.currentCompanyId = COMPANY_ID;
         state.currentBranchId = user.branch_id;
         state.currentUser = { id: user.id, name: user.full_name, email: user.email, globalLevel: user.global_level };
     }
     saveState();
-    // The platform admin has no company/job context — their whole app is the
-    // approval queue for requested accounts.
-    if (user && user.is_platform_admin) {
-        loadPage('admin-approvals');
-        return;
-    }
-    // Everyone who signs in (workers and supplier-role users alike — customer
-    // mode never reaches sign-in) picks a company first; selectCompany()
-    // routes suppliers to inventory and everyone else to jobs from there.
-    loadPage('companies');
+    // Single-company app: no company picker. Suppliers land on their
+    // inventory; everyone else on the job list. (Customer mode never
+    // reaches sign-in.)
+    loadPage(userIsSupplier() ? 'inventory' : 'jobs');
 }
 
 function signOut() {
@@ -732,6 +739,17 @@ function showSignUp() {
             modal.innerHTML = `<div class="modal-sheet"><div class="modal-handle"></div>${html}</div>`;
             modal.addEventListener('click', e => { if (e.target === modal) closeSignUp(); });
             document.getElementById('phone').appendChild(modal);
+            // innerHTML never executes the fragment's <script> tags, so the
+            // requested-position dropdown is filled here instead: the
+            // company's real roles, so a request always maps to a position
+            // an approver can grant (or change) on manage-users.
+            const select = document.getElementById('signup-role');
+            if (select) {
+                select.innerHTML = '<option value="">Select a position...</option>' +
+                    companyRoles().map(function (r) {
+                        return '<option value="' + esc(r.id) + '">' + esc(roleDisplayName(r)) + '</option>';
+                    }).join('');
+            }
         });
 }
 
@@ -745,15 +763,22 @@ function val(id) {
     return el ? el.value.trim() : '';
 }
 
-const KINETIC_SOLUTIONS_ID = 'company-kineticflow';
+// Single-company app: every account lives in this one company; branches are
+// the only org structure. (The old join/create-company flows are gone.)
+const COMPANY_ID = 'company-kineticflow';
+
+function companyRoles() {
+    return DB.find('roles', function (r) { return r.company_id === COMPANY_ID && !r.deleted_at; });
+}
+
+function roleDisplayName(role) {
+    return String(role && role.name || '').replace(/\b[a-z]/g, function (c) { return c.toUpperCase(); });
+}
 
 function submitAccount() {
-    const company = DB.findOne('companies', function (c) {
-        return c.name.toLowerCase() === val('signup-company').toLowerCase();
-    }) || DB.getById('companies', KINETIC_SOLUTIONS_ID);
     const fullName = [val('signup-first'), val('signup-last')].filter(Boolean).join(' ') || 'New User';
-    DB.insert('users', {
-        company_id: company.id,
+    const user = DB.insert('users', {
+        company_id: COMPANY_ID,
         branch_id: null,
         email: val('signup-email') || ('pending-' + Date.now() + '@example.com'),
         // Absolute requirement: never a real hash, never checked against anything.
@@ -764,11 +789,25 @@ function submitAccount() {
         push_token: null,
         global_level: 'apprentice',
         is_active: true,
-        // New accounts are requests, not memberships — the platform admin
-        // (admin@gmail.com) approves them on admin-approvals before they can
-        // sign in. `newUser` is intentionally unused beyond the insert.
+        // New accounts are requests, not memberships — anyone with the
+        // manage-users permission approves them on manage-users (and can
+        // change the requested position there) before they can sign in.
         approval_status: 'pending',
+        request_note: val('signup-notes') || null,
     });
+    const roleId = val('signup-role');
+    if (roleId) {
+        // The requested position rides along as a pending user_roles row;
+        // approval flips it to 'active' (possibly pointed at a different
+        // role, if the approver changes it).
+        DB.insert('user_roles', {
+            user_id: user.id,
+            role_id: roleId,
+            assigned_at: null,
+            requested_at: new Date().toISOString(),
+            status: 'pending',
+        });
+    }
     closeSignUp();
     loadPage('account-pending');
 }
@@ -796,104 +835,9 @@ function hideSabbathLock() {
     if (overlay) overlay.remove();
 }
 
-// ── Company Flow ────────────────────────────────────────────────────────────
-function joinCompany() { loadPage('join-company'); }
-function createCompany() { loadPage('new-company'); }
-function continueFromSetup() { loadPage('jobs'); }
-
-// Real insert path for join-company.html — creates a `pending` user_roles row
-// pointing at the selected company's chosen role. The company's owner/admin
-// accepts or declines it from the Join Requests section on company-setup.html
-// (accept flips status to 'active', which is what membership checks key on).
-function submitJoinRequest() {
-    const companyId = window.jcSelectedCompanyId && window.jcSelectedCompanyId();
-    if (!companyId) { alert('Select a company first.'); return; }
-    const roleId = val('jc-role');
-    if (!roleId) { alert('Select a position.'); return; }
-    const existing = DB.findOne('user_roles', function (ur) {
-        if (ur.user_id !== state.currentUserId || ur.deleted_at) return false;
-        const role = DB.getById('roles', ur.role_id);
-        return role && role.company_id === companyId;
-    });
-    if (existing) {
-        alert(existing.status === 'pending'
-            ? 'You already have a pending request with this company.'
-            : 'You are already a member of this company.');
-        loadPage('companies');
-        return;
-    }
-    DB.insert('user_roles', {
-        user_id: state.currentUserId,
-        role_id: roleId,
-        assigned_at: null,
-        requested_at: new Date().toISOString(),
-        status: 'pending',
-        message: val('jc-message') || null,
-    });
-    loadPage('companies');
-}
-
-// Default position set for a freshly created company — mirrors the seeded
-// companies' roles rows (see db/roles.json), which use the same three-name
-// vocabulary and permissions shape. company-setup.html renders positions and
-// the per-position permission editor straight from these rows.
-const DEFAULT_ROLES = [
-    { name: 'admin', permissions: { finance: 'nationwide', manage_users: true, manage_bids: true } },
-    { name: 'manager', permissions: { finance: 'branch', manage_users: true, manage_bids: true } },
-    { name: 'employee', permissions: { finance: 'job', manage_users: false, manage_bids: false } },
-    // Suppliers are members too (QA note: a role, not an account type) —
-    // they see jobs and the schedule to time material orders, but no
-    // finance and no field-clock work.
-    { name: 'supplier', permissions: { finance: 'none', manage_users: false, manage_bids: false } },
-];
-
-// Real insert path for new-company.html — creates the companies row plus the
-// records every other screen expects a company to have (a primary branch at
-// the entered address, the default roles set, and an active admin membership
-// for the creator), then lands on company-setup scoped to the new company.
-function submitNewCompany() {
-    const name = val('nc-name') || 'New Company';
-    const company = DB.insert('companies', {
-        name: name,
-        slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-        industry: val('nc-industry') || null,
-        size: val('nc-size') || null,
-        phone: val('nc-phone') || null,
-        website: val('nc-website') || null,
-    });
-    const address = DB.insert('addresses', {
-        company_id: company.id,
-        street: val('nc-street') || '',
-        city: val('nc-city') || '',
-        state: val('nc-state') || '',
-        zip: '',
-        lat: null,
-        lng: null,
-    });
-    const branch = DB.insert('branches', {
-        company_id: company.id,
-        name: 'Main Office',
-        address_id: address.id,
-        manager_id: state.currentUserId,
-        is_primary: true,
-    });
-    let adminRoleId = null;
-    DEFAULT_ROLES.forEach(function (r) {
-        const role = DB.insert('roles', { company_id: company.id, name: r.name, permissions: Object.assign({}, r.permissions) });
-        if (r.name === 'admin') adminRoleId = role.id;
-    });
-    if (state.currentUserId && adminRoleId) {
-        DB.insert('user_roles', {
-            user_id: state.currentUserId,
-            role_id: adminRoleId,
-            assigned_at: new Date().toISOString(),
-            status: 'active',
-        });
-    }
-    state.currentCompanyId = company.id;
-    state.currentBranchId = branch.id;
-    loadPage('company-setup');
-}
+// ── Company / Membership ────────────────────────────────────────────────────
+// Done on manage-users: back to wherever the ⋯ menu was opened from.
+function continueFromSetup() { if (!goBack()) loadPage('jobs'); }
 
 function openBranch(branchId) {
     state.currentBranchId = branchId;
@@ -909,7 +853,9 @@ function openBranch(branchId) {
 function companyMemberUsers(companyId) {
     const seen = {};
     const rows = [];
-    DB.find('users', function (u) { return u.company_id === companyId && !u.deleted_at; })
+    // approval_status 'pending' = an unapproved sign-up request — those show
+    // in manage-users' Account Requests, never as members.
+    DB.find('users', function (u) { return u.company_id === companyId && !u.deleted_at && u.approval_status !== 'pending'; })
         .forEach(function (u) { seen[u.id] = true; rows.push(u); });
     DB.get('user_roles').forEach(function (ur) {
         // Pending rows are join *requests*, not memberships — they only
@@ -938,22 +884,32 @@ function userIsSupplier() {
     return names.length > 0 && names.every(function (n) { return n === 'supplier'; });
 }
 
-function selectCompany(companyId) {
-    state.currentCompanyId = companyId;
-    // Re-derive branch context for this company (jobs.html filters by it):
-    // the signed-in user's own branch if it belongs here, else no branch
-    // scope. A branch left over from another company would filter every job
-    // out.
-    const user = state.currentUserId ? DB.getById('users', state.currentUserId) : null;
-    const userBranch = user && user.branch_id ? DB.getById('branches', user.branch_id) : null;
-    state.currentBranchId = (userBranch && userBranch.company_id === companyId) ? userBranch.id : null;
-    // Suppliers land on their inventory; everyone else on the job list.
-    loadPage(userIsSupplier() ? 'inventory' : 'jobs');
+// Admin permission = the manage_users flag on the signed-in user's position
+// (or their per-member override). Gates the ⋯ menu's Manage Users entry, the
+// pending-account indicator, and the manage-users page itself — there is no
+// special admin account; any position can carry this permission.
+function canManageUsers() {
+    if (!state.currentUserId) return false;
+    return DB.get('user_roles').some(function (ur) {
+        if (ur.user_id !== state.currentUserId || ur.deleted_at || ur.status !== 'active') return false;
+        const role = DB.getById('roles', ur.role_id);
+        if (!role || role.deleted_at) return false;
+        const perms = ur.overrides || role.permissions || {};
+        return !!perms.manage_users;
+    });
 }
 
-function manageCompany(companyId) {
-    state.currentCompanyId = companyId;
-    loadPage('company-setup');
+// Sign-up requests waiting on approval — drives the red dot on the ⋯ button
+// and the count on the Manage Users menu row (admins only, see canManageUsers).
+function pendingAccountCount() {
+    return DB.find('users', function (u) {
+        return !u.deleted_at && u.approval_status === 'pending';
+    }).length;
+}
+
+function openManageUsers() {
+    if (!canManageUsers()) { alert('Only someone with the manage-users permission can open this page.'); return; }
+    loadPage('manage-users');
 }
 
 // ── Company Configuration: Divisions / Levels / Competency Levels ───────────
@@ -1352,8 +1308,6 @@ function openInventory() { loadPage('inventory'); }
 // from the job's team list, adjusts the scores, and finalizes it (status
 // 'reviewed'). Guild progression only runs on the manager's final submit.
 function isManagerOrAdmin() {
-    const user = state.currentUserId ? DB.getById('users', state.currentUserId) : null;
-    if (user && user.is_platform_admin) return true;
     return DB.get('user_roles').some(function (ur) {
         if (ur.user_id !== state.currentUserId || ur.deleted_at || ur.status === 'pending') return false;
         const role = DB.getById('roles', ur.role_id);
@@ -2501,13 +2455,7 @@ function managedWorkers() {
         return u.id !== state.currentUserId && managedBranchIds.indexOf(u.branch_id) !== -1;
     });
     if (!workers.length) {
-        const isAdmin = DB.get('user_roles').some(function (ur) {
-            if (ur.user_id !== state.currentUserId || ur.deleted_at || ur.status === 'pending') return false;
-            const role = DB.getById('roles', ur.role_id);
-            return !!role && role.company_id === state.currentCompanyId && (role.name === 'admin' || role.name === 'manager');
-        });
-        const user = state.currentUserId ? DB.getById('users', state.currentUserId) : null;
-        if (isAdmin || (user && user.is_platform_admin)) {
+        if (isManagerOrAdmin()) {
             workers = companyMemberUsers(state.currentCompanyId).filter(function (u) { return u.id !== state.currentUserId; });
         }
     }
@@ -2660,31 +2608,6 @@ function restoreState() {
     if (customerBtn) customerBtn.classList.toggle('active', state.role === 'customer');
 }
 
-// The admin account is seeded in db/users.json, but sessions that restored an
-// older localStorage DB snapshot (saved before that row existed) would never
-// see it — so start() re-asserts it into whatever table copy is live.
-const PLATFORM_ADMIN_EMAIL = 'admin@gmail.com';
-function ensurePlatformAdmin() {
-    const existing = DB.findOne('users', function (u) {
-        return (u.email || '').toLowerCase() === PLATFORM_ADMIN_EMAIL;
-    });
-    if (existing) return;
-    DB.insert('users', {
-        company_id: null,
-        branch_id: null,
-        email: PLATFORM_ADMIN_EMAIL,
-        password_hash: '',
-        phone: null,
-        full_name: 'admin',
-        avatar_url: null,
-        push_token: null,
-        global_level: 'master',
-        is_active: true,
-        is_platform_admin: true,
-        approval_status: 'approved',
-    });
-}
-
 window.addEventListener('beforeunload', saveState);
 
 // ── App Registration ────────────────────────────────────────────────────────
@@ -2700,8 +2623,9 @@ function activate() {
         signIn, afterSignIn, signOut, showSignUp, closeSignUp, submitAccount, goToSignIn,
         showAccountSearch, hideAccountSearch, filterAccountSearch, pickAccount, accountPositionLabel,
         showSabbathLock, hideSabbathLock,
-        joinCompany, createCompany, submitJoinRequest, submitNewCompany, continueFromSetup, openBranch,
-        selectCompany, manageCompany, companyMemberUsers, userIsSupplier,
+        continueFromSetup, openBranch,
+        companyMemberUsers, userIsSupplier, companyRoles, roleDisplayName,
+        canManageUsers, pendingAccountCount, openManageUsers, COMPANY_ID,
         LEVELS, COMPETENCY_LEVELS, companyDivisions,
         openCompanyDivisions,
         companyLocations, findOrCreateLocation,
@@ -2748,6 +2672,11 @@ window.Apps['kinetic-flow'] = {
         // The More tab/page was folded into the app header's ⋯ menu — a
         // session saved on it resumes on the job list instead of a 404.
         if (state.currentPage === 'more') state.currentPage = 'jobs';
+        // Single-company refactor: the company picker and join/create-company
+        // pages are gone, company-setup became manage-users, and the platform
+        // admin's approval queue moved onto manage-users too.
+        if (['companies', 'join-company', 'new-company', 'admin-approvals'].indexOf(state.currentPage) !== -1) state.currentPage = 'jobs';
+        if (state.currentPage === 'company-setup') state.currentPage = 'manage-users';
         // First open fetches 41 db/*.json seeds — show something meanwhile,
         // and surface a fetch failure instead of leaving a silent blank screen.
         const main = document.getElementById('main');
@@ -2755,7 +2684,20 @@ window.Apps['kinetic-flow'] = {
             main.innerHTML = '<div class="page" style="justify-content:center; align-items:center; color:#94a3b8; font-size:0.85rem;">Loading Kinetic Flow&hellip;</div>';
         }
         (DB.isLoaded() ? Promise.resolve() : DB.load()).then(function () {
-            ensurePlatformAdmin();
+            // A restored session may predate the single-company refactor —
+            // signed in as the removed platform admin, or scoped to the
+            // removed second company. Re-anchor to the one company; if the
+            // saved user no longer exists, fall back to sign-in.
+            if (state.signedIn) {
+                if (!state.currentUserId || !DB.getById('users', state.currentUserId)) {
+                    state.signedIn = false;
+                    state.currentPage = '';
+                } else {
+                    state.currentCompanyId = COMPANY_ID;
+                    const branch = state.currentBranchId ? DB.getById('branches', state.currentBranchId) : null;
+                    if (!branch || branch.company_id !== COMPANY_ID) state.currentBranchId = null;
+                }
+            }
             if (state.role === 'customer') {
                 // Customers have no login: the picker stands in for "opened
                 // a property's QR link" (each row is a tokenized URL).

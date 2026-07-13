@@ -1,10 +1,17 @@
 <div class="page">
     <div class="page-header">
-        <div class="page-title">Company Setup</div>
-        <div class="page-subtitle">Configure your company before inviting team members.</div>
+        <div class="page-title">Manage Users</div>
+        <div class="page-subtitle">Account requests, team members, positions, and branches.</div>
     </div>
 
-    <div class="alert mb-4">Company created!</div>
+    <!-- Account Requests (hidden when none are pending) -->
+    <div id="mu-requests-section" style="display:none;">
+        <div class="section-header">
+            <span class="section-title">Account Requests</span>
+            <span class="section-action" id="mu-request-count" style="cursor:default;"></span>
+        </div>
+        <div id="mu-request-list" style="margin-bottom:16px;"></div>
+    </div>
 
     <!-- Positions -->
     <div class="section-header">
@@ -64,34 +71,16 @@
     </div>
     <div class="card" id="permission-list" style="cursor:default; margin-bottom:16px;"></div>
 
-    <!-- Join Requests (hidden when none are pending) -->
-    <div id="cs-requests-section" style="display:none;">
-        <div class="section-header">
-            <span class="section-title">Join Requests</span>
-            <span class="section-action" id="cs-request-count" style="cursor:default;"></span>
-        </div>
-        <div id="cs-request-list" style="margin-bottom:16px;"></div>
-    </div>
-
     <!-- Team Members -->
     <div class="section-header">
         <span class="section-title">Team Members</span>
         <span class="section-action" id="cs-member-count" style="cursor:default;"></span>
     </div>
-    <div class="page-subtitle mb-2" style="font-size:0.78rem;">Tap a member to manage their branch, position, and permissions.</div>
-
-    <div class="form-group" style="margin-bottom:8px;">
-        <div class="account-search">
-            <input type="text" id="cs-member-search" placeholder="Search users by name or email..." autocomplete="off"
-                onfocus="filterCompanyUsers()" oninput="filterCompanyUsers()" onblur="hideCompanyUserSearch()">
-            <div class="account-search-list" id="cs-search-results"></div>
-        </div>
-    </div>
+    <div class="page-subtitle mb-2" style="font-size:0.78rem;">Tap a member to manage their branch, position, and permissions. New members arrive via sign-in's Request Access.</div>
 
     <div class="card" id="cs-member-list" style="cursor:default; margin-bottom:16px;"></div>
 
-    <button class="btn btn-primary" onclick="continueFromSetup()">Continue to Jobs &rarr;</button>
-    <button class="btn btn-secondary" onclick="continueFromSetup()">Skip for Now</button>
+    <button class="btn btn-primary" onclick="continueFromSetup()">Done</button>
 </div>
 
 <script>
@@ -295,54 +284,78 @@
         return companyMemberUsers(state.currentCompanyId);
     }
 
-    // ── Join Requests ──
-    // Pending user_roles rows created by join-company.html's
-    // submitJoinRequest(). Accepting flips the row to 'active' (the status
-    // every membership check keys on); declining soft-deletes it so the
-    // requester can ask again later.
-    function pendingRequests() {
-        return DB.find('user_roles', function (ur) {
-            if (ur.deleted_at || ur.status !== 'pending') return false;
-            var role = DB.getById('roles', ur.role_id);
-            return role && role.company_id === state.currentCompanyId;
+    // ── Account Requests ──
+    // Pending users rows created by the sign-up sheet, each with a pending
+    // user_roles row holding the position they asked for. Approving unlocks
+    // sign-in (approval_status 'approved') and activates the membership at
+    // whatever position the approver left selected; rejecting soft-deletes
+    // the account so the requester can ask again later.
+    function pendingAccounts() {
+        return DB.find('users', function (u) {
+            return !u.deleted_at && u.approval_status === 'pending';
+        });
+    }
+
+    function pendingRoleRow(userId) {
+        return DB.findOne('user_roles', function (ur) {
+            return ur.user_id === userId && !ur.deleted_at && ur.status === 'pending';
         });
     }
 
     function renderRequests() {
-        var rows = pendingRequests();
-        document.getElementById('cs-requests-section').style.display = rows.length ? 'block' : 'none';
-        document.getElementById('cs-request-count').textContent = rows.length + ' pending';
-        document.getElementById('cs-request-list').innerHTML = rows.map(function (ur) {
-            var u = DB.getById('users', ur.user_id);
-            var role = DB.getById('roles', ur.role_id);
-            if (!u) return '';
-            var sub = [(u.email || 'No email'),
-                       role ? 'Requested: ' + role.name.replace(/\b[a-z]/g, function (c) { return c.toUpperCase(); }) : null]
-                .filter(Boolean).join(' • ');
+        var rows = pendingAccounts();
+        document.getElementById('mu-requests-section').style.display = rows.length ? 'block' : 'none';
+        document.getElementById('mu-request-count').textContent = rows.length + ' pending';
+        document.getElementById('mu-request-list').innerHTML = rows.map(function (u) {
+            var requested = pendingRoleRow(u.id);
+            var roles = companyRoles();
+            var sub = [(u.email || 'No email'), u.phone].filter(Boolean).join(' • ');
             return '<div class="card" style="margin-bottom:8px; cursor:default;">' +
-                '<div class="card-title" style="margin-bottom:2px;">' + u.full_name + '</div>' +
-                '<div class="card-subtitle' + (ur.message ? '' : ' mb-2') + '">' + sub + '</div>' +
-                (ur.message ? '<div class="card-subtitle mb-2" style="font-style:italic;">&ldquo;' + ur.message + '&rdquo;</div>' : '') +
+                '<div class="card-title" style="margin-bottom:2px;">' + esc(u.full_name) + '</div>' +
+                '<div class="card-subtitle' + (u.request_note ? '' : ' mb-2') + '">' + sub + '</div>' +
+                (u.request_note ? '<div class="card-subtitle mb-2" style="font-style:italic;">&ldquo;' + esc(u.request_note) + '&rdquo;</div>' : '') +
+                '<div class="form-group" style="margin-bottom:8px;">' +
+                    '<label>Position (requested' + (requested ? ': ' + esc(roleDisplayName(DB.getById('roles', requested.role_id))) : ': none') + ')</label>' +
+                    '<select id="mu-role-' + esc(u.id) + '">' +
+                        roles.map(function (r) {
+                            // No requested position on file → default to the
+                            // least-privileged sensible pick, not admin.
+                            var sel = requested ? requested.role_id === r.id : r.name === 'employee';
+                            return '<option value="' + esc(r.id) + '"' + (sel ? ' selected' : '') + '>' + esc(roleDisplayName(r)) + '</option>';
+                        }).join('') +
+                    '</select>' +
+                '</div>' +
                 '<div style="display:flex; gap:8px;">' +
-                    '<button class="btn btn-primary btn-sm" style="flex:1;" onclick="acceptJoinRequest(\'' + ur.id + '\')">Accept</button>' +
-                    '<button class="btn btn-secondary btn-sm" style="flex:1; color:#dc2626;" onclick="declineJoinRequest(\'' + ur.id + '\')">Decline</button>' +
+                    '<button class="btn btn-primary btn-sm" style="flex:1;" onclick="approveAccountRequest(\'' + jsArg(u.id) + '\')">Approve</button>' +
+                    '<button class="btn btn-secondary btn-sm" style="flex:1; color:#dc2626;" onclick="rejectAccountRequest(\'' + jsArg(u.id) + '\')">Reject</button>' +
                 '</div>' +
             '</div>';
         }).join('');
     }
 
-    window.acceptJoinRequest = function (userRoleId) {
-        DB.update('user_roles', userRoleId, { status: 'active', assigned_at: new Date().toISOString() });
+    window.approveAccountRequest = function (userId) {
+        var select = document.getElementById('mu-role-' + userId);
+        var roleId = select ? select.value : null;
+        DB.update('users', userId, { approval_status: 'approved' });
+        var requested = pendingRoleRow(userId);
+        if (requested) {
+            DB.update('user_roles', requested.id, { role_id: roleId || requested.role_id, status: 'active', assigned_at: new Date().toISOString() });
+        } else if (roleId) {
+            DB.insert('user_roles', { user_id: userId, role_id: roleId, assigned_at: new Date().toISOString(), status: 'active' });
+        }
         renderRequests();
         renderMembers();
+        updateAppHeader(); // pending dot / menu pill may have just cleared
     };
 
-    window.declineJoinRequest = function (userRoleId) {
-        var ur = DB.getById('user_roles', userRoleId);
-        var u = ur ? DB.getById('users', ur.user_id) : null;
-        if (!confirm('Decline ' + (u ? u.full_name : 'this') + '’s join request?')) return;
-        DB.softDelete('user_roles', userRoleId);
+    window.rejectAccountRequest = function (userId) {
+        var u = DB.getById('users', userId);
+        if (!confirm('Reject ' + (u ? u.full_name : 'this user') + '’s account request?')) return;
+        var requested = pendingRoleRow(userId);
+        if (requested) DB.softDelete('user_roles', requested.id);
+        DB.softDelete('users', userId);
         renderRequests();
+        updateAppHeader();
     };
 
     function renderMembers() {
@@ -367,61 +380,15 @@
     renderMembers();
     renderRequests();
 
-    // Same focus-opens / type-to-filter / mousedown-to-pick dropdown as the
-    // sign-in email account picker (reuses its .account-search styles).
-    window.filterCompanyUsers = function () {
-        var q = (document.getElementById('cs-member-search').value || '').trim().toLowerCase();
-        var list = document.getElementById('cs-search-results');
-        var memberIds = {};
-        companyMembers().forEach(function (u) { memberIds[u.id] = true; });
-        var candidates = DB.find('users', function (u) {
-            if (u.deleted_at || memberIds[u.id]) return false;
-            return !q || u.full_name.toLowerCase().indexOf(q) !== -1
-                || (u.email || '').toLowerCase().indexOf(q) !== -1;
-        });
-        list.innerHTML = candidates.length ? candidates.map(function (u) {
-            return '<div class="account-search-item" onmousedown="addMember(\'' + u.id + '\')">' +
-                '<div class="account-search-name">' + u.full_name + '<span class="account-search-position">+ Add</span></div>' +
-                '<div class="account-search-email">' + (u.email || '') + '</div>' +
-            '</div>';
-        }).join('') : '<div class="account-search-empty">No matching users</div>';
-        list.classList.add('open');
-    };
-
-    window.hideCompanyUserSearch = function () {
-        // Delay so an item's onmousedown selection lands before the list closes.
-        setTimeout(function () {
-            var list = document.getElementById('cs-search-results');
-            if (list) list.classList.remove('open');
-        }, 150);
-    };
-
-    window.addMember = function (userId) {
-        var employeeRole = DB.findOne('roles', function (r) {
-            return r.company_id === state.currentCompanyId && !r.deleted_at && r.name === 'employee';
-        }) || companyRoles()[0];
-        if (employeeRole) {
-            DB.insert('user_roles', {
-                user_id: userId,
-                role_id: employeeRole.id,
-                assigned_at: new Date().toISOString(),
-                status: 'active',
-            });
-        }
-        document.getElementById('cs-member-search').value = '';
-        var list = document.getElementById('cs-search-results');
-        list.innerHTML = '';
-        list.classList.remove('open');
-        renderMembers();
-    };
-
+    // Single-company app: there is no other pool of users to add from — new
+    // members only arrive through sign-up requests, so removing someone
+    // removes their account (they can request access again later).
     window.removeMember = function (userId) {
         var u = DB.getById('users', userId);
-        if (!confirm('Remove ' + (u ? u.full_name : 'this member') + ' from the company?')) return;
+        if (userId === state.currentUserId) { alert('You can’t remove your own account.'); return; }
+        if (!confirm('Remove ' + (u ? u.full_name : 'this member') + '? Their account will be deleted and they’ll need to request access again.')) return;
         membershipRows(userId).forEach(function (ur) { DB.softDelete('user_roles', ur.id); });
-        if (u && u.company_id === state.currentCompanyId) {
-            DB.update('users', userId, { company_id: null, branch_id: null });
-        }
+        DB.softDelete('users', userId);
         renderMembers();
     };
 
