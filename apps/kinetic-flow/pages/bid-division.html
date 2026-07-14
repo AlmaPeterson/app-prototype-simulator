@@ -32,7 +32,8 @@
         <span class="section-title">Kits &amp; Carts Required</span>
     </div>
     <p style="font-size:0.78rem; color:#64748b; margin:0 0 8px 0;">Shown to the crew on Job Home so they know what to grab before heading out.</p>
-    <div id="div-kit-chips" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px;"></div>
+    <input class="search-bar mb-2" type="text" id="div-kit-search" placeholder="Search kits &amp; carts..." oninput="window.filterDivKits(this.value)">
+    <div id="div-kit-chips" style="margin-bottom:16px;"></div>
 
     <!-- Tasks -->
     <div class="section-header">
@@ -251,29 +252,58 @@
     }
 
     // ── Kits & carts required ───────────────────────────────────────────────
-    var allKits = DB.find('inventory_kits', function (k) {
-        return k.company_id === state.currentCompanyId && !k.deleted_at;
-    }).slice().sort(function (a, b) {
-        return (a.category || '').localeCompare(b.category || '') || a.name.localeCompare(b.name);
-    });
+    // Grouped by category (same taxonomy kits.html's drawer uses) instead of
+    // one long flat list — a division only ever needs a handful of a
+    // company's 30+ kits/carts, and scanning past every trade's kits to find
+    // the relevant few doesn't scale. No attempt to auto-filter by matching
+    // division name to kit category: those are two independent free-text
+    // taxonomies (see docs/kinetic-flow-materials-kit-unification-plan.md)
+    // with no reliable mapping between them — a wrong guess that hides a
+    // kit someone needs is worse than an extra tap to find it via search.
+    var kitCategories = (function () {
+        var kits = DB.find('inventory_kits', function (k) {
+            return k.company_id === state.currentCompanyId && !k.deleted_at;
+        }).slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+        var byCat = {};
+        var order = [];
+        kits.forEach(function (k) {
+            var cat = k.category || 'Uncategorized';
+            if (!byCat[cat]) { byCat[cat] = []; order.push(cat); }
+            byCat[cat].push(k);
+        });
+        order.sort();
+        return order.map(function (name) { return { name: name, kits: byCat[name] }; });
+    })();
 
-    function renderKitChips() {
+    function renderKitChips(query) {
         var el = document.getElementById('div-kit-chips');
-        if (allKits.length === 0) {
+        if (kitCategories.length === 0) {
             el.innerHTML = '<p style="font-size:0.78rem; color:#94a3b8; margin:0;">No kits or carts set up yet.</p>';
             return;
         }
-        el.innerHTML = allKits.map(function (k) {
-            var selected = div.requiredKitIds.indexOf(k.id) !== -1;
-            return '<div class="chip' + (selected ? ' selected' : '') + '" onclick="window.toggleRequiredKit(\'' + k.id + '\')">' +
-                esc(k.name) + (k.kind === 'cart' ? ' (Cart)' : '') + '</div>';
-        }).join('');
+        var q = (query || '').trim().toLowerCase();
+        var html = '';
+        kitCategories.forEach(function (cat) {
+            var kits = !q ? cat.kits : cat.kits.filter(function (k) {
+                return k.name.toLowerCase().indexOf(q) !== -1 || cat.name.toLowerCase().indexOf(q) !== -1;
+            });
+            if (kits.length === 0) return;
+            html += '<div style="font-size:0.72rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.03em; margin:10px 0 4px;">' + esc(cat.name) + '</div>';
+            html += '<div style="display:flex; flex-wrap:wrap; gap:6px;">' + kits.map(function (k) {
+                var selected = div.requiredKitIds.indexOf(k.id) !== -1;
+                return '<div class="chip' + (selected ? ' selected' : '') + '" onclick="window.toggleRequiredKit(\'' + k.id + '\')">' +
+                    esc(k.name) + (k.kind === 'cart' ? ' (Cart)' : '') + '</div>';
+            }).join('') + '</div>';
+        });
+        el.innerHTML = html || '<p style="font-size:0.78rem; color:#94a3b8; margin:0;">No kits or carts match &quot;' + esc(query) + '&quot;.</p>';
     }
+
+    window.filterDivKits = function (query) { renderKitChips(query); };
 
     window.toggleRequiredKit = function (kitId) {
         var i = div.requiredKitIds.indexOf(kitId);
         if (i === -1) div.requiredKitIds.push(kitId); else div.requiredKitIds.splice(i, 1);
-        renderKitChips();
+        renderKitChips(document.getElementById('div-kit-search').value);
     };
 
     // ── Materials HTML for one task ───────────────────────────────────────
