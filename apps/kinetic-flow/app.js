@@ -17,7 +17,7 @@ const STORAGE_KEY = 'kineticFlow.state';
 // Bump whenever db/*.json seed data or table shapes change: restoreState()
 // discards localStorage DB snapshots from older versions and re-fetches the
 // fresh seeds, so users don't need a manual "Reset Demo Data".
-const DB_VERSION = 13;
+const DB_VERSION = 14;
 
 // ── App State ──────────────────────────────────────────────────────────────
 const state = {
@@ -62,7 +62,8 @@ const state = {
 const TABLES = [
     'companies', 'branches', 'users', 'roles', 'user_roles', 'customers',
     'addresses', 'jobs', 'bids', 'bid_divisions', 'bid_line_items', 'divisions',
-    'materials', 'inventory_kits', 'kit_checkouts', 'locations',
+    'materials', 'inventory_kits', 'kit_checkouts', 'kit_audits',
+    'replacement_tickets', 'locations',
     'job_assignments', 'task_modules', 'tasks', 'task_materials', 'task_photos',
     'time_entries', 'time_entry_edits', 'schedule_events',
     'message_templates', 'scorecard_entries', 'worker_task_competency',
@@ -512,6 +513,7 @@ function showHeaderMenu() {
                 ? item('Manage Users' + (pendingAccountCount() > 0
                     ? ' <span class="header-menu-pill">' + pendingAccountCount() + ' pending</span>' : ''), 'openManageUsers()')
                 : '') +
+            (canManageInventory() ? item('Shop Logistics', 'openShopLogistics()') : '') +
             item('Stock Inventory', "loadPage('inventory')") +
             '<div class="header-menu-section">Preview</div>' +
             item('Sabbath Lock', 'showSabbathLock()') +
@@ -910,6 +912,91 @@ function pendingAccountCount() {
 function openManageUsers() {
     if (!canManageUsers()) { alert('Only someone with the manage-users permission can open this page.'); return; }
     loadPage('manage-users');
+}
+
+// Same shape as canManageUsers() — gates the ⋯ menu's Shop Logistics entry
+// and the page itself. A separate flag from manage_users since a shop hand
+// running daily kit audits isn't necessarily who manages team accounts.
+function canManageInventory() {
+    if (!state.currentUserId) return false;
+    return DB.get('user_roles').some(function (ur) {
+        if (ur.user_id !== state.currentUserId || ur.deleted_at || ur.status !== 'active') return false;
+        const role = DB.getById('roles', ur.role_id);
+        if (!role || role.deleted_at) return false;
+        const perms = ur.overrides || role.permissions || {};
+        return !!perms.manage_inventory;
+    });
+}
+
+function openShopLogistics() {
+    if (!canManageInventory()) { alert('Only someone with the manage-inventory permission can open Shop Logistics.'); return; }
+    loadPage('shop-logistics');
+}
+
+// ── Cart & Kit Tracking ──────────────────────────────────────────────────────
+// A "cart" is just an inventory_kits row with kind: 'cart' whose owned
+// materials rows (item_type: 'material') are consumables meant to deplete
+// and get restocked — no new table needed, this reuses the exact kit_id/
+// item_type model the materials/kit unification already built. A "kit" is
+// kind: 'kit' — a fixed tool package that must come back 100% complete,
+// tracked via the daily audit below.
+//
+// Kit status is deliberately NOT a stored field — it's derived live from
+// kit_checkouts/kit_audits/replacement_tickets so it can never drift out of
+// sync with reality (same reasoning as inventory.html's live low-stock
+// check). Only meaningful for kind: 'kit' rows; carts don't have a pass/
+// fail daily state, just stock levels.
+function getOpenCheckout(kitId) {
+    return DB.findOne('kit_checkouts', function (c) { return c.kit_id === kitId && !c.checked_in_at; });
+}
+
+function getKitStatus(kit) {
+    if (getOpenCheckout(kit.id)) return 'in_transit';
+    const openTicket = DB.findOne('replacement_tickets', function (t) { return t.kit_id === kit.id && t.status === 'open'; });
+    if (openTicket) return 'out_of_service';
+    const today = new Date().toISOString().slice(0, 10);
+    const auditedToday = DB.findOne('kit_audits', function (a) { return a.kit_id === kit.id && a.audit_date === today; });
+    if (!auditedToday) return 'needs_audit';
+    return 'ready';
+}
+
+const KIT_STATUS_LABELS = { ready: 'Ready', in_transit: 'In-Transit', needs_audit: 'Needs Audit', out_of_service: 'Out of Service' };
+
+function checkOutKitToJob(kitId, jobId) {
+    return DB.insert('kit_checkouts', {
+        company_id: state.currentCompanyId, kit_id: kitId, job_id: jobId,
+        checked_out_by: state.currentUserId, checked_out_at: new Date().toISOString(), checked_in_at: null,
+    });
+}
+
+function checkInKit(kitId) {
+    const checkout = getOpenCheckout(kitId);
+    if (!checkout) return;
+    DB.update('kit_checkouts', checkout.id, { checked_in_at: new Date().toISOString() });
+}
+
+// Submits a shop-hand audit: one kit_audits row, plus one replacement_tickets
+// row per flagged issue (empty issues array on a pass). Returns the audit row.
+function submitKitAudit(kitId, jobId, passed, issues) {
+    const audit = DB.insert('kit_audits', {
+        company_id: state.currentCompanyId, kit_id: kitId, job_id: jobId || null,
+        audited_by: state.currentUserId, audit_date: new Date().toISOString().slice(0, 10),
+        status: passed ? 'passed' : 'failed', issues: issues || [],
+    });
+    (issues || []).forEach(function (issue) {
+        DB.insert('replacement_tickets', {
+            company_id: state.currentCompanyId, kit_audit_id: audit.id, kit_id: kitId,
+            material_id: issue.material_id || null, item_name: issue.name, issue_type: issue.issue_type,
+            status: 'open', fulfilled_at: null, fulfilled_by: null,
+        });
+    });
+    return audit;
+}
+
+function fulfillReplacementTicket(ticketId) {
+    DB.update('replacement_tickets', ticketId, {
+        status: 'fulfilled', fulfilled_at: new Date().toISOString(), fulfilled_by: state.currentUserId,
+    });
 }
 
 // ── Company Configuration: Divisions / Levels / Competency Levels ───────────
@@ -2443,6 +2530,10 @@ function saveMaterialLog() {
             unit: 'each',
             sync_status: 'local',
         });
+        // Real depletion for cart-owned consumables — this is what makes
+        // "Bill to Job" actually drive the Shop Logistics Reorder tab via
+        // the existing stock_qty < reorder_qty low-stock check.
+        DB.update('materials', material.id, { stock_qty: Math.max(0, (material.stock_qty || 0) - qty) });
     });
     if (!loggedAny) {
         alert('Enter a quantity for at least one material.');
@@ -2702,6 +2793,8 @@ function activate() {
         continueFromSetup, openBranch,
         companyMemberUsers, userIsSupplier, companyRoles, roleDisplayName,
         canManageUsers, pendingAccountCount, openManageUsers, COMPANY_ID,
+        canManageInventory, openShopLogistics, getKitStatus, KIT_STATUS_LABELS,
+        getOpenCheckout, checkOutKitToJob, checkInKit, submitKitAudit, fulfillReplacementTicket,
         LEVELS, COMPETENCY_LEVELS, companyDivisions,
         openCompanyDivisions,
         companyLocations, findOrCreateLocation,

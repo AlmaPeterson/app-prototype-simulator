@@ -16,6 +16,12 @@
         <input class="search-bar" type="text" id="kit-search" placeholder="Search kits..." oninput="filterKits(this.value)">
     </div>
 
+    <div style="display:flex; gap:6px; margin-bottom:14px;" id="kit-kind-filter">
+        <div id="kit-kind-all" class="chip selected" onclick="setKitKindFilter('all')">All</div>
+        <div id="kit-kind-kit" class="chip" onclick="setKitKindFilter('kit')">Kits</div>
+        <div id="kit-kind-cart" class="chip" onclick="setKitKindFilter('cart')">Carts</div>
+    </div>
+
     <div class="kit-content" id="kit-content"></div>
 </div>
 
@@ -33,10 +39,14 @@
 (function () {
 
     // Group real inventory_kits rows (this company's, not soft-deleted) by
-    // their `category` column.
+    // their `category` column. Respects appState.kindFilter ('all' | 'kit' |
+    // 'cart') — a cart is just an inventory_kits row whose owned materials
+    // are all consumables, see [[kinetic-flow-cart-kit-tracking-plan]].
     function loadCategories() {
         var kits = DB.find('inventory_kits', function (k) {
-            return k.company_id === state.currentCompanyId && !k.deleted_at;
+            if (k.company_id !== state.currentCompanyId || k.deleted_at) return false;
+            if (appState.kindFilter === 'all') return true;
+            return (k.kind || 'kit') === appState.kindFilter;
         });
         var byCat = {};
         var order = [];
@@ -62,11 +72,13 @@
         return loc.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
     }
 
-    var CATEGORIES = loadCategories();
-
     // appState.selected is either {ci, ki} (a real kit) or the sentinel
-    // string 'standalone' (the Standalone Tools view below).
-    var appState = { expandedCat: null, selected: null, searchQuery: '' };
+    // string 'standalone' (the Standalone Tools view below). Declared before
+    // the CATEGORIES/loadCategories() call below since that reads
+    // appState.kindFilter.
+    var appState = { expandedCat: null, selected: null, searchQuery: '', kindFilter: 'all' };
+
+    var CATEGORIES = loadCategories();
 
     function clearSearchInput() {
         var search = document.getElementById('kit-search');
@@ -111,14 +123,19 @@
         return '<div style="' + style + '"></div>';
     }
 
+    // Carts typically carry no tools and plenty of kits carry no materials —
+    // rather than always showing both sections with a "No X listed" filler,
+    // an empty section collapses to just its add link so there's still a
+    // way to add the first item without cluttering the common case.
     function listSection(title, kind, rows, addHandler) {
+        if (!rows || rows.length === 0) {
+            return addHandler
+                ? '<button class="section-action mt-4" style="display:block;" onclick="' + addHandler + '">+ Add ' + title.replace(/s$/, '') + '</button>'
+                : '';
+        }
         var html = '<div class="section-header mt-4"><span class="section-title">' + title + '</span>' +
             (addHandler ? '<button class="section-action" onclick="' + addHandler + '">+ Add</button>' : '') +
             '</div>';
-        if (!rows || rows.length === 0) {
-            html += '<div class="kit-empty">No ' + title.toLowerCase() + ' listed.</div>';
-            return html;
-        }
         html += '<div class="card" style="cursor:default; padding:0 14px;">';
         html += rows.map(function (r) {
             return '<div class="kit-detail-item" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;" ' +
@@ -129,16 +146,70 @@
         return html;
     }
 
+    // Check Out / Check In — the "crew scans out / scans in" step from the
+    // contractor's spec, simulated as a tap since this prototype has no real
+    // QR routing. Checking in is what flips a kit to "Needs Audit" (see
+    // getKitStatus() in app.js) for the shop hand to pick up.
+    function checkoutControlHtml(kit) {
+        var checkout = getOpenCheckout(kit.id);
+        if (checkout) {
+            var job = checkout.job_id ? DB.getById('jobs', checkout.job_id) : null;
+            return '<div class="card mb-4" style="cursor:default;">' +
+                '<div class="list-item-title">Checked out' + (job ? ' to ' + esc(job.name) : '') + '</div>' +
+                '<button class="btn btn-outline btn-sm mt-2" onclick="doCheckInKit(\'' + kit.id + '\')">Check In</button>' +
+                '</div>';
+        }
+        return '<button class="btn btn-outline btn-sm mb-4" onclick="openCheckOutKit(\'' + kit.id + '\')">Check Out to Job</button>';
+    }
+
+    window.openCheckOutKit = function (kitId) {
+        var jobs = DB.find('jobs', function (j) { return j.company_id === state.currentCompanyId && !j.deleted_at; });
+        var existing = document.getElementById('kit-checkout-panel');
+        if (existing) existing.remove();
+        var modal = document.createElement('div');
+        modal.id = 'kit-checkout-panel';
+        modal.className = 'modal-overlay';
+        modal.innerHTML =
+            '<div class="modal-sheet">' +
+                '<div class="modal-handle"></div>' +
+                '<div class="page-title-sm mb-2">Check Out to Job</div>' +
+                '<div class="form-group"><label>Job</label><select id="ko-job">' +
+                    jobs.map(function (j) { return '<option value="' + j.id + '"' + (j.id === state.currentJobId ? ' selected' : '') + '>' + esc(j.name) + '</option>'; }).join('') +
+                '</select></div>' +
+                '<button class="btn btn-primary mt-2" onclick="saveCheckOutKit(\'' + kitId + '\')">Check Out</button>' +
+                '<button class="btn btn-secondary" onclick="document.getElementById(\'kit-checkout-panel\').remove()">Cancel</button>' +
+            '</div>';
+        modal.addEventListener('click', function (e) { if (e.target === modal) modal.remove(); });
+        document.getElementById('phone').appendChild(modal);
+    };
+
+    window.saveCheckOutKit = function (kitId) {
+        var jobId = document.getElementById('ko-job').value;
+        if (!jobId) { alert('Select a job.'); return; }
+        checkOutKitToJob(kitId, jobId);
+        document.getElementById('kit-checkout-panel').remove();
+        render();
+    };
+
+    window.doCheckInKit = function (kitId) {
+        checkInKit(kitId);
+        render();
+    };
+
     function kitDetailHtml(cat, kit) {
         var tools = DB.find('materials', function (m) { return m.kit_id === kit.id && m.item_type === 'tool' && !m.deleted_at; });
         var materials = DB.find('materials', function (m) { return m.kit_id === kit.id && m.item_type === 'material' && !m.deleted_at; });
+        var isCart = kit.kind === 'cart';
 
         var html = '<div class="flex-between">' +
             '<div class="page-title-sm">' + esc(kit.name) + '</div>' +
             '<button class="btn btn-outline btn-sm" onclick="openEditKit(\'' + kit.id + '\')">Edit Kit</button>' +
             '</div>';
-        html += '<div class="page-subtitle mb-2">' + esc(cat.name) + (kit.location ? ' &bull; ' + esc(locationLabel(kit.location)) : '') + '</div>';
+        html += '<div class="page-subtitle mb-2">' + esc(cat.name) + (isCart ? ' &bull; Cart' : '') +
+            (kit.location ? ' &bull; ' + esc(locationLabel(kit.location)) : '') +
+            (!isCart ? ' &bull; ' + esc(KIT_STATUS_LABELS[getKitStatus(kit)]) : '') + '</div>';
         if (kit.description) html += '<div style="font-size:0.82rem; color:#475569; margin-bottom:14px;">' + esc(kit.description) + '</div>';
+        html += checkoutControlHtml(kit);
         html += listSection('Tools', 'tool', tools, 'addKitEntry(\'tool\')');
         html += listSection('Materials', 'material', materials, 'addKitEntry(\'material\')');
         html += '<div class="section-header mt-4"><span class="section-title">Videos</span>' +
@@ -271,6 +342,10 @@
             '<div class="modal-sheet">' +
                 '<div class="modal-handle"></div>' +
                 '<div class="page-title-sm mb-2">New Kit</div>' +
+                '<div class="form-group"><label>Kind</label><select id="kc-kind">' +
+                    '<option value="kit">Specialized Kit (fixed tools, audited nightly)</option>' +
+                    '<option value="cart">Modular Cart (consumables, billed to jobs)</option>' +
+                    '</select></div>' +
                 '<div class="form-group"><label>Kit Name</label><input type="text" id="kc-name" placeholder="e.g. Basic Electrical Kit"></div>' +
                 '<div class="form-group"><label>Category</label><input type="text" id="kc-category" list="kc-category-list" placeholder="Search or type a category"><datalist id="kc-category-list">' +
                     CATEGORIES.map(function (cat) { return '<option value="' + esc(cat.name) + '">'; }).join('') +
@@ -292,12 +367,17 @@
         var category = (document.getElementById('kc-category').value || '').trim() || 'Uncategorized';
         var description = (document.getElementById('kc-description').value || '').trim();
         var locationName = (document.getElementById('kc-location').value || '').trim() || 'shop';
+        var kind = document.getElementById('kc-kind').value;
         var kit = DB.insert('inventory_kits', {
             company_id: state.currentCompanyId, name: name, description: description,
             image_url: null, location: findOrCreateLocation(state.currentCompanyId, locationName).name,
-            division_number: null, category: category,
+            division_number: null, category: category, kind: kind,
         });
         document.getElementById('kit-create-panel').remove();
+        // Reset the kind filter so the new kit is guaranteed visible even if
+        // it doesn't match whatever filter was active (e.g. creating a cart
+        // while "Kits" was selected).
+        window.setKitKindFilter('all');
         CATEGORIES = loadCategories();
         // Select the new kit so the user lands ready to add tools/materials.
         CATEGORIES.forEach(function (cat, ci) {
@@ -354,6 +434,10 @@
             '<div class="modal-sheet">' +
                 '<div class="modal-handle"></div>' +
                 '<div class="page-title-sm mb-2">Edit Kit</div>' +
+                '<div class="form-group"><label>Kind</label><select id="kf-kind">' +
+                    '<option value="kit"' + ((kit.kind || 'kit') === 'kit' ? ' selected' : '') + '>Specialized Kit (fixed tools, audited nightly)</option>' +
+                    '<option value="cart"' + (kit.kind === 'cart' ? ' selected' : '') + '>Modular Cart (consumables, billed to jobs)</option>' +
+                    '</select></div>' +
                 '<div class="form-group"><label>Photo</label>' +
                     '<div style="display:flex; align-items:center; gap:10px;">' +
                         '<img id="kf-photo-preview" ' + (kit.image_asset_id ? 'data-asset-id="' + kit.image_asset_id + '"' : (kit.image_url ? 'src="' + esc(kit.image_url) + '"' : '')) +
@@ -392,12 +476,17 @@
         var patch = {
             name: name, category: category, description: description,
             location: findOrCreateLocation(state.currentCompanyId, locationName).name,
+            kind: document.getElementById('kf-kind').value,
         };
 
         function finish(imageAssetId) {
             if (imageAssetId !== undefined) patch.image_asset_id = imageAssetId;
             DB.update('inventory_kits', kitId, patch);
             closeEditKitPanel();
+            appState.kindFilter = 'all';
+            document.getElementById('kit-kind-all').classList.add('selected');
+            document.getElementById('kit-kind-kit').classList.remove('selected');
+            document.getElementById('kit-kind-cart').classList.remove('selected');
             CATEGORIES = loadCategories();
             CATEGORIES.forEach(function (cat, ci) {
                 cat.kits.forEach(function (k, ki) {
@@ -673,6 +762,19 @@
         if (!confirm('Remove "' + (row ? row.name : 'this item') + '" from the kit?')) return;
         DB.softDelete('materials', id);
         document.getElementById('kit-edit-panel').remove();
+        render();
+    };
+
+    window.setKitKindFilter = function (kind) {
+        appState.kindFilter = kind;
+        ['all', 'kit', 'cart'].forEach(function (k) {
+            document.getElementById('kit-kind-' + k).classList.toggle('selected', k === kind);
+        });
+        CATEGORIES = loadCategories();
+        appState.selected = null;
+        appState.expandedCat = null;
+        appState.searchQuery = '';
+        clearSearchInput();
         render();
     };
 

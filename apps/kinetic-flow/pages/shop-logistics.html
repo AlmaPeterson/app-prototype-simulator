@@ -1,0 +1,244 @@
+<div class="page" style="padding-bottom:80px;">
+    <div class="page-header">
+        <div class="page-title">Shop Logistics</div>
+        <div class="page-subtitle">Daily kit audits, audit history, and open replacement/restock tickets.</div>
+    </div>
+
+    <div style="display:flex; gap:6px; margin-bottom:14px;">
+        <div id="sl-tab-audits" class="chip selected" onclick="slSwitchTab('audits')">Active Audits</div>
+        <div id="sl-tab-history" class="chip" onclick="slSwitchTab('history')">History</div>
+        <div id="sl-tab-reorder" class="chip" onclick="slSwitchTab('reorder')">Reorder</div>
+    </div>
+
+    <div id="sl-content"></div>
+
+    <button class="btn btn-secondary mt-4" onclick="continueFromSetup()">Done</button>
+</div>
+
+<script>
+(function () {
+
+    var slState = { tab: 'audits', selectedKitId: null, passed: null, flagged: {} };
+
+    function kitsOfKind() {
+        return DB.find('inventory_kits', function (k) {
+            return k.company_id === state.currentCompanyId && !k.deleted_at && (k.kind || 'kit') === 'kit';
+        });
+    }
+
+    function assignedLabel(kit) {
+        var checkout = getOpenCheckout(kit.id);
+        if (!checkout) return null;
+        var job = checkout.job_id ? DB.getById('jobs', checkout.job_id) : null;
+        return job ? job.name : 'a job';
+    }
+
+    // ── Active Audits tab ────────────────────────────────────────────────────
+    function auditListHtml() {
+        var kits = kitsOfKind().map(function (k) { return { kit: k, status: getKitStatus(k) }; })
+            .filter(function (row) { return row.status !== 'ready'; });
+        if (kits.length === 0) {
+            return '<div class="kit-empty">Nothing needs attention &mdash; every kit is Ready.</div>';
+        }
+        var order = { needs_audit: 0, out_of_service: 1, in_transit: 2 };
+        kits.sort(function (a, b) { return order[a.status] - order[b.status]; });
+        return '<div class="card" style="cursor:default; padding:0 14px;">' + kits.map(function (row) {
+            var clickable = row.status === 'needs_audit' || row.status === 'out_of_service';
+            var assigned = assignedLabel(row.kit);
+            return '<div class="list-item"' + (clickable ? ' style="cursor:pointer;" onclick="slSelectKit(\'' + row.kit.id + '\')"' : ' style="opacity:0.6;"') + '>' +
+                '<div class="list-item-body">' +
+                    '<div class="list-item-title">' + esc(row.kit.name) + '</div>' +
+                    '<div class="list-item-sub">' + esc(KIT_STATUS_LABELS[row.status]) + (assigned ? ' &bull; ' + esc(assigned) : '') + '</div>' +
+                '</div>' + (clickable ? '<span class="card-arrow">&rsaquo;</span>' : '') +
+            '</div>';
+        }).join('') + '</div>';
+    }
+
+    function auditFormHtml(kit) {
+        var tools = DB.find('materials', function (m) { return m.kit_id === kit.id && m.item_type === 'tool' && !m.deleted_at; });
+        var assigned = assignedLabel(kit);
+        var html = '<div class="flex-between mb-2">' +
+            '<div class="page-title-sm">' + esc(kit.name) + '</div>' +
+            '<button class="btn btn-outline btn-sm" onclick="slSelectKit(null)">&larr; List</button>' +
+            '</div>';
+        if (assigned) html += '<div class="page-subtitle mb-4">Assigned to ' + esc(assigned) + '</div>';
+
+        html += '<div class="section-header"><span class="section-title">Is Kit Complete &amp; Damage-Free?</span></div>';
+        html += '<div style="display:flex; gap:8px; margin-bottom:14px;">' +
+            '<button class="btn ' + (slState.passed === true ? 'btn-primary' : 'btn-outline') + '" style="flex:1;" onclick="slSetPassed(true)">Yes &mdash; Passed</button>' +
+            '<button class="btn ' + (slState.passed === false ? 'btn-primary' : 'btn-outline') + '" style="flex:1;" onclick="slSetPassed(false)">No &mdash; Report Issue</button>' +
+            '</div>';
+
+        if (slState.passed === false) {
+            html += '<div class="section-header"><span class="section-title">Log Missing / Damaged Item</span></div>';
+            if (tools.length === 0) {
+                html += '<div class="kit-empty">This kit has no tool rows to flag.</div>';
+            } else {
+                html += '<div class="card" style="cursor:default; padding:0 14px;">' + tools.map(function (t) {
+                    var flag = slState.flagged[t.id];
+                    return '<div class="list-item">' +
+                        '<div class="list-item-body">' +
+                            '<label style="display:flex; align-items:center; gap:8px; cursor:pointer;">' +
+                                '<input type="checkbox" ' + (flag ? 'checked' : '') + ' onchange="slToggleFlag(\'' + t.id + '\', \'' + jsArg(t.name) + '\', this.checked)">' +
+                                '<span>' + esc(t.name) + '</span>' +
+                            '</label>' +
+                        '</div>' +
+                        (flag ? '<select onchange="slSetIssueType(\'' + t.id + '\', this.value)" style="padding:6px; border:1.5px solid #e2e8f0; border-radius:8px; font-size:0.78rem;">' +
+                            ['missing', 'damaged', 'needs_replacement'].map(function (opt) {
+                                return '<option value="' + opt + '"' + (flag.issue_type === opt ? ' selected' : '') + '>' + opt.replace('_', ' ') + '</option>';
+                            }).join('') + '</select>' : '') +
+                    '</div>';
+                }).join('') + '</div>';
+            }
+        }
+
+        html += '<button class="btn btn-primary mt-4" onclick="slSubmitAudit(\'' + kit.id + '\')" ' +
+            (slState.passed === null ? 'disabled' : '') + '>Submit Audit' +
+            (slState.passed === false ? ' &amp; Create Replacement Ticket' : '') + '</button>';
+        return html;
+    }
+
+    window.slSelectKit = function (kitId) {
+        slState.selectedKitId = kitId;
+        slState.passed = null;
+        slState.flagged = {};
+        slRender();
+    };
+
+    window.slSetPassed = function (passed) {
+        slState.passed = passed;
+        if (passed) slState.flagged = {};
+        slRender();
+    };
+
+    window.slToggleFlag = function (materialId, name, checked) {
+        if (checked) {
+            slState.flagged[materialId] = { name: name, issue_type: 'missing' };
+        } else {
+            delete slState.flagged[materialId];
+        }
+        slRender();
+    };
+
+    window.slSetIssueType = function (materialId, issueType) {
+        if (slState.flagged[materialId]) slState.flagged[materialId].issue_type = issueType;
+    };
+
+    window.slSubmitAudit = function (kitId) {
+        var checkout = getOpenCheckout(kitId);
+        var issues = Object.keys(slState.flagged).map(function (materialId) {
+            var f = slState.flagged[materialId];
+            return { material_id: materialId, name: f.name, issue_type: f.issue_type };
+        });
+        submitKitAudit(kitId, checkout ? checkout.job_id : null, slState.passed, issues);
+        if (slState.passed) {
+            showToast('Audit Passed', ['Kit is Ready.'], '#166534');
+        } else {
+            showToast('Audit Logged', ['Replacement ticket' + (issues.length > 1 ? 's' : '') + ' created for the flagged item' + (issues.length > 1 ? 's' : '') + '.'], '#b91c1c');
+        }
+        slSelectKit(null);
+    };
+
+    // ── History tab ──────────────────────────────────────────────────────────
+    function historyHtml() {
+        var audits = DB.find('kit_audits', function (a) { return a.company_id === state.currentCompanyId && !a.deleted_at; })
+            .slice().sort(function (a, b) { return b.audit_date.localeCompare(a.audit_date) || b.created_at.localeCompare(a.created_at); });
+        if (audits.length === 0) return '<div class="kit-empty">No audits logged yet.</div>';
+        return '<div class="card" style="cursor:default; padding:0 14px;">' + audits.map(function (a) {
+            var kit = DB.getById('inventory_kits', a.kit_id);
+            var issueNote = a.issues && a.issues.length ? a.issues.length + ' issue' + (a.issues.length > 1 ? 's' : '') + ' flagged' : 'Clean';
+            return '<div class="list-item">' +
+                '<div class="list-item-body">' +
+                    '<div class="list-item-title">' + esc(kit ? kit.name : 'Unknown Kit') + '</div>' +
+                    '<div class="list-item-sub">' + esc(a.audit_date) + ' &bull; ' + (a.status === 'passed' ? 'Passed' : 'Failed') + ' &bull; ' + esc(issueNote) + '</div>' +
+                '</div>' +
+            '</div>';
+        }).join('') + '</div>';
+    }
+
+    // ── Reorder tab ─────────────────────────────────────────────────────────
+    function reorderHtml() {
+        var tickets = DB.find('replacement_tickets', function (t) { return t.company_id === state.currentCompanyId && t.status === 'open'; });
+        var cartMaterials = DB.find('materials', function (m) {
+            return m.company_id === state.currentCompanyId && !m.deleted_at && m.kit_id
+                && (function () { var k = DB.getById('inventory_kits', m.kit_id); return k && k.kind === 'cart'; })()
+                && m.stock_qty < m.reorder_qty;
+        });
+        var html = '';
+        html += '<div class="section-header"><span class="section-title">Kit Replacement Tickets</span></div>';
+        if (tickets.length === 0) {
+            html += '<div class="kit-empty">No open replacement tickets.</div>';
+        } else {
+            html += '<div class="card" style="cursor:default; padding:0 14px;">' + tickets.map(function (t) {
+                var kit = DB.getById('inventory_kits', t.kit_id);
+                return '<div class="list-item">' +
+                    '<div class="list-item-body">' +
+                        '<div class="list-item-title">' + esc(t.item_name) + '</div>' +
+                        '<div class="list-item-sub">' + esc(kit ? kit.name : 'Unknown Kit') + ' &bull; ' + esc(t.issue_type.replace('_', ' ')) + '</div>' +
+                    '</div>' +
+                    '<button class="btn btn-outline btn-sm" onclick="slFulfillTicket(\'' + t.id + '\')">Mark Fulfilled</button>' +
+                '</div>';
+            }).join('') + '</div>';
+        }
+
+        html += '<div class="section-header mt-4"><span class="section-title">Low-Stock Cart Materials</span></div>';
+        if (cartMaterials.length === 0) {
+            html += '<div class="kit-empty">Every cart is above its reorder threshold.</div>';
+        } else {
+            html += '<div class="card" style="cursor:default; padding:0 14px;">' + cartMaterials.map(function (m) {
+                var kit = DB.getById('inventory_kits', m.kit_id);
+                return '<div class="list-item">' +
+                    '<div class="list-item-body">' +
+                        '<div class="list-item-title">' + esc(m.name) + '</div>' +
+                        '<div class="list-item-sub">' + esc(kit ? kit.name : 'Unknown Cart') + ' &bull; ' + m.stock_qty + ' / ' + m.reorder_qty + ' on hand</div>' +
+                    '</div>' +
+                    '<button class="btn btn-outline btn-sm" onclick="slRestockMaterial(\'' + m.id + '\')">Mark Restocked</button>' +
+                '</div>';
+            }).join('') + '</div>';
+        }
+        return html;
+    }
+
+    window.slFulfillTicket = function (ticketId) {
+        fulfillReplacementTicket(ticketId);
+        slRender();
+    };
+
+    // "Restocked" resets stock back to double the reorder threshold — a
+    // simple par level, not a real receiving/allocation workflow (matches
+    // the existing "checklist only" restocking decision for kits/carts).
+    window.slRestockMaterial = function (materialId) {
+        var m = DB.getById('materials', materialId);
+        if (!m) return;
+        DB.update('materials', materialId, { stock_qty: m.reorder_qty * 2 });
+        slRender();
+    };
+
+    window.slSwitchTab = function (tab) {
+        slState.tab = tab;
+        slState.selectedKitId = null;
+        ['audits', 'history', 'reorder'].forEach(function (t) {
+            document.getElementById('sl-tab-' + t).classList.toggle('selected', t === tab);
+        });
+        slRender();
+    };
+
+    function slRender() {
+        var el = document.getElementById('sl-content');
+        if (slState.tab === 'audits') {
+            if (slState.selectedKitId) {
+                var kit = DB.getById('inventory_kits', slState.selectedKitId);
+                el.innerHTML = kit ? auditFormHtml(kit) : auditListHtml();
+            } else {
+                el.innerHTML = auditListHtml();
+            }
+        } else if (slState.tab === 'history') {
+            el.innerHTML = historyHtml();
+        } else {
+            el.innerHTML = reorderHtml();
+        }
+    }
+
+    slRender();
+})();
+</script>

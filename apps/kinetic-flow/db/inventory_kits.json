@@ -10,7 +10,8 @@
     "created_at": "2026-02-11T12:00:00Z",
     "updated_at": "2026-06-19T12:00:00Z",
     "sync_status": "synced",
-    "category": "Electrical"
+    "category": "Electrical",
+    "kind": "kit"
   },
   {
     "id": "kit-basic-plumbing-kit",
@@ -23,7 +24,8 @@
     "created_at": "2025-07-02T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
     "sync_status": "synced",
-    "category": "Plumbing"
+    "category": "Plumbing",
+    "kind": "kit"
   },
   {
     "id": "kit-hvac-install-kit",
@@ -36,7 +38,8 @@
     "created_at": "2025-10-18T12:00:00Z",
     "updated_at": "2026-06-20T12:00:00Z",
     "sync_status": "synced",
-    "category": "Fixtures & HVAC"
+    "category": "Fixtures & HVAC",
+    "kind": "kit"
   },
   {
     "id": "kit-drywall-finishing-kit",
@@ -49,7 +52,8 @@
     "created_at": "2025-07-02T12:00:00Z",
     "updated_at": "2026-06-18T12:00:00Z",
     "sync_status": "synced",
-    "category": "Drywall"
+    "category": "Drywall",
+    "kind": "kit"
   },
   {
     "id": "kit-finish-carpentry-kit",
@@ -62,7 +66,8 @@
     "created_at": "2025-08-06T12:00:00Z",
     "updated_at": "2026-06-24T12:00:00Z",
     "sync_status": "synced",
-    "category": "Finish Carpentry"
+    "category": "Finish Carpentry",
+    "kind": "kit"
   },
   {
     "id": "kit-interior-painting-kit",
@@ -75,7 +80,8 @@
     "created_at": "2025-07-24T12:00:00Z",
     "updated_at": "2026-07-02T12:00:00Z",
     "sync_status": "synced",
-    "category": "Painting"
+    "category": "Painting",
+    "kind": "kit"
   },
   {
     "id": "kit-safety-cleanup-kit",
@@ -88,344 +94,427 @@
     "created_at": "2025-05-20T12:00:00Z",
     "updated_at": "2026-06-29T12:00:00Z",
     "sync_status": "synced",
-    "category": "Safety & Cleanup"
+    "category": "Safety & Cleanup",
+    "kind": "kit"
   },
   {
     "id": "kit-drywall-hanging-kit",
     "company_id": "company-kineticflow",
     "name": "Drywall Hanging Kit",
-    "description": "Drywall Hanging Kit — standard field kit",
+    "description": "Drywall Hanging Kit \u2014 standard field kit",
     "image_url": null,
     "location": "shop",
     "division_number": 9,
     "category": "Drywall",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-drywall-tape-kit",
     "company_id": "company-kineticflow",
     "name": "Drywall Tape Kit",
-    "description": "Drywall Tape Kit — standard field kit",
+    "description": "Drywall Tape Kit \u2014 standard field kit",
     "image_url": null,
     "location": "truck_1",
     "division_number": 9,
     "category": "Drywall",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-door-hanging-kit",
     "company_id": "company-kineticflow",
     "name": "Door Hanging Kit",
-    "description": "Door Hanging Kit — standard field kit",
+    "description": "Door Hanging Kit \u2014 standard field kit",
     "image_url": null,
     "location": "truck_2",
     "division_number": 8,
     "category": "Doors & Hardware",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-door-drilling-kit",
     "company_id": "company-kineticflow",
     "name": "Door Drilling Kit",
-    "description": "Door Drilling Kit — standard field kit",
+    "description": "Door Drilling Kit \u2014 standard field kit",
     "image_url": null,
     "location": "shop",
     "division_number": 8,
     "category": "Doors & Hardware",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-framing-kit",
     "company_id": "company-kineticflow",
     "name": "Framing Kit",
-    "description": "Framing Kit — standard field kit",
+    "description": "Framing Kit \u2014 standard field kit",
     "image_url": null,
     "location": "truck_1",
     "division_number": 6,
     "category": "Framing",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-framing-plates",
     "company_id": "company-kineticflow",
     "name": "Framing Plates",
-    "description": "Framing Plates — standard field kit",
+    "description": "Framing Plates \u2014 standard field kit",
     "image_url": null,
     "location": "truck_2",
     "division_number": 6,
     "category": "Framing",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-finish-carpentry-trim-work",
     "company_id": "company-kineticflow",
     "name": "Finish Carpentry Trim Work",
-    "description": "Finish Carpentry Trim Work — standard field kit",
+    "description": "Finish Carpentry Trim Work \u2014 standard field kit",
     "image_url": null,
     "location": "shop",
     "division_number": 6,
     "category": "Finish Carpentry",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-wood-touch-up-kit",
     "company_id": "company-kineticflow",
     "name": "Wood Touch-Up Kit",
-    "description": "Wood Touch-Up Kit — standard field kit",
+    "description": "Wood Touch-Up Kit \u2014 standard field kit",
     "image_url": null,
     "location": "truck_1",
     "division_number": 6,
     "category": "Finish Carpentry",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-tile-kit",
     "company_id": "company-kineticflow",
     "name": "Tile Kit",
-    "description": "Tile Kit — standard field kit",
+    "description": "Tile Kit \u2014 standard field kit",
     "image_url": null,
     "location": "truck_2",
     "division_number": 9,
     "category": "Flooring & Tile",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-carpet-kit",
     "company_id": "company-kineticflow",
     "name": "Carpet Kit",
-    "description": "Carpet Kit — standard field kit",
+    "description": "Carpet Kit \u2014 standard field kit",
     "image_url": null,
     "location": "shop",
     "division_number": 9,
     "category": "Flooring & Tile",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-paint-spraying",
     "company_id": "company-kineticflow",
     "name": "Paint Spraying",
-    "description": "Paint Spraying — standard field kit",
+    "description": "Paint Spraying \u2014 standard field kit",
     "image_url": null,
     "location": "truck_1",
     "division_number": 9,
     "category": "Painting",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-tape-off-kit",
     "company_id": "company-kineticflow",
     "name": "Tape Off Kit",
-    "description": "Tape Off Kit — standard field kit",
+    "description": "Tape Off Kit \u2014 standard field kit",
     "image_url": null,
     "location": "truck_2",
     "division_number": 9,
     "category": "Painting",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-copper-kit",
     "company_id": "company-kineticflow",
     "name": "Copper Kit",
-    "description": "Copper Kit — standard field kit",
+    "description": "Copper Kit \u2014 standard field kit",
     "image_url": null,
     "location": "shop",
     "division_number": 22,
     "category": "Plumbing",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-pex-b-crimp-1-2-kit",
     "company_id": "company-kineticflow",
     "name": "Pex B Crimp 1/2\" Kit",
-    "description": "Pex B Crimp 1/2\" Kit — standard field kit",
+    "description": "Pex B Crimp 1/2\" Kit \u2014 standard field kit",
     "image_url": null,
     "location": "truck_1",
     "division_number": 22,
     "category": "Plumbing",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-outlets-and-switches",
     "company_id": "company-kineticflow",
     "name": "Outlets and Switches",
-    "description": "Outlets and Switches — standard field kit",
+    "description": "Outlets and Switches \u2014 standard field kit",
     "image_url": null,
     "location": "truck_2",
     "division_number": 26,
     "category": "Electrical",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-emt-conduit",
     "company_id": "company-kineticflow",
     "name": "EMT Conduit",
-    "description": "EMT Conduit — standard field kit",
+    "description": "EMT Conduit \u2014 standard field kit",
     "image_url": null,
     "location": "shop",
     "division_number": 26,
     "category": "Electrical",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-hvac-kit",
     "company_id": "company-kineticflow",
     "name": "HVAC Kit",
-    "description": "HVAC Kit — standard field kit",
+    "description": "HVAC Kit \u2014 standard field kit",
     "image_url": null,
     "location": "truck_1",
     "division_number": 23,
     "category": "Fixtures & HVAC",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-toilet-kit",
     "company_id": "company-kineticflow",
     "name": "Toilet Kit",
-    "description": "Toilet Kit — standard field kit",
+    "description": "Toilet Kit \u2014 standard field kit",
     "image_url": null,
     "location": "truck_2",
     "division_number": 23,
     "category": "Fixtures & HVAC",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-bolt-kit",
     "company_id": "company-kineticflow",
     "name": "Bolt Kit",
-    "description": "Bolt Kit — standard field kit",
+    "description": "Bolt Kit \u2014 standard field kit",
     "image_url": null,
     "location": "shop",
     "division_number": null,
     "category": "Fasteners & Hardware",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-brick-and-block-anchors",
     "company_id": "company-kineticflow",
     "name": "Brick and Block Anchors",
-    "description": "Brick and Block Anchors — standard field kit",
+    "description": "Brick and Block Anchors \u2014 standard field kit",
     "image_url": null,
     "location": "truck_1",
     "division_number": null,
     "category": "Fasteners & Hardware",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-demolition-kit",
     "company_id": "company-kineticflow",
     "name": "Demolition Kit",
-    "description": "Demolition Kit — standard field kit",
+    "description": "Demolition Kit \u2014 standard field kit",
     "image_url": null,
     "location": "truck_2",
     "division_number": null,
     "category": "Tools",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-rotary-hammer",
     "company_id": "company-kineticflow",
     "name": "Rotary Hammer",
-    "description": "Rotary Hammer — standard field kit",
+    "description": "Rotary Hammer \u2014 standard field kit",
     "image_url": null,
     "location": "shop",
     "division_number": null,
     "category": "Tools",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-wood-drill-bits",
     "company_id": "company-kineticflow",
     "name": "Wood Drill Bits",
-    "description": "Wood Drill Bits — standard field kit",
+    "description": "Wood Drill Bits \u2014 standard field kit",
     "image_url": null,
     "location": "truck_1",
     "division_number": null,
     "category": "Drill Bits & Sanding",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-festool-sanders",
     "company_id": "company-kineticflow",
     "name": "Festool Sanders",
-    "description": "Festool Sanders — standard field kit",
+    "description": "Festool Sanders \u2014 standard field kit",
     "image_url": null,
     "location": "truck_2",
     "division_number": null,
     "category": "Drill Bits & Sanding",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-safety-kit",
     "company_id": "company-kineticflow",
     "name": "Safety Kit",
-    "description": "Safety Kit — standard field kit",
+    "description": "Safety Kit \u2014 standard field kit",
     "image_url": null,
     "location": "shop",
     "division_number": null,
     "category": "Safety & Cleanup",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
   },
   {
     "id": "kit-insulation-kit",
     "company_id": "company-kineticflow",
     "name": "Insulation Kit",
-    "description": "Insulation Kit — standard field kit",
+    "description": "Insulation Kit \u2014 standard field kit",
     "image_url": null,
     "location": "truck_1",
     "division_number": null,
     "category": "Safety & Cleanup",
     "created_at": "2026-01-05T12:00:00Z",
     "updated_at": "2026-06-30T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "kind": "kit"
+  },
+  {
+    "id": "kit-dryer-duct-cleaning-kit",
+    "company_id": "company-kineticflow",
+    "name": "Dryer Duct Cleaning Kit 01",
+    "description": "Flexible rotary rod system + HEPA vacuum for dryer vent service calls",
+    "image_url": null,
+    "location": "shop",
+    "division_number": null,
+    "created_at": "2026-07-10T12:00:00Z",
+    "updated_at": "2026-07-14T12:00:00Z",
+    "sync_status": "synced",
+    "category": "Tools",
+    "kind": "kit"
+  },
+  {
+    "id": "kit-plumbing-cart-01",
+    "company_id": "company-kineticflow",
+    "name": "Plumbing Cart 01",
+    "description": "Rough-in and service consumables for a full day of plumbing calls",
+    "image_url": null,
+    "location": "trailer_2",
+    "division_number": null,
+    "created_at": "2026-07-10T12:00:00Z",
+    "updated_at": "2026-07-14T12:00:00Z",
+    "sync_status": "synced",
+    "category": "Plumbing",
+    "kind": "cart"
+  },
+  {
+    "id": "kit-electrical-cart-01",
+    "company_id": "company-kineticflow",
+    "name": "Electrical Cart 01",
+    "description": "Wire, boxes, and device consumables for trim-out and service calls",
+    "image_url": null,
+    "location": "shop",
+    "division_number": null,
+    "created_at": "2026-07-10T12:00:00Z",
+    "updated_at": "2026-07-14T12:00:00Z",
+    "sync_status": "synced",
+    "category": "Electrical",
+    "kind": "cart"
+  },
+  {
+    "id": "kit-sprinkler-cart-01",
+    "company_id": "company-kineticflow",
+    "name": "Sprinkler Cart 01",
+    "description": "Irrigation fittings and heads for sprinkler repair/install calls",
+    "image_url": null,
+    "location": "shop",
+    "division_number": null,
+    "created_at": "2026-07-10T12:00:00Z",
+    "updated_at": "2026-07-14T12:00:00Z",
+    "sync_status": "synced",
+    "category": "Plumbing",
+    "kind": "cart"
   }
 ]

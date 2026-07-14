@@ -6,7 +6,8 @@
     "permissions": {
       "finance": "nationwide",
       "manage_users": true,
-      "manage_bids": true
+      "manage_bids": true,
+      "manage_inventory": true
     }
   },
   {
@@ -16,7 +17,8 @@
     "permissions": {
       "finance": "branch",
       "manage_users": true,
-      "manage_bids": true
+      "manage_bids": true,
+      "manage_inventory": true
     }
   },
   {
@@ -26,7 +28,8 @@
     "permissions": {
       "finance": "job",
       "manage_users": false,
-      "manage_bids": false
+      "manage_bids": false,
+      "manage_inventory": false
     }
   },
   {
@@ -36,7 +39,8 @@
     "permissions": {
       "finance": "none",
       "manage_users": false,
-      "manage_bids": false
+      "manage_bids": false,
+      "manage_inventory": false
     }
   }
 ]

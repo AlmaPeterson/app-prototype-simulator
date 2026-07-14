@@ -25,5 +25,23 @@
     "checked_out_by": "user-fellowcraft2",
     "checked_out_at": "2026-06-30T05:45:00Z",
     "checked_in_at": null
+  },
+  {
+    "id": "checkout-plumbing-cart-01",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-plumbing-cart-01",
+    "job_id": "job-northview-plumbing",
+    "checked_out_by": "user-fellowcraft2",
+    "checked_out_at": "2026-07-14T05:45:00Z",
+    "checked_in_at": null
+  },
+  {
+    "id": "checkout-electrical-cart-01",
+    "company_id": "company-kineticflow",
+    "kit_id": "kit-electrical-cart-01",
+    "job_id": "job-westgate-electrical",
+    "checked_out_by": "user-manager",
+    "checked_out_at": "2026-07-14T05:45:00Z",
+    "checked_in_at": null
   }
 ]
