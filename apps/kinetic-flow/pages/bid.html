@@ -365,7 +365,7 @@
             DB.insert('bid_divisions', {
                 company_id: state.currentCompanyId, bid_id: bidId,
                 division_number: null, division_name: name,
-                form_data: {}, labor_cost: 0, material_cost: 0,
+                form_data: {}, labor_cost: 0, material_cost: 0, required_kit_ids: [],
             });
         }
         renderDivList();

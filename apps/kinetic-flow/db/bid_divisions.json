@@ -10,7 +10,11 @@
     "material_cost": 4200,
     "created_at": "2026-06-06T12:00:00Z",
     "updated_at": "2026-07-01T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "required_kit_ids": [
+      "kit-hvac-install-kit",
+      "kit-hvac-kit"
+    ]
   },
   {
     "id": "biddiv-2",
@@ -23,7 +27,11 @@
     "material_cost": 1200,
     "created_at": "2026-06-06T12:00:00Z",
     "updated_at": "2026-07-01T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "required_kit_ids": [
+      "kit-basic-electrical-kit",
+      "kit-electrical-cart-01"
+    ]
   },
   {
     "id": "biddiv-3",
@@ -36,7 +44,11 @@
     "material_cost": 2450,
     "created_at": "2026-06-16T12:00:00Z",
     "updated_at": "2026-07-01T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "required_kit_ids": [
+      "kit-basic-plumbing-kit",
+      "kit-plumbing-cart-01"
+    ]
   },
   {
     "id": "biddiv-4",
@@ -49,6 +61,10 @@
     "material_cost": 5100,
     "created_at": "2026-06-25T12:00:00Z",
     "updated_at": "2026-07-01T12:00:00Z",
-    "sync_status": "synced"
+    "sync_status": "synced",
+    "required_kit_ids": [
+      "kit-basic-electrical-kit",
+      "kit-electrical-cart-01"
+    ]
   }
 ]

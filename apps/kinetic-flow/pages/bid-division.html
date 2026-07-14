@@ -27,6 +27,13 @@
         <textarea id="div-scope" rows="2" placeholder="Brief description shown on the bid proposal..."></textarea>
     </div>
 
+    <!-- Kits & carts required -->
+    <div class="section-header">
+        <span class="section-title">Kits &amp; Carts Required</span>
+    </div>
+    <p style="font-size:0.78rem; color:#64748b; margin:0 0 8px 0;">Shown to the crew on Job Home so they know what to grab before heading out.</p>
+    <div id="div-kit-chips" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px;"></div>
+
     <!-- Tasks -->
     <div class="section-header">
         <span class="section-title">Tasks</span>
@@ -149,6 +156,7 @@
         guys: formData.guys || 1,
         scope: formData.scope || '',
         tasks: buildTasksFromLineItems(),
+        requiredKitIds: (divRow.required_kit_ids || []).slice(),
     };
     // Also reachable as window.divWorking: the task/material card markup
     // below is injected via innerHTML, so its inline oninput/onclick
@@ -241,6 +249,32 @@
             '<div style="display:flex; justify-content:space-between; padding:8px 0 0 0;"><strong>Division Total</strong><strong style="color:#0f172a; font-size:1.05rem;">' + fmt(c.total) + '</strong></div>' +
             '</div>';
     }
+
+    // ── Kits & carts required ───────────────────────────────────────────────
+    var allKits = DB.find('inventory_kits', function (k) {
+        return k.company_id === state.currentCompanyId && !k.deleted_at;
+    }).slice().sort(function (a, b) {
+        return (a.category || '').localeCompare(b.category || '') || a.name.localeCompare(b.name);
+    });
+
+    function renderKitChips() {
+        var el = document.getElementById('div-kit-chips');
+        if (allKits.length === 0) {
+            el.innerHTML = '<p style="font-size:0.78rem; color:#94a3b8; margin:0;">No kits or carts set up yet.</p>';
+            return;
+        }
+        el.innerHTML = allKits.map(function (k) {
+            var selected = div.requiredKitIds.indexOf(k.id) !== -1;
+            return '<div class="chip' + (selected ? ' selected' : '') + '" onclick="window.toggleRequiredKit(\'' + k.id + '\')">' +
+                esc(k.name) + (k.kind === 'cart' ? ' (Cart)' : '') + '</div>';
+        }).join('');
+    }
+
+    window.toggleRequiredKit = function (kitId) {
+        var i = div.requiredKitIds.indexOf(kitId);
+        if (i === -1) div.requiredKitIds.push(kitId); else div.requiredKitIds.splice(i, 1);
+        renderKitChips();
+    };
 
     // ── Materials HTML for one task ───────────────────────────────────────
     function buildMatsHTML(t, ti) {
@@ -444,6 +478,7 @@
             labor_cost: laborTotal,
             material_cost: materialTotal,
             form_data: { scope: div.scope || '', laborRate: laborRate, guys: div.guys || 1 },
+            required_kit_ids: div.requiredKitIds,
         });
 
         recalcBidTotals(bidId);
@@ -451,6 +486,7 @@
     };
 
     renderTasks();
+    renderKitChips();
 
 })();
 </script>

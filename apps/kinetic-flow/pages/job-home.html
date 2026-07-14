@@ -41,6 +41,17 @@
         <div id="training-next-list"></div>
     </div>
 
+    <!-- Kits & Carts Needed: pulled from the job's bid divisions
+         (bid-division.html's "Kits & Carts Required" picker) so the crew
+         knows what to grab before heading out, and can mark it checked out
+         right from here. -->
+    <div id="job-kits-section" style="display:none; margin-bottom:16px;">
+        <div class="section-header">
+            <span class="section-title">Kits &amp; Carts Needed</span>
+        </div>
+        <div id="job-kits-list"></div>
+    </div>
+
     <div class="card" onclick="openJob(state.currentJobId)">
         <div class="card-row">
             <div class="card-body">
@@ -116,5 +127,53 @@
             document.getElementById('training-next-section').style.display = 'block';
         }
     }
+
+    // ── Kits & Carts Needed ───────────────────────────────────────────────
+    function renderJobKits() {
+        if (!job) return;
+        var kits = requiredKitsForJob(job);
+        if (kits.length === 0) return;
+        document.getElementById('job-kits-list').innerHTML = kits.map(function (k) {
+            var checkout = getOpenCheckout(k.id);
+            var kindLabel = k.kind === 'cart' ? 'Cart' : 'Kit';
+            if (checkout && checkout.job_id === job.id) {
+                return '<div class="card mb-2" style="cursor:default;">' +
+                    '<div class="card-row">' +
+                        '<div class="card-body"><div class="card-title">' + esc(k.name) + '</div><div class="card-subtitle">' + kindLabel + '</div></div>' +
+                        '<span class="badge badge-green">Checked Out</span>' +
+                    '</div>' +
+                    '<button class="btn btn-outline btn-sm mt-2" onclick="jkCheckIn(\'' + k.id + '\')">Check In</button>' +
+                    '</div>';
+            }
+            if (checkout) {
+                var otherJob = DB.getById('jobs', checkout.job_id);
+                return '<div class="card mb-2" style="cursor:default;">' +
+                    '<div class="card-row">' +
+                        '<div class="card-body"><div class="card-title">' + esc(k.name) + '</div><div class="card-subtitle">' + kindLabel + '</div></div>' +
+                        '<span class="badge badge-gray">In Use' + (otherJob ? ' &mdash; ' + esc(otherJob.name) : '') + '</span>' +
+                    '</div></div>';
+            }
+            return '<div class="card mb-2" style="cursor:default;">' +
+                '<div class="card-row">' +
+                    '<div class="card-body"><div class="card-title">' + esc(k.name) + '</div><div class="card-subtitle">' + kindLabel + '</div></div>' +
+                    '<span class="badge badge-gray">Needed</span>' +
+                '</div>' +
+                '<button class="btn btn-primary btn-sm mt-2" onclick="jkCheckOut(\'' + k.id + '\')">Check Out</button>' +
+                '</div>';
+        }).join('');
+        document.getElementById('job-kits-section').style.display = 'block';
+    }
+
+    window.jkCheckOut = function (kitId) {
+        checkOutKitToJob(kitId, job.id);
+        renderJobKits();
+    };
+
+    window.jkCheckIn = function (kitId) {
+        checkInKit(kitId);
+        renderJobKits();
+    };
+
+    renderJobKits();
 })();
 </script>

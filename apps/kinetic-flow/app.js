@@ -17,7 +17,7 @@ const STORAGE_KEY = 'kineticFlow.state';
 // Bump whenever db/*.json seed data or table shapes change: restoreState()
 // discards localStorage DB snapshots from older versions and re-fetches the
 // fresh seeds, so users don't need a manual "Reset Demo Data".
-const DB_VERSION = 14;
+const DB_VERSION = 15;
 
 // ── App State ──────────────────────────────────────────────────────────────
 const state = {
@@ -997,6 +997,21 @@ function fulfillReplacementTicket(ticketId) {
     DB.update('replacement_tickets', ticketId, {
         status: 'fulfilled', fulfilled_at: new Date().toISOString(), fulfilled_by: state.currentUserId,
     });
+}
+
+// The kits/carts a job needs, per its bid — the union of every
+// bid_divisions.required_kit_ids across that bid's (non-deleted) divisions,
+// deduped and resolved to real inventory_kits rows (a division can name a
+// kit that was since deleted; those ids are silently dropped). Set from
+// bid-division.html's picker, read by job-home.html's checklist.
+function requiredKitsForJob(job) {
+    if (!job || !job.bid_id) return [];
+    const seen = {};
+    const ids = [];
+    DB.find('bid_divisions', function (d) { return d.bid_id === job.bid_id && !d.deleted_at; }).forEach(function (d) {
+        (d.required_kit_ids || []).forEach(function (id) { if (!seen[id]) { seen[id] = true; ids.push(id); } });
+    });
+    return ids.map(function (id) { return DB.getById('inventory_kits', id); }).filter(Boolean);
 }
 
 // ── Company Configuration: Divisions / Levels / Competency Levels ───────────
@@ -2795,6 +2810,7 @@ function activate() {
         canManageUsers, pendingAccountCount, openManageUsers, COMPANY_ID,
         canManageInventory, openShopLogistics, getKitStatus, KIT_STATUS_LABELS,
         getOpenCheckout, checkOutKitToJob, checkInKit, submitKitAudit, fulfillReplacementTicket,
+        requiredKitsForJob,
         LEVELS, COMPETENCY_LEVELS, companyDivisions,
         openCompanyDivisions,
         companyLocations, findOrCreateLocation,
