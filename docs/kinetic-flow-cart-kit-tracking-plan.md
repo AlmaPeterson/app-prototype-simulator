@@ -128,11 +128,61 @@ admin-only pages.
   reorder_qty` and the `reorder_qty * 2` restock par level.
 - Mapping carts onto the 40 CSI divisions as a real taxonomy.
 
+## Follow-up work (same day, 2026-07-14)
+
+**Empty Tools/Materials sections collapse instead of showing "No X listed."**
+A cart's Tools section and a tools-only kit's Materials section used to
+render a full header + empty-state box for nothing owned. `listSection()`
+in `kits.html` now collapses an empty section to just its "+ Add Tool"/
+"+ Add Material" link — still a way to add the first item, just without the
+clutter of two mostly-empty sections on every cart/kit detail view.
+
+**Cart checkout was accidentally kit-only at first.** The initial build's
+`kitDetailHtml()` only called `checkoutControlHtml(kit)` for `kind: 'kit'`
+rows, on the assumption carts wouldn't need it — wrong, since carts are
+exactly what rolls out to jobs under the contractor's model. Fixed by
+dropping the `kind` guard; both kits and carts now get Check Out/Check In.
+Caught because seeding two carts checked out to real jobs
+(`kit-plumbing-cart-01` → Northview, `kit-electrical-cart-01` → Westgate)
+made the missing control immediately visible.
+
+**Required kits/carts per bid division, surfaced on Job Home.** New field
+`bid_divisions.required_kit_ids` (string array of `inventory_kits.id`),
+picked via a chip list on `bid-division.html` and persisted on Save. New
+`app.js` helper `requiredKitsForJob(job)` unions `required_kit_ids` across
+a job's non-deleted bid divisions, resolved to real kit rows. `job-home.html`
+renders that union as a "Kits & Carts Needed" checklist — Needed / Checked
+Out / "In Use — {other job}" per row, with Check Out/Check In reusing the
+same `checkOutKitToJob`/`checkInKit` helpers `kits.html` uses. The "In Use
+elsewhere" case matters: without it, checking a kit out to a second job
+while it's still out on the first would silently double-book it.
+
+Division-level (not task-level) was a deliberate simplification —
+`bid-division.html`'s task cards are free-text scope/labor entries today,
+not structured enough to hang a kit picker off cleanly, and division-level
+roughly matches how kits are already trade-categorized. If task-level
+precision is ever needed, the field would move to the labor-type
+`bid_line_items` row per task (which already carries other task-specific
+columns like `task_category`/`task_scope`) — an additive migration, not a
+schema rewrite, since it's the same "array of kit ids" shape one level
+deeper.
+
+**Kit picker grouped by category, with search.** The chip list above was
+initially one flat list of every company kit/cart (30+ items) — scanning
+past every trade's kits to find the relevant few for one division didn't
+scale. `bid-division.html` now groups chips under the same category headers
+`kits.html`'s drawer uses, plus a search box filtering by kit or category
+name. Still no attempt to auto-filter by matching division name to kit
+category (see "No new taxonomy for carts" above — same reasoning: the two
+are independent free-text fields, and a wrong auto-filter guess that hides
+a needed kit is worse than an extra tap to find it via search).
+
 ## For the actual Google Doc
 
 The user's "Kinetic Flow — Master Blueprint v1.0" Google Doc's Section 5
 (Inventory & Training) and Section 9 (Database Schema Overview) should get
 a short addition pointing at this file, plus `kit_audits` and
-`replacement_tickets` added to Section 9's Inventory Tables list — no tool
-exists in this environment that can edit that Google Doc in place, so
+`replacement_tickets` added to Section 9's Inventory Tables list and a note
+under Bid Tables that `bid_divisions` now carries `required_kit_ids` — no
+tool exists in this environment that can edit that Google Doc in place, so
 that's left for the user to paste in by hand.
