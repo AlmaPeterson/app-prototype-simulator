@@ -17,7 +17,7 @@ const STORAGE_KEY = 'kineticFlow.state';
 // Bump whenever db/*.json seed data or table shapes change: restoreState()
 // discards localStorage DB snapshots from older versions and re-fetches the
 // fresh seeds, so users don't need a manual "Reset Demo Data".
-const DB_VERSION = 15;
+const DB_VERSION = 16;
 
 // ── App State ──────────────────────────────────────────────────────────────
 const state = {
@@ -1029,7 +1029,7 @@ function requiredKitsForJob(job) {
 // company-competency-levels pages were removed on purpose).
 const DIVISIONS = [
     'Planning / Design', 'Site Prep', 'Temporary Utilities', 'Demolition',
-    'Excavation and Trenching', 'Underground Utilities', 'Concrete', 'Framing',
+    'Excavation and Trenching', 'Underground Utilities', 'Concrete', 'Masonry', 'Framing',
     'Exterior Doors and Windows', 'Rough HVAC', 'Rough Plumbing', 'Rough Electrical',
     'Low Voltage / Data Rough-In', 'Thermal and Moisture Protection', 'Pre-Drywall Sign-Off',
     'Drywall', 'Drywall Dry-Out & Dehumidification', 'HVAC Commissioning', 'Cultured Marble',
