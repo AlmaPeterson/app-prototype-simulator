@@ -12,15 +12,15 @@
         <label style="font-size:0.75rem; color:#64748b; font-weight:600; display:block; margin-bottom:6px;">Billed Labor Rates ($/hr)</label>
         <div class="form-row">
             <div class="form-group" style="margin:0; flex:1;">
-                <label id="rate-label-master">Master</label>
+                <label id="rate-label-master">Master Specialist</label>
                 <input type="number" id="rate-master" min="0" step="1">
             </div>
             <div class="form-group" style="margin:0; flex:1;">
-                <label id="rate-label-fellow">Fellow Craft</label>
+                <label id="rate-label-fellow">Trade Professional</label>
                 <input type="number" id="rate-fellow" min="0" step="1">
             </div>
             <div class="form-group" style="margin:0; flex:1;">
-                <label id="rate-label-apprentice">Apprentice</label>
+                <label id="rate-label-apprentice">Support &amp; Prep</label>
                 <input type="number" id="rate-apprentice" min="0" step="1">
             </div>
         </div>
@@ -84,13 +84,23 @@
     // task itself, even if its hours are 0) plus zero or more 'material'-type
     // rows sharing the same task_key — written by persistDivision() below.
     //
-    // Labor is billed across three rate tiers (Master / Fellow Craft /
-    // Apprentice — same ladder as LEVELS, app.js) instead of one flat
+    // Labor is billed across three rate tiers instead of one flat
     // division-wide rate: each task splits its hours-per-unit across the
     // tiers, and each division sets its own billed $/hr per tier (these are
     // customer-facing bid rates, independent of what LEVELS/users.hourly_rate
     // actually pays the crew — see kinetic-flow-bid-creation-sheet-review
     // memory for why).
+    //
+    // UI labels are "Master Specialist" / "Trade Professional" /
+    // "Support & Prep" — deliberately NOT "Master"/"Fellow Craft"/
+    // "Apprentice" (LEVELS' own names, app.js). LEVELS is a worker's fixed
+    // career rank; these tiers describe what a *task* requires, a completely
+    // different axis. An apprentice-ranked worker can legitimately log hours
+    // against the Master Specialist tier on a task — reusing LEVELS' labels
+    // here would make that look like a contradiction instead of the normal
+    // case it is. Internal field/variable names below still use the short
+    // master/fellow/apprentice slugs (hrs_each_master etc.) purely as
+    // compact identifiers — only the user-facing text needed to change.
     var divRow = DB.getById('bid_divisions', state.currentDivisionId);
     var bidId  = divRow.bid_id;
     var bid    = DB.getById('bids', bidId);
@@ -538,15 +548,15 @@
             '</div>' +
             '<div class="form-row" style="margin-top:6px;">' +
             '<div class="form-group" style="margin:0; flex:1;">' +
-            '<label>Master Hrs/Ea</label>' +
+            '<label>Master Specialist Hrs/Ea</label>' +
             '<input type="number" min="0" step="0.25" value="' + (t.hrsEachMaster||'') + '" placeholder="0"' +
             ' oninput="window.divWorking.tasks[' + ti + '].hrsEachMaster=+this.value; window.bidRecalcDiv();"></div>' +
             '<div class="form-group" style="margin:0; flex:1;">' +
-            '<label>Fellow Craft Hrs/Ea</label>' +
+            '<label>Trade Professional Hrs/Ea</label>' +
             '<input type="number" min="0" step="0.25" value="' + (t.hrsEachFellow||'') + '" placeholder="0"' +
             ' oninput="window.divWorking.tasks[' + ti + '].hrsEachFellow=+this.value; window.bidRecalcDiv();"></div>' +
             '<div class="form-group" style="margin:0; flex:1;">' +
-            '<label>Apprentice Hrs/Ea</label>' +
+            '<label>Support &amp; Prep Hrs/Ea</label>' +
             '<input type="number" min="0" step="0.25" value="' + (t.hrsEachApprentice||'') + '" placeholder="0"' +
             ' oninput="window.divWorking.tasks[' + ti + '].hrsEachApprentice=+this.value; window.bidRecalcDiv();"></div>' +
             '</div>' +
