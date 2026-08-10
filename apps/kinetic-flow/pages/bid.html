@@ -95,6 +95,24 @@
         <p style="font-size:0.75rem; color:#64748b; margin:6px 0 0 0;">On-site days auto-sum from division sheets; est. completion auto-calculates from start + procurement + on-site working days (Mon&ndash;Fri). Override either if needed.</p>
     </div>
 
+    <!-- Mileage -->
+    <div class="section-header mt-2">
+        <span class="section-title">Mileage</span>
+    </div>
+    <div class="card" style="cursor:default; padding:12px; margin-bottom:16px;">
+        <div class="form-row">
+            <div class="form-group" style="margin:0; flex:1;">
+                <label>Miles to Site (one-way)</label>
+                <input type="number" id="hdr-miles" min="0" step="1">
+            </div>
+            <div class="form-group" style="margin:0; flex:1;">
+                <label>Mileage Rate ($/mile)</label>
+                <input type="number" id="hdr-mileage-rate" min="0" step="0.01">
+            </div>
+        </div>
+        <p style="font-size:0.75rem; color:#64748b; margin:6px 0 0 0;">Priced per round trip on each division's tasks — set trips per task on the division sheet.</p>
+    </div>
+
     <!-- Schedule of Payments -->
     <div class="section-header mt-2">
         <span class="section-title">Schedule of Payments</span>
@@ -168,6 +186,10 @@
         DB.update('bids', bidId, { expires_at: exp.toISOString().slice(0, 10) });
         bid = DB.getById('bids', bidId);
     }
+    if (bid.mileage_rate == null) {
+        DB.update('bids', bidId, { mileage_rate: DEFAULT_MILEAGE_RATE });
+        bid = DB.getById('bids', bidId);
+    }
     var job   = DB.getById('jobs', state.currentJobId);
     var customer = bid.customer_id ? DB.getById('customers', bid.customer_id) : null;
     var address  = bid.address_id ? DB.getById('addresses', bid.address_id) : null;
@@ -212,6 +234,8 @@
     document.getElementById('sched-build').value   = (bid.construction_days != null) ? bid.construction_days : '';
     document.getElementById('pay-m1').value        = bid.milestone_1 || '';
     document.getElementById('pay-m2').value         = bid.milestone_2 || '';
+    document.getElementById('hdr-miles').value        = bid.miles_to_site != null ? bid.miles_to_site : '';
+    document.getElementById('hdr-mileage-rate').value = bid.mileage_rate != null ? bid.mileage_rate : DEFAULT_MILEAGE_RATE;
 
     document.getElementById('hdr-date').addEventListener('input', function () { DB.update('bids', bidId, { created_at: this.value }); });
     document.getElementById('hdr-expires').addEventListener('input', function () { DB.update('bids', bidId, { expires_at: this.value }); });
@@ -269,6 +293,12 @@
     document.getElementById('sched-build').addEventListener('input', function () { DB.update('bids', bidId, { construction_days: +this.value || 0 }); recalcCompletion(); });
     document.getElementById('pay-m1').addEventListener('input', function () { DB.update('bids', bidId, { milestone_1: this.value }); });
     document.getElementById('pay-m2').addEventListener('input', function () { DB.update('bids', bidId, { milestone_2: this.value }); });
+    // Miles/rate feed each division sheet's per-task mileage math (see
+    // bid-division.html) — a division only picks up a change here the next
+    // time it's opened and saved, same as every other division-level rollup
+    // in this app (labor rate, guys on site).
+    document.getElementById('hdr-miles').addEventListener('input', function () { DB.update('bids', bidId, { miles_to_site: this.value === '' ? null : +this.value }); });
+    document.getElementById('hdr-mileage-rate').addEventListener('input', function () { DB.update('bids', bidId, { mileage_rate: +this.value || 0 }); });
 
     // ── Division rows — "included" now means "has a live bid_divisions row",
     // matched by division_name. Cost fields (labor_cost/material_cost) are
@@ -281,8 +311,8 @@
         });
     }
     function divTotal(row) {
-        var labor = row.labor_cost || 0, mat = row.material_cost || 0;
-        return labor + mat + labor * 0.10 + mat * 0.10;
+        var labor = row.labor_cost || 0, mat = row.material_cost || 0, mi = row.mileage_cost || 0;
+        return labor + mat + mi + labor * 0.10 + mat * 0.10 + mi * 0.10;
     }
     // Exposed for parity with the old window.calcDivTotal — nothing in this
     // app currently calls it cross-page, but keeping the name avoids
@@ -365,7 +395,7 @@
             DB.insert('bid_divisions', {
                 company_id: state.currentCompanyId, bid_id: bidId,
                 division_number: null, division_name: name,
-                form_data: {}, labor_cost: 0, material_cost: 0, required_kit_ids: [],
+                form_data: {}, labor_cost: 0, material_cost: 0, mileage_cost: 0, required_kit_ids: [],
             });
         }
         renderDivList();

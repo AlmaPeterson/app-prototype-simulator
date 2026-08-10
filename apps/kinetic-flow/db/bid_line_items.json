@@ -19,7 +19,11 @@
     "task_qty": null,
     "hrs_each": null,
     "supplier": null,
-    "deleted_at": null
+    "deleted_at": null,
+    "hrs_each_master": null,
+    "hrs_each_fellow_craft": null,
+    "hrs_each_apprentice": null,
+    "task_trips": null
   },
   {
     "id": "line-2",
@@ -41,7 +45,11 @@
     "task_qty": null,
     "hrs_each": null,
     "supplier": null,
-    "deleted_at": null
+    "deleted_at": null,
+    "hrs_each_master": null,
+    "hrs_each_fellow_craft": null,
+    "hrs_each_apprentice": null,
+    "task_trips": null
   },
   {
     "id": "line-3",
@@ -63,7 +71,11 @@
     "task_qty": null,
     "hrs_each": null,
     "supplier": null,
-    "deleted_at": null
+    "deleted_at": null,
+    "hrs_each_master": null,
+    "hrs_each_fellow_craft": null,
+    "hrs_each_apprentice": null,
+    "task_trips": null
   },
   {
     "id": "line-4",
@@ -85,7 +97,11 @@
     "task_qty": null,
     "hrs_each": null,
     "supplier": null,
-    "deleted_at": null
+    "deleted_at": null,
+    "hrs_each_master": null,
+    "hrs_each_fellow_craft": null,
+    "hrs_each_apprentice": null,
+    "task_trips": null
   },
   {
     "id": "line-5",
@@ -107,7 +123,11 @@
     "task_qty": null,
     "hrs_each": null,
     "supplier": null,
-    "deleted_at": null
+    "deleted_at": null,
+    "hrs_each_master": null,
+    "hrs_each_fellow_craft": null,
+    "hrs_each_apprentice": null,
+    "task_trips": null
   },
   {
     "id": "line-6",
@@ -129,7 +149,11 @@
     "task_qty": null,
     "hrs_each": null,
     "supplier": null,
-    "deleted_at": null
+    "deleted_at": null,
+    "hrs_each_master": null,
+    "hrs_each_fellow_craft": null,
+    "hrs_each_apprentice": null,
+    "task_trips": null
   },
   {
     "id": "line-7",
@@ -151,7 +175,11 @@
     "task_qty": null,
     "hrs_each": null,
     "supplier": null,
-    "deleted_at": null
+    "deleted_at": null,
+    "hrs_each_master": null,
+    "hrs_each_fellow_craft": null,
+    "hrs_each_apprentice": null,
+    "task_trips": null
   },
   {
     "id": "line-8",
@@ -173,7 +201,11 @@
     "task_qty": null,
     "hrs_each": null,
     "supplier": null,
-    "deleted_at": null
+    "deleted_at": null,
+    "hrs_each_master": null,
+    "hrs_each_fellow_craft": null,
+    "hrs_each_apprentice": null,
+    "task_trips": null
   },
   {
     "id": "line-9",
@@ -195,7 +227,11 @@
     "task_qty": null,
     "hrs_each": null,
     "supplier": null,
-    "deleted_at": null
+    "deleted_at": null,
+    "hrs_each_master": null,
+    "hrs_each_fellow_craft": null,
+    "hrs_each_apprentice": null,
+    "task_trips": null
   },
   {
     "id": "line-10",
@@ -217,7 +253,11 @@
     "task_qty": null,
     "hrs_each": null,
     "supplier": null,
-    "deleted_at": null
+    "deleted_at": null,
+    "hrs_each_master": null,
+    "hrs_each_fellow_craft": null,
+    "hrs_each_apprentice": null,
+    "task_trips": null
   },
   {
     "id": "line-11",
@@ -239,7 +279,11 @@
     "task_qty": null,
     "hrs_each": null,
     "supplier": null,
-    "deleted_at": null
+    "deleted_at": null,
+    "hrs_each_master": null,
+    "hrs_each_fellow_craft": null,
+    "hrs_each_apprentice": null,
+    "task_trips": null
   },
   {
     "id": "line-12",
@@ -261,7 +305,11 @@
     "task_qty": null,
     "hrs_each": null,
     "supplier": null,
-    "deleted_at": null
+    "deleted_at": null,
+    "hrs_each_master": null,
+    "hrs_each_fellow_craft": null,
+    "hrs_each_apprentice": null,
+    "task_trips": null
   },
   {
     "id": "line-13",
@@ -283,6 +331,10 @@
     "task_qty": null,
     "hrs_each": null,
     "supplier": null,
-    "deleted_at": null
+    "deleted_at": null,
+    "hrs_each_master": null,
+    "hrs_each_fellow_craft": null,
+    "hrs_each_apprentice": null,
+    "task_trips": null
   }
 ]

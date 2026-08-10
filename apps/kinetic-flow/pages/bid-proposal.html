@@ -87,8 +87,8 @@
         return new Date(iso.slice(0, 10) + 'T12:00:00').toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
     }
     function divTotal(row) {
-        var labor = row.labor_cost || 0, mat = row.material_cost || 0;
-        return labor + mat + labor * 0.10 + mat * 0.10;
+        var labor = row.labor_cost || 0, mat = row.material_cost || 0, mi = row.mileage_cost || 0;
+        return labor + mat + mi + labor * 0.10 + mat * 0.10 + mi * 0.10;
     }
 
     document.getElementById('prop-company-name').textContent = (company ? company.name : '').toUpperCase();

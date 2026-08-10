@@ -9,15 +9,24 @@
 
     <!-- Settings -->
     <div class="card" style="cursor:default; padding:12px; margin-bottom:12px;">
+        <label style="font-size:0.75rem; color:#64748b; font-weight:600; display:block; margin-bottom:6px;">Billed Labor Rates ($/hr)</label>
         <div class="form-row">
             <div class="form-group" style="margin:0; flex:1;">
-                <label>Labor Rate ($/hr)</label>
-                <input type="number" id="labor-rate" min="1" step="1">
+                <label id="rate-label-master">Master</label>
+                <input type="number" id="rate-master" min="0" step="1">
             </div>
             <div class="form-group" style="margin:0; flex:1;">
-                <label>Guys on Site</label>
-                <input type="number" id="guys-count" min="1" step="1">
+                <label id="rate-label-fellow">Fellow Craft</label>
+                <input type="number" id="rate-fellow" min="0" step="1">
             </div>
+            <div class="form-group" style="margin:0; flex:1;">
+                <label id="rate-label-apprentice">Apprentice</label>
+                <input type="number" id="rate-apprentice" min="0" step="1">
+            </div>
+        </div>
+        <div class="form-group" style="margin:8px 0 0 0; max-width:50%;">
+            <label>Guys on Site</label>
+            <input type="number" id="guys-count" min="1" step="1">
         </div>
     </div>
 
@@ -34,6 +43,14 @@
     <p style="font-size:0.78rem; color:#64748b; margin:0 0 8px 0;">Shown to the crew on Job Home so they know what to grab before heading out.</p>
     <input class="search-bar mb-2" type="text" id="div-kit-search" placeholder="Search kits &amp; carts..." oninput="window.filterDivKits(this.value)">
     <div id="div-kit-chips" style="margin-bottom:16px;"></div>
+
+    <!-- Crew -->
+    <div class="section-header">
+        <span class="section-title">Crew Assigned to This Division</span>
+        <button class="section-action" onclick="window.toggleDivCrewPicker()">+ Add</button>
+    </div>
+    <div id="div-crew-picker" class="card" style="cursor:default; margin-bottom:8px; display:none;"></div>
+    <div id="div-crew-list" style="margin-bottom:16px;"></div>
 
     <!-- Tasks -->
     <div class="section-header">
@@ -60,13 +77,23 @@
     // handful of nullable columns to preserve the task shape losslessly:
     //   task_key       — groups one labor row + N material rows into a task
     //   task_category, task_scope, task_included, qty_type, task_qty,
-    //   hrs_each       — the task's own fields, carried on its labor row
+    //   hrs_each_master/hrs_each_fellow_craft/hrs_each_apprentice,
+    //   task_trips     — the task's own fields, carried on its labor row
     //   supplier       — carried on material rows
     // Every task is stored as exactly one 'labor'-type row (representing the
     // task itself, even if its hours are 0) plus zero or more 'material'-type
     // rows sharing the same task_key — written by persistDivision() below.
+    //
+    // Labor is billed across three rate tiers (Master / Fellow Craft /
+    // Apprentice — same ladder as LEVELS, app.js) instead of one flat
+    // division-wide rate: each task splits its hours-per-unit across the
+    // tiers, and each division sets its own billed $/hr per tier (these are
+    // customer-facing bid rates, independent of what LEVELS/users.hourly_rate
+    // actually pays the crew — see kinetic-flow-bid-creation-sheet-review
+    // memory for why).
     var divRow = DB.getById('bid_divisions', state.currentDivisionId);
     var bidId  = divRow.bid_id;
+    var bid    = DB.getById('bids', bidId);
 
     var NAMES = companyDivisions(state.currentCompanyId)
         .filter(function (d) { return d.is_active; })
@@ -75,12 +102,17 @@
 
     var formData = divRow.form_data || {};
 
+    // Legacy single-rate divisions (form_data.laborRate, pre-tier schema)
+    // fall back to that one number for all three tiers; brand-new divisions
+    // default to the old flat 120 for all three, same starting point as
+    // before, adjustable per bid.
+    var legacyRate = formData.laborRate || 120;
+
     function buildTasksFromLineItems() {
         var items = DB.find('bid_line_items', function (li) {
             return li.bid_division_id === divRow.id && !li.deleted_at;
         }).slice().sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
 
-        var laborRate = formData.laborRate || 120;
         var groups = {};
         var order = [];
 
@@ -113,26 +145,33 @@
                 var m = g.legacyMaterial;
                 return {
                     category: '', name: m.description || '(legacy material)', included: true, scope: '',
-                    qtyType: 'EA', qty: 0, hrsEach: 0,
+                    qtyType: 'EA', qty: 0,
+                    hrsEachMaster: 0, hrsEachFellow: 0, hrsEachApprentice: 0, trips: 0,
                     materials: [{ item: m.description || '', supplier: m.supplier || '', price: m.unit_cost || 0, qty: m.quantity || 0 }],
                 };
             }
 
             var labor = g.labor;
-            var qtyType, qty, hrsEach;
-            if (labor.hrs_each != null) {
+            var qtyType, qty, hrsEachMaster, hrsEachFellow, hrsEachApprentice;
+            if (labor.hrs_each_master != null || labor.hrs_each_fellow_craft != null || labor.hrs_each_apprentice != null) {
                 qtyType = labor.qty_type || 'C';
                 qty = labor.task_qty != null ? labor.task_qty : (labor.quantity || 0);
-                hrsEach = labor.hrs_each;
+                hrsEachMaster     = labor.hrs_each_master || 0;
+                hrsEachFellow     = labor.hrs_each_fellow_craft || 0;
+                hrsEachApprentice = labor.hrs_each_apprentice || 0;
             } else {
-                // Legacy labor row: real seed data carries its own per-line
-                // $/hr rate (unit_cost), but this UI only has one shared
-                // laborRate per division. Back out an hrsEach so
-                // qty * hrsEach * laborRate reproduces this row's original
-                // line_total exactly under the division's shared rate.
+                // Legacy labor row (pre-tier schema): real seed data carries
+                // its own per-line $/hr rate (unit_cost), but this UI used to
+                // have only one shared laborRate per division. Back out an
+                // hrsEach so qty * hrsEach * legacyRate reproduces this row's
+                // original line_total exactly, and put all of it on the
+                // Fellow Craft tier — the "standard" middle tier, and the one
+                // that best matches what a flat single rate used to mean.
                 qtyType = 'HR';
                 qty = labor.quantity || 0;
-                hrsEach = laborRate ? (labor.unit_cost || 0) / laborRate : 0;
+                hrsEachMaster = 0;
+                hrsEachFellow = legacyRate ? (labor.unit_cost || 0) / legacyRate : 0;
+                hrsEachApprentice = 0;
             }
 
             return {
@@ -140,7 +179,9 @@
                 name: labor.description || '',
                 included: labor.task_included !== false,
                 scope: labor.task_scope || '',
-                qtyType: qtyType, qty: qty, hrsEach: hrsEach,
+                qtyType: qtyType, qty: qty,
+                hrsEachMaster: hrsEachMaster, hrsEachFellow: hrsEachFellow, hrsEachApprentice: hrsEachApprentice,
+                trips: labor.task_trips || 0,
                 materials: g.materials.map(function (m) {
                     return { item: m.description || '', supplier: m.supplier || '', price: m.unit_cost || 0, qty: m.quantity || 0 };
                 }),
@@ -153,7 +194,9 @@
     // Save (see window.saveDivision at the bottom).
     var div = {
         name: divRow.division_name,
-        laborRate: formData.laborRate || 120,
+        rateMaster:     formData.laborRateMaster     != null ? formData.laborRateMaster     : legacyRate,
+        rateFellow:      formData.laborRateFellowCraft != null ? formData.laborRateFellowCraft : legacyRate,
+        rateApprentice: formData.laborRateApprentice  != null ? formData.laborRateApprentice  : legacyRate,
         guys: formData.guys || 1,
         scope: formData.scope || '',
         tasks: buildTasksFromLineItems(),
@@ -166,18 +209,30 @@
     // below do — they need a window-scoped handle onto the same object.
     window.divWorking = div;
 
+    // Mileage: miles-to-site and $/mile are one trip-distance setting per bid
+    // (a bid is one job site), edited on bid.html — this page just reads them
+    // to price each task's round trips.
+    var milesToSite  = bid.miles_to_site || 0;
+    var mileageRate  = bid.mileage_rate  || 0;
+
     // Header
     document.getElementById('div-name-label').textContent = div.name;
     document.getElementById('div-num-label').textContent  = 'Division ' + (idx >= 0 ? idx + 1 : '?') + ' of ' + NAMES.length;
 
     // Populate settings
-    var rateEl  = document.getElementById('labor-rate');
+    var rateMasterEl     = document.getElementById('rate-master');
+    var rateFellowEl      = document.getElementById('rate-fellow');
+    var rateApprenticeEl = document.getElementById('rate-apprentice');
     var guysEl  = document.getElementById('guys-count');
     var scopeEl = document.getElementById('div-scope');
-    rateEl.value  = div.laborRate;
+    rateMasterEl.value     = div.rateMaster;
+    rateFellowEl.value      = div.rateFellow;
+    rateApprenticeEl.value = div.rateApprentice;
     guysEl.value  = div.guys;
     scopeEl.value = div.scope;
-    rateEl.addEventListener('input',  function() { div.laborRate = +this.value || 120; window.bidRecalcDiv(); });
+    rateMasterEl.addEventListener('input',     function() { div.rateMaster     = +this.value || 0; window.bidRecalcDiv(); });
+    rateFellowEl.addEventListener('input',      function() { div.rateFellow      = +this.value || 0; window.bidRecalcDiv(); });
+    rateApprenticeEl.addEventListener('input', function() { div.rateApprentice = +this.value || 0; window.bidRecalcDiv(); });
     guysEl.addEventListener('input',  function() { div.guys      = +this.value || 1;   window.bidRecalcDiv(); });
     scopeEl.addEventListener('input', function() { div.scope = this.value; });
 
@@ -191,23 +246,29 @@
     }
     function calcTask(t) {
         // Hours round to the nearest quarter hour (15 min) — matches how
-        // time is actually estimated/billed in the field.
-        var hrs = Math.round((t.qty || 0) * (t.hrsEach || 0) * 4) / 4;
-        var lc  = hrs * (div.laborRate || 120);
-        var mc  = (t.materials || []).reduce(function(s, m) { return s + (m.price||0)*(m.qty||0); }, 0);
-        return { hrs: hrs, lc: lc, mc: mc };
+        // time is actually estimated/billed in the field. Each tier's hours
+        // are tracked (and rounded) independently since they're billed at
+        // different rates.
+        var hrsM = Math.round((t.qty || 0) * (t.hrsEachMaster     || 0) * 4) / 4;
+        var hrsF = Math.round((t.qty || 0) * (t.hrsEachFellow      || 0) * 4) / 4;
+        var hrsA = Math.round((t.qty || 0) * (t.hrsEachApprentice || 0) * 4) / 4;
+        var hrs  = hrsM + hrsF + hrsA;
+        var lc   = hrsM * (div.rateMaster || 0) + hrsF * (div.rateFellow || 0) + hrsA * (div.rateApprentice || 0);
+        var mc   = (t.materials || []).reduce(function(s, m) { return s + (m.price||0)*(m.qty||0); }, 0);
+        var mic  = (t.trips || 0) * milesToSite * mileageRate;
+        return { hrsM: hrsM, hrsF: hrsF, hrsA: hrsA, hrs: hrs, lc: lc, mc: mc, mic: mic };
     }
     function calcDiv() {
-        var labor = 0, mat = 0, hours = 0;
+        var labor = 0, mat = 0, mileage = 0, hours = 0;
         (div.tasks || []).forEach(function(t) {
             if (!t.included) return;
             var c = calcTask(t);
-            labor += c.lc; mat += c.mc; hours += c.hrs;
+            labor += c.lc; mat += c.mc; mileage += c.mic; hours += c.hrs;
         });
-        var conL = labor * 0.10, conM = mat * 0.10;
-        var total = labor + mat + conL + conM;
+        var conL = labor * 0.10, conM = mat * 0.10, conMi = mileage * 0.10;
+        var total = labor + mat + mileage + conL + conM + conMi;
         var days = Math.ceil(hours / (8 * (div.guys || 1))) || 0;
-        return { labor:labor, mat:mat, hours:hours, days:days, conL:conL, conM:conM, total:total };
+        return { labor:labor, mat:mat, mileage:mileage, hours:hours, days:days, conL:conL, conM:conM, conMi:conMi, total:total };
     }
 
     // ── Stats display ─────────────────────────────────────────────────────
@@ -217,6 +278,7 @@
             '<span>Total: <strong style="color:#0f172a;" id="stat-total">' + fmt(c.total) + '</strong></span>' +
             '<span>Labor: <strong id="stat-labor">' + fmt(c.labor) + '</strong></span>' +
             '<span>Materials: <strong id="stat-mat">' + fmt(c.mat) + '</strong></span>' +
+            '<span>Mileage: <strong id="stat-mileage">' + fmt(c.mileage) + '</strong></span>' +
             '<span>Hours: <strong id="stat-hours">' + c.hours.toFixed(2) + '</strong></span>' +
             '<span>Days: <strong id="stat-days">' + c.days + '</strong></span>';
 
@@ -225,10 +287,12 @@
             var tc = calcTask(t);
             var hrsEl   = document.querySelector('[data-task-hrs="'   + ti + '"]');
             var lcEl    = document.querySelector('[data-task-lc="'    + ti + '"]');
+            var micEl   = document.querySelector('[data-task-mic="'   + ti + '"]');
             var totEl   = document.querySelector('[data-task-total="' + ti + '"]');
             if (hrsEl) hrsEl.textContent = tc.hrs.toFixed(2);
             if (lcEl)  lcEl.textContent  = fmt(tc.lc);
-            if (totEl) totEl.textContent = fmt(tc.lc + tc.mc);
+            if (micEl) micEl.textContent = fmt(tc.mic);
+            if (totEl) totEl.textContent = fmt(tc.lc + tc.mc + tc.mic);
             (t.materials || []).forEach(function(m, mi) {
                 var mEl = document.querySelector('[data-mat-total="' + ti + '-' + mi + '"]');
                 if (mEl) mEl.textContent = fmt((m.price||0)*(m.qty||0));
@@ -245,8 +309,10 @@
             '<div style="border:1px solid #e2e8f0; border-radius:6px; padding:12px; margin:12px 0;">' +
             '<div style="display:flex; justify-content:space-between; padding:3px 0; font-size:0.85rem;"><span>Labor Subtotal</span><span>' + fmt(c.labor) + '</span></div>' +
             '<div style="display:flex; justify-content:space-between; padding:3px 0; font-size:0.85rem;"><span>Materials Subtotal</span><span>' + fmt(c.mat) + '</span></div>' +
+            '<div style="display:flex; justify-content:space-between; padding:3px 0; font-size:0.85rem;"><span>Mileage Subtotal</span><span>' + fmt(c.mileage) + '</span></div>' +
             '<div style="display:flex; justify-content:space-between; padding:3px 0; font-size:0.85rem; color:#94a3b8;"><span>Contingency — Labor (10%)</span><span>' + fmt(c.conL) + '</span></div>' +
-            '<div style="display:flex; justify-content:space-between; padding:3px 0 8px 0; font-size:0.85rem; color:#94a3b8; border-bottom:1px solid #e2e8f0;"><span>Contingency — Materials (10%)</span><span>' + fmt(c.conM) + '</span></div>' +
+            '<div style="display:flex; justify-content:space-between; padding:3px 0; font-size:0.85rem; color:#94a3b8;"><span>Contingency — Materials (10%)</span><span>' + fmt(c.conM) + '</span></div>' +
+            '<div style="display:flex; justify-content:space-between; padding:3px 0 8px 0; font-size:0.85rem; color:#94a3b8; border-bottom:1px solid #e2e8f0;"><span>Contingency — Mileage (10%)</span><span>' + fmt(c.conMi) + '</span></div>' +
             '<div style="display:flex; justify-content:space-between; padding:8px 0 0 0;"><strong>Division Total</strong><strong style="color:#0f172a; font-size:1.05rem;">' + fmt(c.total) + '</strong></div>' +
             '</div>';
     }
@@ -304,6 +370,74 @@
         var i = div.requiredKitIds.indexOf(kitId);
         if (i === -1) div.requiredKitIds.push(kitId); else div.requiredKitIds.splice(i, 1);
         renderKitChips(document.getElementById('div-kit-search').value);
+    };
+
+    // ── Crew assigned to this division ──────────────────────────────────────
+    // Division-level, not per-task (matches how "Guys on Site" already works)
+    // — extends job_assignments with a nullable bid_division_id rather than a
+    // new table; null bid_division_id rows (today's job-wide assignments)
+    // are untouched and keep meaning "on this job" everywhere else that reads
+    // job_assignments (e.g. confirmCoSign, job-detail.html's team list).
+    function renderCrewList() {
+        var rows = DB.find('job_assignments', function (a) {
+            return a.job_id === state.currentJobId && a.bid_division_id === divRow.id;
+        });
+        var html = rows.map(function (a, i) {
+            var user = DB.getById('users', a.user_id);
+            if (!user) return '';
+            var isLast = i === rows.length - 1;
+            return '<div class="list-item" style="padding:6px 0;' + (isLast ? ' border-bottom:none;' : '') + '">' +
+                '<div class="list-item-body"><div class="list-item-title">' + esc(user.full_name) + '</div></div>' +
+                '<button class="btn btn-secondary btn-sm" style="margin:0;" onclick="window.removeDivCrew(\'' + a.id + '\')">Remove</button>' +
+                '</div>';
+        }).join('');
+        document.getElementById('div-crew-list').innerHTML = html ||
+            '<p style="font-size:0.78rem; color:#94a3b8; margin:0;">No one assigned to this division yet.</p>';
+    }
+
+    function renderCrewPicker() {
+        var assignedIds = DB.find('job_assignments', function (a) {
+            return a.job_id === state.currentJobId && a.bid_division_id === divRow.id;
+        }).map(function (a) { return a.user_id; });
+        var candidates = companyMemberUsers(state.currentCompanyId).filter(function (u) {
+            return assignedIds.indexOf(u.id) === -1;
+        });
+        var box = document.getElementById('div-crew-picker');
+        box.innerHTML = candidates.map(function (u, i) {
+            var isLast = i === candidates.length - 1;
+            return '<div class="list-item" style="padding:8px 0;' + (isLast ? ' border-bottom:none;' : '') + ' cursor:pointer;" onclick="window.addDivCrew(\'' + u.id + '\')">' +
+                '<div class="list-item-body"><div class="list-item-title">' + esc(u.full_name) + '</div></div>' +
+                '<span class="badge">+ Add</span>' +
+                '</div>';
+        }).join('') ||
+            '<div class="list-item" style="padding:8px 0; border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">Everyone in the company is already assigned.</div></div>';
+    }
+
+    window.toggleDivCrewPicker = function () {
+        var box = document.getElementById('div-crew-picker');
+        var show = box.style.display === 'none';
+        if (show) renderCrewPicker();
+        box.style.display = show ? 'block' : 'none';
+    };
+
+    window.addDivCrew = function (userId) {
+        DB.insert('job_assignments', {
+            company_id: state.currentCompanyId, job_id: state.currentJobId,
+            bid_division_id: divRow.id, user_id: userId,
+            role_on_job: 'member', assigned_at: new Date().toISOString(),
+        });
+        renderCrewList();
+        renderCrewPicker();
+    };
+
+    window.removeDivCrew = function (assignmentId) {
+        // Hard delete, not soft — job_assignments has no deleted_at column
+        // (every existing reader filters by job_id/user_id only, never
+        // deleted_at), so this matches the table's existing convention.
+        var rows = DB.get('job_assignments');
+        var i = rows.findIndex(function (a) { return a.id === assignmentId; });
+        if (i !== -1) rows.splice(i, 1);
+        renderCrewList();
     };
 
     // ── Materials HTML for one task ───────────────────────────────────────
@@ -367,7 +501,7 @@
             'style="font-size:0.92rem; font-weight:600; border:none; background:transparent; width:100%; padding:2px 0 0 0; outline:none;"' +
             ' oninput="window.divWorking.tasks[' + ti + '].name=this.value;">' +
             '</div>' +
-            '<strong data-task-total="' + ti + '" style="white-space:nowrap; color:#0f172a;">' + fmt(tc.lc + tc.mc) + '</strong>' +
+            '<strong data-task-total="' + ti + '" style="white-space:nowrap; color:#0f172a;">' + fmt(tc.lc + tc.mc + tc.mic) + '</strong>' +
             '<button onclick="window.removeTask(' + ti + ')" ' +
             'style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0; line-height:1;">&times;</button>' +
             '</div>' +
@@ -397,13 +531,29 @@
             '<input type="number" min="0" step="1" value="' + (t.qty||'') + '" placeholder="0"' +
             ' oninput="window.divWorking.tasks[' + ti + '].qty=+this.value; window.bidRecalcDiv();"></div>' +
             '<div class="form-group" style="margin:0; flex:1;">' +
-            '<label>Hrs / Each</label>' +
-            '<input type="number" min="0" step="0.25" value="' + (t.hrsEach||'') + '" placeholder="0"' +
-            ' oninput="window.divWorking.tasks[' + ti + '].hrsEach=+this.value; window.bidRecalcDiv();"></div>' +
+            '<label>Trips</label>' +
+            '<input type="number" min="0" step="1" value="' + (t.trips||'') + '" placeholder="0"' +
+            ' title="Round trips to the job site this task requires"' +
+            ' oninput="window.divWorking.tasks[' + ti + '].trips=+this.value; window.bidRecalcDiv();"></div>' +
             '</div>' +
-            '<div style="display:flex; gap:16px; font-size:0.85rem; margin-top:4px;">' +
+            '<div class="form-row" style="margin-top:6px;">' +
+            '<div class="form-group" style="margin:0; flex:1;">' +
+            '<label>Master Hrs/Ea</label>' +
+            '<input type="number" min="0" step="0.25" value="' + (t.hrsEachMaster||'') + '" placeholder="0"' +
+            ' oninput="window.divWorking.tasks[' + ti + '].hrsEachMaster=+this.value; window.bidRecalcDiv();"></div>' +
+            '<div class="form-group" style="margin:0; flex:1;">' +
+            '<label>Fellow Craft Hrs/Ea</label>' +
+            '<input type="number" min="0" step="0.25" value="' + (t.hrsEachFellow||'') + '" placeholder="0"' +
+            ' oninput="window.divWorking.tasks[' + ti + '].hrsEachFellow=+this.value; window.bidRecalcDiv();"></div>' +
+            '<div class="form-group" style="margin:0; flex:1;">' +
+            '<label>Apprentice Hrs/Ea</label>' +
+            '<input type="number" min="0" step="0.25" value="' + (t.hrsEachApprentice||'') + '" placeholder="0"' +
+            ' oninput="window.divWorking.tasks[' + ti + '].hrsEachApprentice=+this.value; window.bidRecalcDiv();"></div>' +
+            '</div>' +
+            '<div style="display:flex; gap:16px; font-size:0.85rem; margin-top:4px; flex-wrap:wrap;">' +
             '<span>Total Hrs: <strong data-task-hrs="' + ti + '">' + tc.hrs.toFixed(2) + '</strong></span>' +
             '<span>Labor Cost: <strong data-task-lc="'  + ti + '">' + fmt(tc.lc) + '</strong></span>' +
+            '<span>Mileage: <strong data-task-mic="' + ti + '">' + fmt(tc.mic) + '</strong></span>' +
             '</div>' +
             '</div>' +
 
@@ -439,7 +589,10 @@
     // unlike the card markup's inline oninput/onclick attributes above,
     // which go through window.divWorking instead (see its declaration up top).
     window.addTask = function() {
-        div.tasks.push({ category:'', name:'', included:true, scope:'', qtyType:'C', qty:0, hrsEach:0, materials:[] });
+        div.tasks.push({
+            category:'', name:'', included:true, scope:'', qtyType:'C', qty:0,
+            hrsEachMaster:0, hrsEachFellow:0, hrsEachApprentice:0, trips:0, materials:[],
+        });
         renderTasks();
     };
     window.removeTask = function(ti) {
@@ -458,36 +611,43 @@
     };
 
     // ── Save: flatten the working `div` object back into real bid_line_items
-    // rows, recompute this division's labor_cost/material_cost rollup, then
-    // bubble the bid-level rollup via the shared app.js helper. Shadows
-    // app.js's window.saveDivision for as long as this page is displayed —
-    // same pattern this file already uses for addTask/bidRecalcDiv/etc.
+    // rows, recompute this division's labor_cost/material_cost/mileage_cost
+    // rollup, then bubble the bid-level rollup via the shared app.js helper.
+    // Shadows app.js's window.saveDivision for as long as this page is
+    // displayed — same pattern this file already uses for
+    // addTask/bidRecalcDiv/etc.
     window.saveDivision = function() {
         var old = DB.find('bid_line_items', function (li) {
             return li.bid_division_id === divRow.id && !li.deleted_at;
         });
         old.forEach(function (li) { DB.softDelete('bid_line_items', li.id); });
 
-        var laborRate = div.laborRate || 120;
         var sortOrder = 0;
-        var laborTotal = 0, materialTotal = 0;
+        var laborTotal = 0, materialTotal = 0, mileageTotal = 0;
 
         div.tasks.forEach(function (t, ti) {
             var taskKey = 'task-' + ti;
-            // Same quarter-hour rounding as calcTask(), so what's persisted
-            // matches what the page displayed.
-            var hrs = Math.round((t.qty || 0) * (t.hrsEach || 0) * 4) / 4;
-            var laborLineTotal = hrs * laborRate;
+            var tc = calcTask(t);
             var matSum = 0;
             (t.materials || []).forEach(function (m) { matSum += (m.price || 0) * (m.qty || 0); });
 
+            // quantity/unit_cost keep carrying "total hours"/"blended $/hr"
+            // on the labor row (not per-tier) — several other pages
+            // (bid.html's autoOnsiteDays, bid-proposal.html/generateBidPdf's
+            // day-count math, generateScheduleFromBid) read li.quantity
+            // directly as this task's hours and don't need to know about
+            // tiers; the tier breakdown lives in the hrs_each_* columns.
             DB.insert('bid_line_items', {
                 company_id: state.currentCompanyId, bid_division_id: divRow.id,
-                description: t.name || '', quantity: hrs, unit: 'hr', unit_cost: laborRate,
-                line_total: laborLineTotal, type: 'labor', sort_order: sortOrder++,
+                description: t.name || '', quantity: tc.hrs, unit: 'hr',
+                unit_cost: tc.hrs ? (tc.lc / tc.hrs) : 0,
+                line_total: tc.lc, type: 'labor', sort_order: sortOrder++,
                 task_key: taskKey, task_category: t.category || null, task_scope: t.scope || null,
                 task_included: !!t.included, qty_type: t.qtyType || null, task_qty: t.qty || 0,
-                hrs_each: t.hrsEach || 0, supplier: null,
+                hrs_each: null,
+                hrs_each_master: t.hrsEachMaster || 0, hrs_each_fellow_craft: t.hrsEachFellow || 0,
+                hrs_each_apprentice: t.hrsEachApprentice || 0, task_trips: t.trips || 0,
+                supplier: null,
             });
 
             (t.materials || []).forEach(function (m) {
@@ -496,18 +656,23 @@
                     description: m.item || '', quantity: m.qty || 0, unit: 'each', unit_cost: m.price || 0,
                     line_total: (m.price || 0) * (m.qty || 0), type: 'material', sort_order: sortOrder++,
                     task_key: taskKey, task_category: null, task_scope: null,
-                    task_included: null, qty_type: null, task_qty: null, hrs_each: null,
+                    task_included: null, qty_type: null, task_qty: null,
+                    hrs_each: null, hrs_each_master: null, hrs_each_fellow_craft: null, hrs_each_apprentice: null, task_trips: null,
                     supplier: m.supplier || null,
                 });
             });
 
-            if (t.included) { laborTotal += laborLineTotal; materialTotal += matSum; }
+            if (t.included) { laborTotal += tc.lc; materialTotal += matSum; mileageTotal += tc.mic; }
         });
 
         DB.update('bid_divisions', divRow.id, {
             labor_cost: laborTotal,
             material_cost: materialTotal,
-            form_data: { scope: div.scope || '', laborRate: laborRate, guys: div.guys || 1 },
+            mileage_cost: mileageTotal,
+            form_data: {
+                scope: div.scope || '', guys: div.guys || 1,
+                laborRateMaster: div.rateMaster, laborRateFellowCraft: div.rateFellow, laborRateApprentice: div.rateApprentice,
+            },
             required_kit_ids: div.requiredKitIds,
         });
 
@@ -517,6 +682,7 @@
 
     renderTasks();
     renderKitChips();
+    renderCrewList();
 
 })();
 </script>

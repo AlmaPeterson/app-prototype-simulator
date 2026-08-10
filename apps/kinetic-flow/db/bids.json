@@ -28,7 +28,9 @@
     "procurement_days": 10,
     "construction_days": null,
     "milestone_1": null,
-    "milestone_2": null
+    "milestone_2": null,
+    "miles_to_site": null,
+    "mileage_rate": 0.67
   },
   {
     "id": "bid-northview",
@@ -59,7 +61,9 @@
     "procurement_days": 10,
     "construction_days": null,
     "milestone_1": null,
-    "milestone_2": null
+    "milestone_2": null,
+    "miles_to_site": null,
+    "mileage_rate": 0.67
   },
   {
     "id": "bid-summit",
@@ -90,6 +94,8 @@
     "procurement_days": 10,
     "construction_days": null,
     "milestone_1": null,
-    "milestone_2": null
+    "milestone_2": null,
+    "miles_to_site": null,
+    "mileage_rate": 0.67
   }
 ]

@@ -14,7 +14,8 @@
     "required_kit_ids": [
       "kit-hvac-install-kit",
       "kit-hvac-kit"
-    ]
+    ],
+    "mileage_cost": 0
   },
   {
     "id": "biddiv-2",
@@ -31,7 +32,8 @@
     "required_kit_ids": [
       "kit-basic-electrical-kit",
       "kit-electrical-cart-01"
-    ]
+    ],
+    "mileage_cost": 0
   },
   {
     "id": "biddiv-3",
@@ -48,7 +50,8 @@
     "required_kit_ids": [
       "kit-basic-plumbing-kit",
       "kit-plumbing-cart-01"
-    ]
+    ],
+    "mileage_cost": 0
   },
   {
     "id": "biddiv-4",
@@ -65,6 +68,7 @@
     "required_kit_ids": [
       "kit-basic-electrical-kit",
       "kit-electrical-cart-01"
-    ]
+    ],
+    "mileage_cost": 0
   }
 ]

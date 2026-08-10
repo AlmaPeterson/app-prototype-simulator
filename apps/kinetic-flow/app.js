@@ -17,7 +17,7 @@ const STORAGE_KEY = 'kineticFlow.state';
 // Bump whenever db/*.json seed data or table shapes change: restoreState()
 // discards localStorage DB snapshots from older versions and re-fetches the
 // fresh seeds, so users don't need a manual "Reset Demo Data".
-const DB_VERSION = 16;
+const DB_VERSION = 17;
 
 // ── App State ──────────────────────────────────────────────────────────────
 const state = {
@@ -1219,6 +1219,11 @@ function nextBidNumber() {
 // validity window from the bid date, standard 30 days.
 const BID_VALIDITY_DAYS = 30;
 
+// IRS-style standard mileage rate — a sane default $/mile for a brand-new
+// bid; fully editable per bid on bid.html (a job with an unusually far or
+// close site should override it there, not here).
+const DEFAULT_MILEAGE_RATE = 0.67;
+
 function openBid() {
     const job = DB.getById('jobs', state.currentJobId);
     let bid = job.bid_id ? DB.getById('bids', job.bid_id) : null;
@@ -1231,9 +1236,10 @@ function openBid() {
             title: job.name + ' — Bid', status: 'draft',
             bid_number: nextBidNumber(),
             expires_at: expires.toISOString().slice(0, 10),
-            total_labor: 0, total_materials: 0, total_cost: 0,
+            total_labor: 0, total_materials: 0, total_mileage: 0, total_cost: 0,
             created_by: state.currentUserId, sent_at: null, signed_at: null,
             signature_url: null, notes: null,
+            miles_to_site: null, mileage_rate: DEFAULT_MILEAGE_RATE,
         });
         DB.update('jobs', job.id, { bid_id: bid.id });
     }
@@ -1333,8 +1339,8 @@ function generateBidPdf(bid) {
 
     function money(n) { return '$' + (n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
     function divTotal(row) {
-        const labor = row.labor_cost || 0, mat = row.material_cost || 0;
-        return labor + mat + labor * 0.10 + mat * 0.10;
+        const labor = row.labor_cost || 0, mat = row.material_cost || 0, mi = row.mileage_cost || 0;
+        return labor + mat + mi + labor * 0.10 + mat * 0.10 + mi * 0.10;
     }
     const grandTotal = divisions.reduce(function (s, d) { return s + divTotal(d); }, 0);
     const totalDays = bid.construction_days || divisions.reduce(function (sum, row) {
@@ -1444,15 +1450,17 @@ function downloadBidPdf() {
 // two places that can change a division's labor_cost/material_cost.
 function recalcBidTotals(bidId) {
     const divisions = DB.find('bid_divisions', function (d) { return d.bid_id === bidId && !d.deleted_at; });
-    let labor = 0, materials = 0;
+    let labor = 0, materials = 0, mileage = 0;
     divisions.forEach(function (d) {
         labor += d.labor_cost || 0;
         materials += d.material_cost || 0;
+        mileage += d.mileage_cost || 0;
     });
     return DB.update('bids', bidId, {
         total_labor: labor,
         total_materials: materials,
-        total_cost: labor + materials,
+        total_mileage: mileage,
+        total_cost: labor + materials + mileage,
     });
 }
 
@@ -2815,7 +2823,7 @@ function activate() {
         openCompanyDivisions,
         companyLocations, findOrCreateLocation,
         openJob, createJob, submitJob,
-        openBid, submitBid, recalcBidTotals, sendBidToCustomer, downloadBidPdf, nextBidNumber,
+        openBid, submitBid, recalcBidTotals, sendBidToCustomer, downloadBidPdf, nextBidNumber, DEFAULT_MILEAGE_RATE,
         openDivision, saveDivision, previewProposal,
         openSchedule, generateScheduleFromBid, openTimeSheet, openKits, openLabelGenerator, openFieldClock, openInventory,
         openScorecard, openMyScorecard, submitScorecard, isManagerOrAdmin, pendingSelfScorecard,

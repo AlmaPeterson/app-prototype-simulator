@@ -5,7 +5,8 @@
     "job_id": "job-riverside-hvac",
     "user_id": "user-master",
     "role_on_job": "lead",
-    "assigned_at": "2026-06-04T12:00:00Z"
+    "assigned_at": "2026-06-04T12:00:00Z",
+    "bid_division_id": null
   },
   {
     "id": "assign-2",
@@ -13,7 +14,8 @@
     "job_id": "job-riverside-hvac",
     "user_id": "user-fellowcraft1",
     "role_on_job": "member",
-    "assigned_at": "2026-06-04T12:00:00Z"
+    "assigned_at": "2026-06-04T12:00:00Z",
+    "bid_division_id": null
   },
   {
     "id": "assign-3",
@@ -21,7 +23,8 @@
     "job_id": "job-riverside-hvac",
     "user_id": "user-apprentice1",
     "role_on_job": "member",
-    "assigned_at": "2026-06-05T12:00:00Z"
+    "assigned_at": "2026-06-05T12:00:00Z",
+    "bid_division_id": null
   },
   {
     "id": "assign-4",
@@ -29,7 +32,8 @@
     "job_id": "job-northview-plumbing",
     "user_id": "user-fellowcraft2",
     "role_on_job": "lead",
-    "assigned_at": "2026-05-17T12:00:00Z"
+    "assigned_at": "2026-05-17T12:00:00Z",
+    "bid_division_id": null
   },
   {
     "id": "assign-5",
@@ -37,7 +41,8 @@
     "job_id": "job-northview-plumbing",
     "user_id": "user-apprentice2",
     "role_on_job": "member",
-    "assigned_at": "2026-05-18T12:00:00Z"
+    "assigned_at": "2026-05-18T12:00:00Z",
+    "bid_division_id": null
   },
   {
     "id": "assign-6",
@@ -45,7 +50,8 @@
     "job_id": "job-summit-wiring",
     "user_id": "user-manager",
     "role_on_job": "lead",
-    "assigned_at": "2026-05-08T12:00:00Z"
+    "assigned_at": "2026-05-08T12:00:00Z",
+    "bid_division_id": null
   },
   {
     "id": "assign-7",
@@ -53,7 +59,8 @@
     "job_id": "job-summit-wiring",
     "user_id": "user-fellowcraft1",
     "role_on_job": "member",
-    "assigned_at": "2026-05-09T12:00:00Z"
+    "assigned_at": "2026-05-09T12:00:00Z",
+    "bid_division_id": null
   },
   {
     "id": "assign-8",
@@ -61,6 +68,7 @@
     "job_id": "job-summit-wiring",
     "user_id": "user-apprentice1",
     "role_on_job": "member",
-    "assigned_at": "2026-05-10T12:00:00Z"
+    "assigned_at": "2026-05-10T12:00:00Z",
+    "bid_division_id": null
   }
 ]
