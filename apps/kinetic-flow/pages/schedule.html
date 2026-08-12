@@ -126,10 +126,16 @@
         // Skip the per-row job name once the grid is already scoped to one
         // job (see jobFilter) — it'd just repeat the subtitle on every row.
         var showJobName = job && job.id !== state.currentJobId;
-        var cellStyle = 'padding:8px 6px; border-bottom:1px solid #f1f5f9; min-width:0; position:sticky; left:0; z-index:1; background:#fff;' + (job ? ' cursor:pointer;' : '');
+        // Re-checked on every render (not stored) — a dependency's date or a
+        // linked material order's status can change after this row was
+        // created, so the flag has to reflect current state, not the state
+        // at save time (see scheduleStartBlockers() in app.js).
+        var blockers = scheduleStartBlockers(e.start_date, e.dependency_id, e.lag_days, e.material_order_id);
+        var cellStyle = 'padding:8px 6px; border-bottom:1px solid #f1f5f9; min-width:0; position:sticky; left:0; z-index:1; background:#fff;' + (job ? ' cursor:pointer;' : '')
+            + (blockers.length ? ' border-left:3px solid #dc2626;' : '');
         var clickAttr = job ? ' onclick="openJob(\'' + esc(job.id) + '\')"' : '';
-        var html = '<div' + clickAttr + ' style="' + cellStyle + '">' +
-            '<div style="font-weight:600; line-height:1.25; word-break:break-word;">' + esc(e.title) + '</div>' +
+        var html = '<div' + clickAttr + ' style="' + cellStyle + '"' + (blockers.length ? ' title="' + esc(blockers.join(' ')) + '"' : '') + '>' +
+            '<div style="font-weight:600; line-height:1.25; word-break:break-word;">' + (blockers.length ? '&#9888; ' : '') + esc(e.title) + '</div>' +
             (showJobName ? '<div style="color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(job.name) + '</div>' : '') +
             '</div>';
         dayIsos.forEach(function (iso) {
@@ -263,6 +269,28 @@
         renderGrid();
     };
 
+    // Dependency/material pickers are scoped to whichever job is selected in
+    // the Job field — an event can only sensibly depend on another event or
+    // delivery from the same job, and re-running this on every Job change
+    // (see the select's onchange below) keeps the two lists honest instead
+    // of showing cross-job choices that would never pass scheduleStartBlockers().
+    function scRefreshDependencyOptions() {
+        var jobId = document.getElementById('sc-job').value;
+        var depSelect = document.getElementById('sc-dependency');
+        var matSelect = document.getElementById('sc-material');
+        if (!depSelect || !matSelect) return;
+        var deps = jobId ? DB.find('schedule_events', function (e) { return !e.deleted_at && e.job_id === jobId && e.view_type === 'worker'; }) : [];
+        depSelect.innerHTML = '<option value="">None</option>' + deps.map(function (e) {
+            return '<option value="' + esc(e.id) + '">' + esc(e.title) + ' (ends ' + esc(e.end_date) + ')</option>';
+        }).join('');
+        var orders = jobId ? materialOrdersForJob(jobId) : [];
+        matSelect.innerHTML = '<option value="">None</option>' + orders.map(function (o) {
+            return '<option value="' + esc(o.id) + '">' + esc(o.name) + ' (' + MATERIAL_ORDER_STATUS_LABELS[o.status] + ')</option>';
+        }).join('');
+        depSelect.disabled = matSelect.disabled = !jobId;
+    }
+    window.scRefreshDependencyOptions = scRefreshDependencyOptions;
+
     // Real insert path: a bottom sheet that writes a schedule_events row the
     // same shape as the seeded ones, defaulting to the Monday of the
     // currently viewed week (no "today" concept — see WEEK_START note above).
@@ -283,16 +311,20 @@
                 '<div class="modal-handle"></div>' +
                 '<div class="page-title-sm mb-2">New Schedule Entry</div>' +
                 '<div class="form-group"><label>Title</label><input type="text" id="sc-title" placeholder="e.g. Rough Electrical — Unit 4"></div>' +
-                '<div class="form-group"><label>Job</label><select id="sc-job">' + jobOptions + '</select></div>' +
+                '<div class="form-group"><label>Job</label><select id="sc-job" onchange="scRefreshDependencyOptions()">' + jobOptions + '</select></div>' +
                 '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">' +
                     '<div class="form-group"><label>Start</label><input type="date" id="sc-start" value="' + defaultDate + '"></div>' +
                     '<div class="form-group"><label>End</label><input type="date" id="sc-end" value="' + defaultDate + '"></div>' +
                 '</div>' +
+                '<div class="form-group"><label>Depends On</label><select id="sc-dependency"><option value="">None</option></select></div>' +
+                '<div class="form-group"><label>Lag (days after dependency finishes)</label><input type="number" id="sc-lag" min="0" step="1" value="0"></div>' +
+                '<div class="form-group"><label>Material Delivery (Next-Day Rule)</label><select id="sc-material"><option value="">None</option></select></div>' +
                 '<button class="btn btn-primary" onclick="saveScheduleEntry()">Add to Schedule</button>' +
                 '<button class="btn btn-secondary" onclick="closeCreateSchedule()">Cancel</button>' +
             '</div>';
         modal.addEventListener('click', function (e) { if (e.target === modal) window.closeCreateSchedule(); });
         document.getElementById('phone').appendChild(modal);
+        scRefreshDependencyOptions();
     };
 
     window.closeCreateSchedule = function () {
@@ -307,6 +339,11 @@
         var end = document.getElementById('sc-end').value || start;
         if (!start) { alert('Pick a start date.'); return; }
         if (end < start) { alert('End date can\'t be before the start date.'); return; }
+        var dependencyId = document.getElementById('sc-dependency').value || null;
+        var lagDays = parseInt(document.getElementById('sc-lag').value, 10) || 0;
+        var materialOrderId = document.getElementById('sc-material').value || null;
+        var blockers = scheduleStartBlockers(start, dependencyId, lagDays, materialOrderId);
+        if (blockers.length && !confirm(blockers.join('\n') + '\n\nSchedule it anyway?')) return;
         DB.insert('schedule_events', {
             company_id: state.currentCompanyId,
             branch_id: state.currentBranchId,
@@ -320,6 +357,9 @@
             view_type: state.role === 'customer' ? 'customer' : 'worker',
             color: '#2563eb',
             status: 'scheduled',
+            dependency_id: dependencyId,
+            lag_days: lagDays,
+            material_order_id: materialOrderId,
         });
         window.closeCreateSchedule();
         renderGrid();

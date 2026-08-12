@@ -17,7 +17,7 @@ const STORAGE_KEY = 'kineticFlow.state';
 // Bump whenever db/*.json seed data or table shapes change: restoreState()
 // discards localStorage DB snapshots from older versions and re-fetches the
 // fresh seeds, so users don't need a manual "Reset Demo Data".
-const DB_VERSION = 18;
+const DB_VERSION = 19;
 
 // ── App State ──────────────────────────────────────────────────────────────
 const state = {
@@ -73,7 +73,7 @@ const TABLES = [
     'training_assignments', 'job_history_library', 'finance_snapshots',
     'expense_entries', 'finance_dashboard_permissions', 'property_records',
     'phase_logs', 'system_state', 'label_templates',
-    'kit_debriefs', 'stewardship_logs',
+    'kit_debriefs', 'stewardship_logs', 'material_orders',
 ];
 
 let _tables = {};
@@ -379,7 +379,7 @@ function updateBottomNav() {
 
     const tabs = userIsSupplier() ? supplierNav : workerNav;
 
-    const jobPages = ['job-home', 'job-detail', 'job-detail-nobid', 'bid', 'bid-division', 'bid-proposal', 'create-job', 'job-closeout'];
+    const jobPages = ['job-home', 'job-detail', 'job-detail-nobid', 'bid', 'bid-division', 'bid-proposal', 'create-job', 'job-closeout', 'material-orders'];
     nav.innerHTML = tabs.map(t => {
         const isActive = state.currentPage === t.page
             || (t.page === 'jobs' && jobPages.includes(state.currentPage))
@@ -1172,7 +1172,20 @@ const DIVISIONS = [
     'Shower Glass and Mirrors', 'Floor Coverings — Phase 2', 'Final Clean', 'Final Building Inspections',
     'Exterior Hardscape & Irrigation Sleeves', 'Exterior Flatwork', 'Irrigation and Landscaping',
     'Exterior Electrical', 'Exterior Structures', 'Furnishings',
-].map(function (name) { return { name: name, isActive: true }; });
+]
+    // Best-effort real CSI MasterFormat 2-digit division numbers, same order
+    // as the names above (and as the seeded db/divisions.json rows) — see
+    // C5 in the gap analysis. A few (QA checkpoints like Pre-Drywall Sign-Off,
+    // temp-condition steps like Drywall Dry-Out) don't map to a trade
+    // division and land in 01 General Requirements, which is where
+    // administrative/procedural scope conventionally goes.
+    .map(function (name, i) {
+        const CSI_NUMBERS = [
+            1, 1, 1, 2, 31, 33, 3, 4, 6, 8, 23, 22, 26, 27, 7, 1, 9, 1, 23, 12,
+            6, 9, 6, 9, 9, 12, 26, 23, 27, 22, 11, 8, 9, 1, 1, 32, 32, 32, 26, 32, 12,
+        ];
+        return { name: name, isActive: true, csi: CSI_NUMBERS[i] };
+    });
 
 // The company's persisted division list, ordered. Lazily seeds the default
 // template for companies that have no rows yet, so every company is editable
@@ -1186,7 +1199,7 @@ function companyDivisions(companyId) {
     if (!result.length && companyId) {
         DIVISIONS.forEach(function (d, i) {
             DB.insert('divisions', {
-                company_id: companyId, division_number: null,
+                company_id: companyId, division_number: d.csi,
                 name: d.name, sort_order: i, is_active: true,
             });
         });
@@ -1428,6 +1441,12 @@ function generateScheduleFromBid(jobId) {
     const d0 = new Date(startIso + 'T12:00:00');
     while (d0.getDay() === 0 || d0.getDay() === 6) d0.setDate(d0.getDate() + 1);
     let cursor = d0.toISOString().slice(0, 10);
+    // Each generated row depends on the one immediately before it (0-day
+    // lag) — the run was already back-to-back by date, this just makes that
+    // sequencing a real, checkable dependency chain (C5) instead of an
+    // implicit one, so a later manual date edit gets flagged instead of
+    // silently breaking the order.
+    let previousEventId = null;
 
     tasks.forEach(function (t) {
         let end = cursor;
@@ -1438,7 +1457,7 @@ function generateScheduleFromBid(jobId) {
             return m.company_id === job.company_id
                 && (m.task_name || '').toLowerCase() === t.title.toLowerCase();
         });
-        DB.insert('schedule_events', {
+        const row = DB.insert('schedule_events', {
             company_id: job.company_id,
             branch_id: job.branch_id,
             job_id: job.id,
@@ -1451,10 +1470,110 @@ function generateScheduleFromBid(jobId) {
             view_type: 'worker',
             color: t.color,
             status: 'scheduled',
+            dependency_id: previousEventId,
+            lag_days: 0,
+            material_order_id: null,
         });
+        previousEventId = row.id;
         cursor = nextWorkDayIso(end);
     });
     return tasks.length;
+}
+
+// ── Material Lifecycle + Schedule Dependencies ──────────────────────────────
+// Closes the gap the client's emails hit three separate ways (CSI dependency/
+// lag scheduling, material delivery lifecycle, the Next-Day Rule): schedule
+// and materials didn't reference each other at all before this. One
+// dependency graph now covers both — a schedule_events row can depend on
+// another schedule_events row (a generic predecessor, with a configurable
+// lag) and/or a material_orders row (the delivery it needs, with a hard
+// 1-day-minimum lag that isn't configurable — that's the Next-Day Rule).
+
+const MATERIAL_ORDER_STATUSES = ['ordered', 'in_transit', 'landed', 'staged'];
+const MATERIAL_ORDER_STATUS_LABELS = { ordered: 'Ordered', in_transit: 'In-Transit', landed: 'Landed', staged: 'Staged' };
+// A small fixed pool to draw from when a status advance first needs a
+// carrier — simulated, same honesty-in-faking pattern as the QuickBooks
+// export and the PPE/kit-photo camera captures (no real shipping API here).
+const SIMULATED_CARRIERS = ['Mountain West Freight', 'Summit Supply Co.', 'Rocky Peak Logistics', 'Valley Building Supply'];
+
+function materialOrdersForJob(jobId) {
+    return DB.find('material_orders', function (o) { return o.job_id === jobId && !o.deleted_at; })
+        .sort(function (a, b) { return a.created_at < b.created_at ? -1 : 1; });
+}
+
+function createMaterialOrder(jobId, bidDivisionId, name, materialId, quantity, unit, expectedDeliveryDate) {
+    const job = DB.getById('jobs', jobId);
+    return DB.insert('material_orders', {
+        company_id: job.company_id, job_id: jobId, bid_division_id: bidDivisionId || null,
+        material_id: materialId || null, name: name, quantity: quantity || 1, unit: unit || 'each',
+        status: 'ordered', carrier: null, tracking_number: null,
+        ordered_at: new Date().toISOString(), expected_delivery_date: expectedDeliveryDate || null,
+        in_transit_at: null, landed_at: null, staged_at: null,
+    });
+}
+
+// Steps a material_orders row forward exactly one stage (ordered -> in_transit
+// -> landed -> staged). The carrier/tracking number is assigned once, on the
+// first advance, and stays put after — a re-shipment isn't modeled, matching
+// this prototype's "simulate the one common path" pattern elsewhere.
+function advanceMaterialOrder(orderId) {
+    const order = DB.getById('material_orders', orderId);
+    if (!order) return null;
+    const idx = MATERIAL_ORDER_STATUSES.indexOf(order.status);
+    if (idx === -1 || idx === MATERIAL_ORDER_STATUSES.length - 1) return order;
+    const next = MATERIAL_ORDER_STATUSES[idx + 1];
+    const now = new Date().toISOString();
+    const patch = { status: next };
+    if (next === 'in_transit') {
+        patch.carrier = SIMULATED_CARRIERS[Math.floor(Math.random() * SIMULATED_CARRIERS.length)];
+        patch.tracking_number = order.carrier ? order.tracking_number
+            : patch.carrier.slice(0, 3).toUpperCase().replace(/[^A-Z]/g, 'X') + '-' + Math.floor(10000000 + Math.random() * 89999999);
+        patch.in_transit_at = now;
+    } else if (next === 'landed') {
+        patch.landed_at = now;
+    } else if (next === 'staged') {
+        patch.staged_at = now;
+    }
+    return DB.update('material_orders', orderId, patch);
+}
+
+function addDaysIso(iso, days) {
+    const d = new Date(iso + 'T00:00:00');
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0, 10);
+}
+
+// The one guardrail both C5 (generic dependency/lag) and A9 (the Next-Day
+// Rule) reduce to: given a proposed start date and the two optional links a
+// schedule_events row can carry, what (if anything) blocks that start date?
+// Returns an array of human-readable reasons — empty means clear to schedule.
+// Used both to block saving a new/edited event and to flag an existing one
+// whose linked dependency/order state has since changed out from under it.
+function scheduleStartBlockers(startDate, dependencyId, lagDays, materialOrderId) {
+    const reasons = [];
+    if (dependencyId) {
+        const dep = DB.getById('schedule_events', dependencyId);
+        if (dep) {
+            const minStart = addDaysIso(dep.end_date, lagDays || 0);
+            if (startDate < minStart) {
+                reasons.push('Starts before "' + dep.title + '" finishes' + (lagDays ? ' + ' + lagDays + '-day lag' : '') + ' (needs ' + minStart + ' or later).');
+            }
+        }
+    }
+    if (materialOrderId) {
+        const order = DB.getById('material_orders', materialOrderId);
+        if (order) {
+            if (order.status !== 'staged') {
+                reasons.push('Materials for this task ("' + order.name + '") aren\'t Staged yet (currently ' + MATERIAL_ORDER_STATUS_LABELS[order.status] + ') — Next-Day Rule blocks scheduling labor against them until they are.');
+            } else {
+                const minStart = addDaysIso(order.staged_at.slice(0, 10), 1);
+                if (startDate < minStart) {
+                    reasons.push('Next-Day Rule: "' + order.name + '" was staged ' + order.staged_at.slice(0, 10) + ' — labor can\'t start before ' + minStart + '.');
+                }
+            }
+        }
+    }
+    return reasons;
 }
 
 // The customer never sees the app (QA note): everything they need — bid,
@@ -1811,6 +1930,7 @@ function openKits() { loadPage('kits'); }
 function openLabelGenerator() { loadPage('label-generator'); }
 function openFieldClock() { loadPage('field-clock'); }
 function openInventory() { loadPage('inventory'); }
+function openMaterialOrders() { loadPage('material-orders'); }
 
 // ── Scorecard ────────────────────────────────────────────────────────────────
 // Two-step flow: every worker fills out their own scorecard first (a
@@ -3225,6 +3345,8 @@ function activate() {
         switchTab, toggleChip,
         CUSTOMER_DEMO_JOB_ID, openCustomerProperty,
         generateInvoicesForBid, generateInvoiceForChangeOrder, ensureInvoicesForBid, nextInvoiceNumber,
+        MATERIAL_ORDER_STATUSES, MATERIAL_ORDER_STATUS_LABELS, materialOrdersForJob, createMaterialOrder,
+        advanceMaterialOrder, scheduleStartBlockers, openMaterialOrders, addDaysIso,
     });
 }
 

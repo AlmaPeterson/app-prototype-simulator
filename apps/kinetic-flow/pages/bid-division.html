@@ -237,7 +237,8 @@
 
     // Header
     document.getElementById('div-name-label').textContent = div.name;
-    document.getElementById('div-num-label').textContent  = 'Division ' + (idx >= 0 ? idx + 1 : '?') + ' of ' + NAMES.length;
+    document.getElementById('div-num-label').textContent  = 'Division ' + (idx >= 0 ? idx + 1 : '?') + ' of ' + NAMES.length +
+        (divRow.division_number ? ' · CSI ' + divRow.division_number : '');
 
     // Populate settings
     var rateMasterEl     = document.getElementById('rate-master');

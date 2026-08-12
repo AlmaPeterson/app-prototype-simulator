@@ -2,7 +2,7 @@
   {
     "id": "div-planning-design",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 1,
     "name": "Planning / Design",
     "sort_order": 0,
     "is_active": true,
@@ -13,7 +13,7 @@
   {
     "id": "div-site-prep",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 1,
     "name": "Site Prep",
     "sort_order": 1,
     "is_active": true,
@@ -24,7 +24,7 @@
   {
     "id": "div-temporary-utilities",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 1,
     "name": "Temporary Utilities",
     "sort_order": 2,
     "is_active": true,
@@ -35,7 +35,7 @@
   {
     "id": "div-demolition",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 2,
     "name": "Demolition",
     "sort_order": 3,
     "is_active": true,
@@ -46,7 +46,7 @@
   {
     "id": "div-excavation-and-trenching",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 31,
     "name": "Excavation and Trenching",
     "sort_order": 4,
     "is_active": true,
@@ -57,7 +57,7 @@
   {
     "id": "div-underground-utilities",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 33,
     "name": "Underground Utilities",
     "sort_order": 5,
     "is_active": true,
@@ -68,7 +68,7 @@
   {
     "id": "div-concrete",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 3,
     "name": "Concrete",
     "sort_order": 6,
     "is_active": true,
@@ -79,7 +79,7 @@
   {
     "id": "div-masonry",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 4,
     "name": "Masonry",
     "sort_order": 7,
     "is_active": true,
@@ -90,7 +90,7 @@
   {
     "id": "div-framing",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 6,
     "name": "Framing",
     "sort_order": 8,
     "is_active": true,
@@ -101,7 +101,7 @@
   {
     "id": "div-exterior-doors-and-windows",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 8,
     "name": "Exterior Doors and Windows",
     "sort_order": 9,
     "is_active": true,
@@ -112,7 +112,7 @@
   {
     "id": "div-rough-hvac",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 23,
     "name": "Rough HVAC",
     "sort_order": 10,
     "is_active": true,
@@ -123,7 +123,7 @@
   {
     "id": "div-rough-plumbing",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 22,
     "name": "Rough Plumbing",
     "sort_order": 11,
     "is_active": true,
@@ -134,7 +134,7 @@
   {
     "id": "div-rough-electrical",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 26,
     "name": "Rough Electrical",
     "sort_order": 12,
     "is_active": true,
@@ -145,7 +145,7 @@
   {
     "id": "div-low-voltage-data-rough-in",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 27,
     "name": "Low Voltage / Data Rough-In",
     "sort_order": 13,
     "is_active": true,
@@ -156,7 +156,7 @@
   {
     "id": "div-thermal-and-moisture-protect",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 7,
     "name": "Thermal and Moisture Protection",
     "sort_order": 14,
     "is_active": true,
@@ -167,7 +167,7 @@
   {
     "id": "div-pre-drywall-sign-off",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 1,
     "name": "Pre-Drywall Sign-Off",
     "sort_order": 15,
     "is_active": true,
@@ -178,7 +178,7 @@
   {
     "id": "div-drywall",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 9,
     "name": "Drywall",
     "sort_order": 16,
     "is_active": true,
@@ -189,7 +189,7 @@
   {
     "id": "div-drywall-dry-out-dehumidifica",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 1,
     "name": "Drywall Dry-Out & Dehumidification",
     "sort_order": 17,
     "is_active": true,
@@ -200,7 +200,7 @@
   {
     "id": "div-hvac-commissioning",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 23,
     "name": "HVAC Commissioning",
     "sort_order": 18,
     "is_active": true,
@@ -211,7 +211,7 @@
   {
     "id": "div-cultured-marble",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 12,
     "name": "Cultured Marble",
     "sort_order": 19,
     "is_active": true,
@@ -222,8 +222,8 @@
   {
     "id": "div-finish-carpentry-millwork-ph",
     "company_id": "company-kineticflow",
-    "division_number": null,
-    "name": "Finish Carpentry, Millwork — Phase 1",
+    "division_number": 6,
+    "name": "Finish Carpentry, Millwork \u2014 Phase 1",
     "sort_order": 20,
     "is_active": true,
     "created_at": "2024-06-01T12:00:00Z",
@@ -233,8 +233,8 @@
   {
     "id": "div-floor-coverings-phase-1",
     "company_id": "company-kineticflow",
-    "division_number": null,
-    "name": "Floor Coverings — Phase 1",
+    "division_number": 9,
+    "name": "Floor Coverings \u2014 Phase 1",
     "sort_order": 21,
     "is_active": true,
     "created_at": "2024-06-01T12:00:00Z",
@@ -244,8 +244,8 @@
   {
     "id": "div-finish-carpentry-phase-2",
     "company_id": "company-kineticflow",
-    "division_number": null,
-    "name": "Finish Carpentry — Phase 2",
+    "division_number": 6,
+    "name": "Finish Carpentry \u2014 Phase 2",
     "sort_order": 22,
     "is_active": true,
     "created_at": "2024-06-01T12:00:00Z",
@@ -255,7 +255,7 @@
   {
     "id": "div-painting",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 9,
     "name": "Painting",
     "sort_order": 23,
     "is_active": true,
@@ -266,7 +266,7 @@
   {
     "id": "div-epoxy-floor-coatings",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 9,
     "name": "Epoxy Floor Coatings",
     "sort_order": 24,
     "is_active": true,
@@ -277,7 +277,7 @@
   {
     "id": "div-countertops",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 12,
     "name": "Countertops",
     "sort_order": 25,
     "is_active": true,
@@ -288,7 +288,7 @@
   {
     "id": "div-finish-electrical",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 26,
     "name": "Finish Electrical",
     "sort_order": 26,
     "is_active": true,
@@ -299,7 +299,7 @@
   {
     "id": "div-finish-hvac",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 23,
     "name": "Finish HVAC",
     "sort_order": 27,
     "is_active": true,
@@ -310,7 +310,7 @@
   {
     "id": "div-finish-low-voltage-data",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 27,
     "name": "Finish Low Voltage / Data",
     "sort_order": 28,
     "is_active": true,
@@ -321,7 +321,7 @@
   {
     "id": "div-finish-plumbing",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 22,
     "name": "Finish Plumbing",
     "sort_order": 29,
     "is_active": true,
@@ -332,7 +332,7 @@
   {
     "id": "div-appliances-hardware-wall-spe",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 11,
     "name": "Appliances, Hardware & Wall Specialties",
     "sort_order": 30,
     "is_active": true,
@@ -343,7 +343,7 @@
   {
     "id": "div-shower-glass-and-mirrors",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 8,
     "name": "Shower Glass and Mirrors",
     "sort_order": 31,
     "is_active": true,
@@ -354,8 +354,8 @@
   {
     "id": "div-floor-coverings-phase-2",
     "company_id": "company-kineticflow",
-    "division_number": null,
-    "name": "Floor Coverings — Phase 2",
+    "division_number": 9,
+    "name": "Floor Coverings \u2014 Phase 2",
     "sort_order": 32,
     "is_active": true,
     "created_at": "2024-06-01T12:00:00Z",
@@ -365,7 +365,7 @@
   {
     "id": "div-final-clean",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 1,
     "name": "Final Clean",
     "sort_order": 33,
     "is_active": true,
@@ -376,7 +376,7 @@
   {
     "id": "div-final-building-inspections",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 1,
     "name": "Final Building Inspections",
     "sort_order": 34,
     "is_active": true,
@@ -387,7 +387,7 @@
   {
     "id": "div-exterior-hardscape-irrigatio",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 32,
     "name": "Exterior Hardscape & Irrigation Sleeves",
     "sort_order": 35,
     "is_active": true,
@@ -398,7 +398,7 @@
   {
     "id": "div-exterior-flatwork",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 32,
     "name": "Exterior Flatwork",
     "sort_order": 36,
     "is_active": true,
@@ -409,7 +409,7 @@
   {
     "id": "div-irrigation-and-landscaping",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 32,
     "name": "Irrigation and Landscaping",
     "sort_order": 37,
     "is_active": true,
@@ -420,7 +420,7 @@
   {
     "id": "div-exterior-electrical",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 26,
     "name": "Exterior Electrical",
     "sort_order": 38,
     "is_active": true,
@@ -431,7 +431,7 @@
   {
     "id": "div-exterior-structures",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 32,
     "name": "Exterior Structures",
     "sort_order": 39,
     "is_active": true,
@@ -442,7 +442,7 @@
   {
     "id": "div-furnishings",
     "company_id": "company-kineticflow",
-    "division_number": null,
+    "division_number": 12,
     "name": "Furnishings",
     "sort_order": 40,
     "is_active": true,

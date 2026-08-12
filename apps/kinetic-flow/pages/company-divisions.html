@@ -34,7 +34,10 @@
             html += '</div>';
 
             html += '<span style="color:#94a3b8; font-size:0.75rem; min-width:18px;">' + (i + 1) + '</span>';
-            html += '<input type="text" value="' + esc(d.name) + '" style="flex:1; border:none; background:transparent; font-weight:600; font-size:0.85rem; padding:4px 0;" onchange="window.renameCompanyDivision(\'' + jsArg(d.id) + '\', this.value)">';
+            html += '<input type="text" value="' + esc(d.name) + '" style="flex:1; min-width:0; border:none; background:transparent; font-weight:600; font-size:0.85rem; padding:4px 0;" onchange="window.renameCompanyDivision(\'' + jsArg(d.id) + '\', this.value)">';
+            html += '<input type="number" min="0" max="49" value="' + (d.division_number == null ? '' : d.division_number) + '" placeholder="CSI" title="CSI MasterFormat division number" ' +
+                'style="width:34px; flex-shrink:0; border:1.5px solid #e2e8f0; border-radius:6px; font-size:0.7rem; text-align:center; padding:4px 1px;" ' +
+                'onchange="window.setCompanyDivisionCsi(\'' + jsArg(d.id) + '\', this.value)">';
             html += '<div class="toggle-switch' + (d.is_active ? ' on' : '') + '" onclick="window.toggleCompanyDivisionActive(\'' + jsArg(d.id) + '\')"><div class="toggle-switch-knob"></div></div>';
             html += '<button class="text-link" style="color:#dc2626; font-size:0.75rem; white-space:nowrap;" onclick="window.removeCompanyDivision(\'' + jsArg(d.id) + '\')">Remove</button>';
 
@@ -78,6 +81,11 @@
     window.renameCompanyDivision = function (id, val) {
         val = val.trim();
         if (val) DB.update('divisions', id, { name: val });
+        render();
+    };
+    window.setCompanyDivisionCsi = function (id, val) {
+        var n = parseInt(val, 10);
+        DB.update('divisions', id, { division_number: isNaN(n) ? null : n });
         render();
     };
 

@@ -1,0 +1,117 @@
+<div class="page" style="padding-bottom:80px;">
+    <button class="btn btn-secondary btn-sm mb-4" onclick="openJob(state.currentJobId)">&larr; Job</button>
+
+    <div class="flex-between mb-4">
+        <div>
+            <div class="page-title">Material Deliveries</div>
+            <div class="page-subtitle" id="mo-job-subtitle"></div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="moShowCreate()">+ New Order</button>
+    </div>
+
+    <div id="mo-list"></div>
+</div>
+
+<script>
+(function () {
+    var jobId = state.currentJobId;
+    var job = jobId ? DB.getById('jobs', jobId) : null;
+    if (!job) {
+        document.getElementById('mo-list').innerHTML = '<div class="alert">No job selected.</div>';
+        return;
+    }
+    document.getElementById('mo-job-subtitle').textContent = job.name;
+
+    function divisionOptions(selectedId) {
+        var divs = DB.find('bid_divisions', function (d) { return d.bid_id === job.bid_id && !d.deleted_at; });
+        return '<option value="">No division</option>' + divs.map(function (d) {
+            return '<option value="' + esc(d.id) + '"' + (d.id === selectedId ? ' selected' : '') + '>' + esc(d.division_name) +
+                (d.division_number ? ' (CSI ' + d.division_number + ')' : '') + '</option>';
+        }).join('');
+    }
+
+    // The schedule_events row(s) currently pointing at an order — so a
+    // shop/PM can see what labor is waiting on a delivery, and so a blocked
+    // Next-Day Rule reads as concrete rather than abstract.
+    function scheduleEventsFor(orderId) {
+        return DB.find('schedule_events', function (e) { return e.material_order_id === orderId && !e.deleted_at; });
+    }
+
+    function orderCardHtml(o) {
+        var idx = MATERIAL_ORDER_STATUSES.indexOf(o.status);
+        var nextLabel = idx < MATERIAL_ORDER_STATUSES.length - 1 ? MATERIAL_ORDER_STATUS_LABELS[MATERIAL_ORDER_STATUSES[idx + 1]] : null;
+        var waitingOn = scheduleEventsFor(o.id);
+
+        var html = '<div class="card" style="cursor:default; margin-bottom:10px;">';
+        html += '<div class="flex-between mb-1">' +
+            '<div class="card-title" style="margin:0;">' + esc(o.name) + '</div>' +
+            '<span class="badge' + (o.status === 'staged' ? ' badge-green' : ' badge-gray') + '">' + MATERIAL_ORDER_STATUS_LABELS[o.status] + '</span>' +
+            '</div>';
+        html += '<div class="card-subtitle">' + o.quantity + ' ' + esc(o.unit) + (o.expected_delivery_date ? ' &bull; Expected ' + esc(o.expected_delivery_date) : '') + '</div>';
+        if (o.carrier) {
+            html += '<div style="font-size:0.75rem; color:#64748b; margin-top:4px;">' + esc(o.carrier) + ' &bull; ' + esc(o.tracking_number) + '</div>';
+        }
+        if (o.staged_at) {
+            html += '<div style="font-size:0.75rem; color:#64748b; margin-top:2px;">Staged ' + esc(o.staged_at.slice(0, 10)) + ' &mdash; labor can start ' + esc(addDaysIso(o.staged_at.slice(0, 10), 1)) + ' or later (Next-Day Rule).</div>';
+        }
+        if (waitingOn.length) {
+            html += '<div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Scheduled against: ' + waitingOn.map(function (e) { return esc(e.title); }).join(', ') + '</div>';
+        }
+        if (nextLabel) {
+            html += '<button class="btn btn-outline btn-sm mt-2" onclick="moAdvance(\'' + o.id + '\')">Advance to ' + nextLabel + '</button>';
+        }
+        html += '</div>';
+        return html;
+    }
+
+    function render() {
+        var orders = materialOrdersForJob(job.id);
+        document.getElementById('mo-list').innerHTML = orders.length
+            ? orders.map(orderCardHtml).join('')
+            : '<div class="alert">No material orders logged for this job yet.</div>';
+    }
+
+    window.moAdvance = function (orderId) {
+        advanceMaterialOrder(orderId);
+        render();
+    };
+
+    window.moShowCreate = function () {
+        var existing = document.getElementById('mo-create-panel');
+        if (existing) existing.remove();
+        var modal = document.createElement('div');
+        modal.id = 'mo-create-panel';
+        modal.className = 'modal-overlay';
+        modal.innerHTML =
+            '<div class="modal-sheet">' +
+                '<div class="modal-handle"></div>' +
+                '<div class="page-title-sm mb-2">New Material Order</div>' +
+                '<div class="form-group"><label>Material</label><input type="text" id="mo-name" placeholder="e.g. Copper Pipe 3/4in"></div>' +
+                '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">' +
+                    '<div class="form-group"><label>Quantity</label><input type="number" min="1" step="1" id="mo-qty" value="1"></div>' +
+                    '<div class="form-group"><label>Unit</label><input type="text" id="mo-unit" value="each"></div>' +
+                '</div>' +
+                '<div class="form-group"><label>Bid Division</label><select id="mo-division">' + divisionOptions(null) + '</select></div>' +
+                '<div class="form-group"><label>Expected Delivery</label><input type="date" id="mo-delivery"></div>' +
+                '<button class="btn btn-primary mt-2" onclick="moSaveCreate()">Log Order</button>' +
+                '<button class="btn btn-secondary" onclick="document.getElementById(\'mo-create-panel\').remove()">Cancel</button>' +
+            '</div>';
+        modal.addEventListener('click', function (e) { if (e.target === modal) modal.remove(); });
+        document.getElementById('phone').appendChild(modal);
+    };
+
+    window.moSaveCreate = function () {
+        var name = (document.getElementById('mo-name').value || '').trim();
+        if (!name) { alert('Enter what\'s being ordered.'); return; }
+        var qty = parseInt(document.getElementById('mo-qty').value, 10) || 1;
+        var unit = (document.getElementById('mo-unit').value || 'each').trim();
+        var divisionId = document.getElementById('mo-division').value || null;
+        var delivery = document.getElementById('mo-delivery').value || null;
+        createMaterialOrder(job.id, divisionId, name, null, qty, unit, delivery);
+        document.getElementById('mo-create-panel').remove();
+        render();
+    };
+
+    render();
+})();
+</script>

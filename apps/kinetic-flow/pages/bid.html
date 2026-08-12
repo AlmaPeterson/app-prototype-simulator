@@ -165,9 +165,15 @@
     // table via companyDivisions(), edited on company-divisions.html) rather
     // than a hardcoded array, so admins can add/remove/reorder/deactivate
     // divisions and every new bid picks up the change.
-    var NAMES = companyDivisions(state.currentCompanyId)
-        .filter(function (d) { return d.is_active; })
-        .map(function (d) { return d.name; });
+    var ALL_DIVISIONS = companyDivisions(state.currentCompanyId);
+    var NAMES = ALL_DIVISIONS.filter(function (d) { return d.is_active; }).map(function (d) { return d.name; });
+    // Real CSI MasterFormat number, carried from the company's division
+    // template onto each bid — this is what makes C5's "CSI divisions" show
+    // up on actual bid/schedule data, not just the settings screen.
+    function csiNumberFor(name) {
+        var d = ALL_DIVISIONS.find(function (d) { return d.name === name; });
+        return d ? d.division_number : null;
+    }
 
     var bidId = state.currentBidId;
     var bid   = DB.getById('bids', bidId);
@@ -394,7 +400,7 @@
         } else {
             DB.insert('bid_divisions', {
                 company_id: state.currentCompanyId, bid_id: bidId,
-                division_number: null, division_name: name,
+                division_number: csiNumberFor(name), division_name: name,
                 form_data: {}, labor_cost: 0, material_cost: 0, mileage_cost: 0, required_kit_ids: [],
             });
         }
