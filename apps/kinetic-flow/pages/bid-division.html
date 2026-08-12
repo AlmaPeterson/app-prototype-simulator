@@ -370,9 +370,11 @@
         var q = (query || '').trim().toLowerCase();
         var html = '';
         kitCategories.forEach(function (cat) {
-            var kits = !q ? cat.kits : cat.kits.filter(function (k) {
-                return k.name.toLowerCase().indexOf(q) !== -1 || cat.name.toLowerCase().indexOf(q) !== -1;
-            });
+            var kits = q
+                ? cat.kits.filter(function (k) {
+                    return k.name.toLowerCase().indexOf(q) !== -1 || cat.name.toLowerCase().indexOf(q) !== -1;
+                })
+                : cat.kits.filter(function (k) { return div.requiredKitIds.indexOf(k.id) !== -1; });
             if (kits.length === 0) return;
             html += '<div style="font-size:0.72rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.03em; margin:10px 0 4px;">' + esc(cat.name) + '</div>';
             html += '<div style="display:flex; flex-wrap:wrap; gap:6px;">' + kits.map(function (k) {
@@ -381,7 +383,12 @@
                     esc(k.name) + (k.kind === 'cart' ? ' (Cart)' : '') + '</div>';
             }).join('') + '</div>';
         });
-        el.innerHTML = html || '<p style="font-size:0.78rem; color:#94a3b8; margin:0;">No kits or carts match &quot;' + esc(query) + '&quot;.</p>';
+        if (!html) {
+            html = q
+                ? '<p style="font-size:0.78rem; color:#94a3b8; margin:0;">No kits or carts match &quot;' + esc(query) + '&quot;.</p>'
+                : '<p style="font-size:0.78rem; color:#94a3b8; margin:0;">No kits or carts selected yet. Search above to find and add some.</p>';
+        }
+        el.innerHTML = html;
     }
 
     window.filterDivKits = function (query) { renderKitChips(query); };
