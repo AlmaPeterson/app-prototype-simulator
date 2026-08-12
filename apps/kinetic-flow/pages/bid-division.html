@@ -112,11 +112,20 @@
 
     var formData = divRow.form_data || {};
 
+    // Default billed rates match the source Google Sheet's own per-tier
+    // rates (Master Consultation/High-risk/Engineer, Specialist Execution,
+    // Apprentice Prep/Task Support — shown as "500 PHR / 300 PHR / 120 PHR"
+    // in the sheet's per-division calculator). Fully editable per division.
+    var DEFAULT_RATE_MASTER = 500, DEFAULT_RATE_FELLOW = 300, DEFAULT_RATE_APPRENTICE = 120;
+
     // Legacy single-rate divisions (form_data.laborRate, pre-tier schema)
-    // fall back to that one number for all three tiers; brand-new divisions
-    // default to the old flat 120 for all three, same starting point as
-    // before, adjustable per bid.
-    var legacyRate = formData.laborRate || 120;
+    // fall back to that one saved number for all three tiers, so an already-
+    // priced division doesn't silently reprice itself; brand-new divisions
+    // (no laborRate ever saved) get the sheet's defaults above instead.
+    var oldFlatRate = formData.laborRate != null ? formData.laborRate : null;
+    var resolvedRateMaster     = formData.laborRateMaster     != null ? formData.laborRateMaster     : (oldFlatRate != null ? oldFlatRate : DEFAULT_RATE_MASTER);
+    var resolvedRateFellow      = formData.laborRateFellowCraft != null ? formData.laborRateFellowCraft : (oldFlatRate != null ? oldFlatRate : DEFAULT_RATE_FELLOW);
+    var resolvedRateApprentice = formData.laborRateApprentice  != null ? formData.laborRateApprentice  : (oldFlatRate != null ? oldFlatRate : DEFAULT_RATE_APPRENTICE);
 
     function buildTasksFromLineItems() {
         var items = DB.find('bid_line_items', function (li) {
@@ -173,14 +182,17 @@
                 // Legacy labor row (pre-tier schema): real seed data carries
                 // its own per-line $/hr rate (unit_cost), but this UI used to
                 // have only one shared laborRate per division. Back out an
-                // hrsEach so qty * hrsEach * legacyRate reproduces this row's
-                // original line_total exactly, and put all of it on the
+                // hrsEach — using resolvedRateFellow, the same rate that
+                // ends up in div.rateFellow below — so
+                // qty * hrsEach * div.rateFellow reproduces this row's
+                // original line_total exactly regardless of what that
+                // resolved rate turns out to be, and put all of it on the
                 // Fellow Craft tier — the "standard" middle tier, and the one
                 // that best matches what a flat single rate used to mean.
                 qtyType = 'HR';
                 qty = labor.quantity || 0;
                 hrsEachMaster = 0;
-                hrsEachFellow = legacyRate ? (labor.unit_cost || 0) / legacyRate : 0;
+                hrsEachFellow = resolvedRateFellow ? (labor.unit_cost || 0) / resolvedRateFellow : 0;
                 hrsEachApprentice = 0;
             }
 
@@ -204,9 +216,7 @@
     // Save (see window.saveDivision at the bottom).
     var div = {
         name: divRow.division_name,
-        rateMaster:     formData.laborRateMaster     != null ? formData.laborRateMaster     : legacyRate,
-        rateFellow:      formData.laborRateFellowCraft != null ? formData.laborRateFellowCraft : legacyRate,
-        rateApprentice: formData.laborRateApprentice  != null ? formData.laborRateApprentice  : legacyRate,
+        rateMaster: resolvedRateMaster, rateFellow: resolvedRateFellow, rateApprentice: resolvedRateApprentice,
         guys: formData.guys || 1,
         scope: formData.scope || '',
         tasks: buildTasksFromLineItems(),
