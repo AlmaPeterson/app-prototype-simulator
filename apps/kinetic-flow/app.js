@@ -40,6 +40,7 @@ const state = {
     // edited on bid-division.html (set by openDivision()).
     currentBidId: null,
     currentDivisionId: null,
+    currentChangeOrderId: null, // change_orders row being edited on change-order.html (set by openChangeOrder()/createChangeOrder())
     simulateOffsite: false,   // field-clock GPS simulator: true = pretend the phone is ~2 km from the job site
     timesheetNote: null,      // draft "Notes for Supervisor" text from review-time.html, kept across visits until submit
     customerJobId: null,      // customer mode: the property (job) opened from the customer-links picker
@@ -62,7 +63,7 @@ const state = {
 const TABLES = [
     'companies', 'branches', 'users', 'roles', 'user_roles', 'customers',
     'addresses', 'jobs', 'bids', 'bid_divisions', 'bid_line_items', 'divisions',
-    'invoices',
+    'change_orders', 'change_order_line_items', 'invoices',
     'materials', 'inventory_kits', 'kit_checkouts', 'kit_audits',
     'replacement_tickets', 'locations',
     'job_assignments', 'task_modules', 'tasks', 'task_materials', 'task_photos',
@@ -1483,6 +1484,196 @@ function saveDivision() {
 function previewProposal() {
     loadPage('bid-proposal');
 }
+
+// ── Change Orders ────────────────────────────────────────────────────────────
+// A change order is its own signable document against an already-sent bid —
+// NOT inline Original/Change columns on bid_divisions. Reasoning (see
+// kinetic-flow-bid-creation-sheet-review memory): the source spreadsheet's
+// inline columns are internal scratch math; the real deliverable is a
+// separately dated/signed Change Order Proposal, and a job can rack up
+// several change orders over its life, which inline per-division columns
+// can't represent. change_order_line_items mirrors bid_line_items' task
+// shape exactly (same tiered-labor/mileage/material columns), but a change
+// order itself isn't split into named divisions like a bid is — each line
+// just optionally tags which existing bid_divisions row it amends
+// (bid_division_id, nullable — null means new/general scope not tied to an
+// existing division).
+//
+// Expiration is 7 days (vs. a bid's 30) — the source sheet's own Change
+// Order Proposal template uses "Expired if not accepted by" = date + 7.
+const CHANGE_ORDER_VALIDITY_DAYS = 7;
+
+function nextChangeOrderNumber() {
+    const seq = DB.find('change_orders', function (c) { return c.company_id === state.currentCompanyId; }).length + 1;
+    return 'CO-' + new Date().getFullYear() + '-' + String(seq).padStart(3, '0');
+}
+
+function openChangeOrders() { loadPage('change-orders'); }
+
+// Gated on the bid having actually gone out (sent or signed) — not
+// signed-only: there's no e-sign UI in this app, so signed_at is never
+// written (see bids.status/signed_at commentary at openBid()/sendBidToCustomer()
+// above), and gating on 'signed' would make change orders permanently
+// unreachable.
+function createChangeOrder() {
+    const job = DB.getById('jobs', state.currentJobId);
+    const bid = job && job.bid_id ? DB.getById('bids', job.bid_id) : null;
+    if (!bid || (bid.status !== 'sent' && bid.status !== 'signed')) return;
+    const expires = new Date();
+    expires.setDate(expires.getDate() + CHANGE_ORDER_VALIDITY_DAYS);
+    const co = DB.insert('change_orders', {
+        company_id: state.currentCompanyId, branch_id: state.currentBranchId,
+        bid_id: bid.id, job_id: job.id,
+        co_number: nextChangeOrderNumber(), title: 'Change Order', description: '',
+        status: 'draft', created_by: state.currentUserId,
+        sent_at: null, signed_at: null, signature_url: null, notes: null,
+        expires_at: expires.toISOString().slice(0, 10),
+        // Same sheet-sourced default tiers as a fresh bid division (see
+        // bid-division.html's DEFAULT_RATE_* comment) — 500/300/120.
+        labor_rate_master: 500, labor_rate_fellow_craft: 300, labor_rate_apprentice: 120,
+        total_labor: 0, total_materials: 0, total_mileage: 0, total_cost: 0,
+    });
+    state.currentChangeOrderId = co.id;
+    loadPage('change-order');
+}
+
+function openChangeOrder(changeOrderId) {
+    state.currentChangeOrderId = changeOrderId;
+    loadPage('change-order');
+}
+
+// change-order.html shadows this with its own window.saveChangeOrder (same
+// shadow-the-app.js-fallback pattern as bid-division.html's saveDivision).
+function saveChangeOrder() {
+    loadPage('change-orders');
+}
+
+function previewChangeOrderProposal() {
+    loadPage('change-order-proposal');
+}
+
+// Recomputes a change order's total_labor/total_materials/total_mileage/
+// total_cost from its non-deleted change_order_line_items — same plain
+// (no-contingency) rollup convention as recalcBidTotals().
+function recalcChangeOrderTotals(changeOrderId) {
+    const items = DB.find('change_order_line_items', function (li) {
+        return li.change_order_id === changeOrderId && !li.deleted_at && li.task_included !== false;
+    });
+    // Mileage isn't its own line-item type (same convention as
+    // bid_line_items — see bid-division.html's calcTask): it's derived per
+    // labor row from task_trips × the originating bid's miles/rate.
+    const bid = DB.getById('bids', DB.getById('change_orders', changeOrderId).bid_id);
+    const milesToSite = (bid && bid.miles_to_site) || 0;
+    const mileageRate = (bid && bid.mileage_rate) || 0;
+
+    let labor = 0, materials = 0, mileage = 0;
+    items.forEach(function (li) {
+        if (li.type === 'labor') {
+            labor += li.line_total || 0;
+            mileage += (li.task_trips || 0) * milesToSite * mileageRate;
+        } else if (li.type === 'material') {
+            materials += li.line_total || 0;
+        }
+    });
+    return DB.update('change_orders', changeOrderId, {
+        total_labor: labor, total_materials: materials, total_mileage: mileage,
+        total_cost: labor + materials + mileage,
+    });
+}
+
+// Mirrors generateBidPdf()'s structure (jsPDF, same line()/heading() cursor
+// helpers) as a parallel function, not an extension — generateBidPdf is
+// bid-specific/hardcoded (payment split, field names), so a second document
+// type gets its own copy of the pattern rather than trying to share code.
+function generateChangeOrderPdf(co) {
+    if (!window.jspdf) return false;
+    const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'letter' });
+    const company = DB.getById('companies', co.company_id);
+    const bid = DB.getById('bids', co.bid_id);
+    const customer = bid && bid.customer_id ? DB.getById('customers', bid.customer_id) : null;
+    const address = bid && bid.address_id ? DB.getById('addresses', bid.address_id) : null;
+    const items = DB.find('change_order_line_items', function (li) {
+        return li.change_order_id === co.id && !li.deleted_at && li.task_included !== false;
+    });
+
+    function money(n) { return '$' + (n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    const grandTotal = co.total_cost || 0;
+
+    const left = 54, right = 558;
+    let y = 60;
+    function line(label, value, bold) {
+        doc.setFont(undefined, bold ? 'bold' : 'normal');
+        doc.text(label, left, y);
+        if (value != null) doc.text(String(value), right, y, { align: 'right' });
+        y += 16;
+        if (y > 740) { doc.addPage(); y = 60; }
+    }
+    function heading(text) {
+        y += 10;
+        doc.setFontSize(12);
+        line(text, null, true);
+        doc.setFontSize(10);
+    }
+
+    doc.setFontSize(16);
+    doc.setFont(undefined, 'bold');
+    doc.text(((company && company.name) || 'Change Order').toUpperCase(), left, y);
+    y += 24;
+    doc.setFontSize(10);
+    line('CHANGE ORDER PROPOSAL — ' + (co.co_number || ''), null, true);
+    line('Amends Bid', (bid && bid.bid_number) || '—');
+    line('Customer', customer ? customer.full_name : '—');
+    line('Site Address', bid && bid.site_address_override != null ? bid.site_address_override
+        : (address ? address.street + ', ' + address.city + ', ' + address.state : '—'));
+    line('Date', (co.created_at || '').slice(0, 10));
+    if (co.expires_at) line('Expires', co.expires_at.slice(0, 10));
+    if (co.description) line('Reason for Change', co.description);
+
+    heading('Scope of Change');
+    items.filter(function (li) { return li.type === 'labor'; }).forEach(function (li) {
+        line(li.description || '(untitled task)', money(li.line_total));
+    });
+    line('Grand Total', money(grandTotal), true);
+
+    // The source template's own policy for change orders: paid in full on
+    // acceptance, not split into progress draws like the original bid.
+    heading('Payment');
+    line('Total Due — 100% (due on acceptance)', money(grandTotal));
+
+    const slug = ((co.co_number || 'change-order').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')) || 'change-order';
+    doc.save(slug + '-proposal.pdf');
+    return true;
+}
+
+function sendChangeOrderToCustomer() {
+    if (!state.currentChangeOrderId) return;
+    const co = DB.getById('change_orders', state.currentChangeOrderId);
+    if (!co) return;
+    const gotPdf = generateChangeOrderPdf(co);
+    const resend = co.status === 'sent' || co.status === 'signed';
+    DB.update('change_orders', co.id, {
+        status: co.status === 'signed' ? 'signed' : 'sent',
+        sent_at: new Date().toISOString(),
+    });
+    generateInvoiceForChangeOrder(DB.getById('change_orders', co.id));
+    loadPage('change-orders');
+    showToast(resend ? 'Change Order Re-Sent' : 'Change Order Sent',
+        [gotPdf ? 'PDF downloaded — that document is what the customer receives. (Demo — no real email/text goes out.)'
+                : 'Marked sent, but the PDF library didn\'t load — check your connection and re-send for the document.'],
+        '#1e40af');
+}
+
+function downloadChangeOrderPdf() {
+    if (!state.currentChangeOrderId) return;
+    const co = DB.getById('change_orders', state.currentChangeOrderId);
+    if (!co) return;
+    if (generateChangeOrderPdf(co)) {
+        showToast('PDF Downloaded', ['Same document the customer received — print it or attach it from your phone.'], '#1e40af');
+    } else {
+        showToast('PDF Not Generated', ['The PDF library didn\'t load — check your connection and try again.'], '#b91c1c');
+    }
+}
+
 function openSchedule() { loadPage('schedule'); }
 function openTimeSheet() { loadPage('review-time'); }
 function openKits() { loadPage('kits'); }
@@ -2883,6 +3074,8 @@ function activate() {
         openJob, createJob, submitJob,
         openBid, submitBid, recalcBidTotals, sendBidToCustomer, downloadBidPdf, nextBidNumber, DEFAULT_MILEAGE_RATE,
         openDivision, saveDivision, previewProposal,
+        openChangeOrders, createChangeOrder, openChangeOrder, saveChangeOrder, previewChangeOrderProposal,
+        recalcChangeOrderTotals, sendChangeOrderToCustomer, downloadChangeOrderPdf, nextChangeOrderNumber,
         openSchedule, generateScheduleFromBid, openTimeSheet, openKits, openLabelGenerator, openFieldClock, openInventory,
         openScorecard, openMyScorecard, submitScorecard, isManagerOrAdmin, pendingSelfScorecard,
         computeProductionSpeed,

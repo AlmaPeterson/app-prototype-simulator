@@ -89,7 +89,7 @@ sense — nothing hits a server.
 ### job-detail.html (jobs that have a bid)
 - **See:** Job header (name, JOB-XXXX code, status badge, address, date range, static 65% progress bar); Bid & Finance card (estimated value from the bid, labour-to-date and materials-used summed from `expense_entries`); Assigned Team (each member's initials avatar, name, Lead/Team Member, guild-level badge, Clocked In / Off Site status); two static JIT training cards.
 - **Edit:** Nothing directly.
-- **Do:** Clock In / Schedule / Kits quick actions. View Bid → bid. Tap a team member row → scorecard for that worker (managers/admins only — others are blocked with an alert). "+ Add" (team) opens an inline picker of company members not yet on the job; tapping one inserts a `job_assignments` row (role: member) and refreshes the list. Training cards → field-clock. ← Jobs.
+- **Do:** Clock In / Schedule / Kits quick actions. View Bid → bid. **Change Orders** (2026-08-10) → change-orders, scoped to this job's bid. Tap a team member row → scorecard for that worker (managers/admins only — others are blocked with an alert). "+ Add" (team) opens an inline picker of company members not yet on the job; tapping one inserts a `job_assignments` row (role: member) and refreshes the list. Training cards → field-clock. ← Jobs.
 
 ### job-detail-nobid.html (jobs without a bid)
 - **See:** Job header with "No Bid Yet" badge and target start; a "No Bid Created" call-to-action panel; Job Details card (customer, job type, priority, assigned lead); job notes.
@@ -119,6 +119,36 @@ sense — nothing hits a server.
 - **See:** Read-only proposal: company letterhead, bid header grid (date, expires, bid #, project, customer, craftsman, site address), included divisions with scope + cost, grand total, project schedule (on-site days auto-summed from division sheets unless overridden), legal boilerplate, 50/20/20/10 payment schedule with milestones, dual signature blocks (your company + owner).
 - **Edit:** Nothing.
 - **Do:** "Send to Customer" — generates and downloads a real jsPDF proposal (header, division costs with contingency, project schedule, 50/20/20/10 payment plan; that document is what the customer would receive) and moves the bid to `status: 'sent'` with `sent_at`. Already-sent bids show "Download PDF (sent {date})" instead (QA note 2026-07-07) — a pure re-download that leaves the sent status and `sent_at` untouched. ← Back to Bid Creation.
+
+---
+
+## Change Orders (2026-08-10)
+
+A change order is its own signable document against an already-sent bid — not
+inline Original/Change columns on the bid divisions. `change_order_line_items`
+mirrors `bid_line_items`' task shape (same tiered-labor/mileage/material
+columns), but a change order isn't split into named divisions like a bid is:
+each task just optionally tags which existing bid division it amends. No 10%
+contingency is added — a change order is a firm price for already-negotiated
+work, not a fresh estimate, and it's paid in full on acceptance rather than
+the bid's 50/20/20/10 draws. Reachable only once the underlying bid has been
+sent (there's no e-sign flow in this app, so gating on `signed` would make
+the feature permanently unreachable).
+
+### change-orders.html (job-detail's "Change Orders" button)
+- **See:** The job's change orders against its bid (number, title, status badge — Draft/Sent/Signed, total), newest first. A gating note when the job has no bid yet, or has a bid that hasn't been sent yet.
+- **Edit:** Nothing.
+- **Do:** "+ New Change Order" (hidden until the bid is sent/signed) — creates a `change_orders` row (`CO-<year>-<seq>`, 7-day expiration, default 500/300/120 tier rates) and opens it. Tap a row → change-order. ← Job Detail.
+
+### change-order.html — one change order's sheet
+- **See:** CO number, job name and which bid it amends; live stats row (total, labor, materials, mileage); a mileage note showing the bid's miles/rate feeding this order's math.
+- **Edit:** Title, reason/description of change, expires date; Billed Labor Rates (Master Specialist/Trade Professional/Support & Prep $/hr — same naming as bid-division.html, see that entry for why they're not named after the Guild ladder; defaults 500/300/120, independent per change order from the originating divisions); tasks — same shape as bid-division.html's (category dropdown of which bid division this task amends, or "New / General Scope"; name, scope, qty type/qty, trips, per-tier hrs-each, materials). Add/remove tasks and materials freely.
+- **Do:** Edits are held in a page-local working copy. "Preview & Send →" persists then opens change-order-proposal. **Save Draft** (or ← back, same function) persists tasks into `change_order_line_items` rows, recomputes the rollup, and returns to change-orders.
+
+### change-order-proposal.html — client-facing preview
+- **See:** Read-only proposal: company letterhead, header grid (date, expires, CO #, amends bid #, customer, site address, reason for change), included tasks with cost, Grand Total, a fixed "due in full upon acceptance" payment note, dual signature blocks.
+- **Edit:** Nothing.
+- **Do:** "Send to Customer" — generates and downloads a real jsPDF proposal, moves the CO to `status: 'sent'` with `sent_at`, and generates its one real `invoices` row (full amount, due on acceptance). Already-sent COs show "Download PDF (sent {date})" instead — a pure re-download. ← Back to Change Order.
 
 ---
 

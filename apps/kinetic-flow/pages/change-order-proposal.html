@@ -1,0 +1,141 @@
+<div class="page">
+    <button class="btn btn-secondary btn-sm mb-4" onclick="loadPage('change-order')">&larr; Edit Change Order</button>
+
+    <div style="text-align:center; border-bottom:2px solid #0f172a; padding-bottom:12px; margin-bottom:16px;">
+        <div id="cop-company-name" style="font-size:1rem; font-weight:900; letter-spacing:0.04em;"></div>
+        <div style="font-size:0.75rem; color:#64748b;">General Contracting &bull; Construction Management</div>
+        <div style="font-size:0.9rem; font-weight:700; margin-top:6px;">CHANGE ORDER PROPOSAL</div>
+    </div>
+
+    <div id="cop-header"></div>
+
+    <div class="section-header mt-2">
+        <span class="section-title">Scope of Change</span>
+    </div>
+    <div id="cop-tasks"></div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; border-top:2px solid #0f172a; border-bottom:1px solid #e2e8f0; padding:8px 0; margin:8px 0 16px 0;">
+        <strong>Grand Total</strong>
+        <strong id="cop-total" style="font-size:1.1rem; color:#0f172a;"></strong>
+    </div>
+
+    <div style="border:1px solid #e2e8f0; border-radius:6px; padding:12px; margin-bottom:16px; font-size:0.78rem; color:#475569; line-height:1.6;">
+        <p style="margin:0;"><strong>Payment:</strong> Change orders are due in full upon acceptance. Work related to this change — including ordering materials and scheduling labor — begins once this document is signed and payment clears.</p>
+    </div>
+
+    <div class="section-header mt-2">
+        <span class="section-title">Payment</span>
+    </div>
+    <div style="border:1px solid #e2e8f0; border-radius:6px; padding:12px; margin-bottom:16px; display:flex; justify-content:space-between;">
+        <div>
+            <div style="font-weight:600;">Total Due — 100%</div>
+            <div style="font-size:0.75rem; color:#64748b;">Due upon acceptance</div>
+        </div>
+        <strong id="cop-due" style="color:#0f172a;"></strong>
+    </div>
+
+    <div class="section-header mt-2">
+        <span class="section-title">Acceptance of Change Order</span>
+    </div>
+    <div style="border:1px solid #e2e8f0; border-radius:6px; padding:12px; margin-bottom:20px;">
+        <p style="font-size:0.78rem; color:#475569; margin:0 0 12px 0; line-height:1.5;">By signing below, the client acknowledges they have read and agree to this change order and its added cost.</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:0.8rem;">
+            <div>
+                <div id="cop-signer-company" style="font-weight:700; margin-bottom:6px;"></div>
+                <div style="border-bottom:1px solid #000; height:28px; margin-bottom:4px;"></div>
+                <div id="cop-signer-name"></div>
+                <div style="color:#64748b; font-size:0.72rem;">Managing Member / President</div>
+                <div style="border-bottom:1px solid #e2e8f0; height:20px; margin-top:10px; margin-bottom:2px;"></div>
+                <div style="color:#94a3b8; font-size:0.72rem;">Date</div>
+            </div>
+            <div>
+                <div style="font-weight:700; margin-bottom:6px;">Owner / Auth. Representative</div>
+                <div style="border-bottom:1px solid #000; height:28px; margin-bottom:4px;"></div>
+                <div style="color:#94a3b8;">Print name</div>
+                <div style="border-bottom:1px solid #e2e8f0; height:20px; margin-top:10px; margin-bottom:2px;"></div>
+                <div style="color:#94a3b8; font-size:0.72rem;">Date</div>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn btn-primary" style="margin-bottom:8px;" id="cop-send-btn" onclick="sendChangeOrderToCustomer()">Send to Customer</button>
+    <button class="btn btn-secondary" onclick="loadPage('change-order')">&larr; Back to Change Order</button>
+</div>
+
+<script>
+(function renderChangeOrderProposal() {
+
+    if (!state.currentChangeOrderId) {
+        document.getElementById('cop-header').innerHTML = '<p style="color:red;">No change order data. Go back and create one first.</p>';
+        return;
+    }
+
+    var co = DB.getById('change_orders', state.currentChangeOrderId);
+    var bid = DB.getById('bids', co.bid_id);
+    var customer = bid.customer_id ? DB.getById('customers', bid.customer_id) : null;
+    var address = bid.address_id ? DB.getById('addresses', bid.address_id) : null;
+    var company = DB.getById('companies', state.currentCompanyId);
+
+    function fmt(n) {
+        return '$' + (n || 0).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
+    }
+    function fmtDate(iso) {
+        if (!iso) return '—';
+        return new Date(iso.slice(0, 10) + 'T12:00:00').toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
+    }
+    function esc(s) {
+        if (!s) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    document.getElementById('cop-company-name').textContent = (company ? company.name : '').toUpperCase();
+
+    var siteAddress = (bid.site_address_override != null)
+        ? bid.site_address_override
+        : (address ? address.street + ', ' + address.city + ', ' + address.state + ' ' + address.zip : '—');
+
+    document.getElementById('cop-header').innerHTML =
+        '<div style="border:1px solid #e2e8f0; border-radius:6px; padding:12px; margin-bottom:16px; font-size:0.82rem;">' +
+        '<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px 16px;">' +
+        '<div><span style="color:#64748b; font-size:0.72rem; display:block;">DATE</span><strong>' + fmtDate(co.created_at) + '</strong></div>' +
+        '<div><span style="color:#64748b; font-size:0.72rem; display:block;">EXPIRES</span><strong>' + fmtDate(co.expires_at) + '</strong></div>' +
+        '<div><span style="color:#64748b; font-size:0.72rem; display:block;">CHANGE ORDER #</span><strong>' + (co.co_number || '—') + '</strong></div>' +
+        '<div><span style="color:#64748b; font-size:0.72rem; display:block;">AMENDS BID #</span><strong>' + (bid.bid_number || '—') + '</strong></div>' +
+        '<div style="margin-top:4px;"><span style="color:#64748b; font-size:0.72rem; display:block;">CUSTOMER</span><strong>' + (customer ? customer.full_name : '—') + '</strong></div>' +
+        '<div style="margin-top:4px; grid-column:1/-1;"><span style="color:#64748b; font-size:0.72rem; display:block;">SITE ADDRESS</span><strong>' + siteAddress + '</strong></div>' +
+        (co.description ? '<div style="margin-top:4px; grid-column:1/-1;"><span style="color:#64748b; font-size:0.72rem; display:block;">REASON FOR CHANGE</span><strong>' + esc(co.description) + '</strong></div>' : '') +
+        '</div></div>';
+
+    var items = DB.find('change_order_line_items', function (li) {
+        return li.change_order_id === co.id && !li.deleted_at && li.type === 'labor' && li.task_included !== false;
+    }).sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+
+    if (items.length === 0) {
+        document.getElementById('cop-tasks').innerHTML =
+            '<p style="color:#94a3b8; font-size:0.85rem; padding:12px 0;">No tasks added.</p>';
+    } else {
+        document.getElementById('cop-tasks').innerHTML = items.map(function (li) {
+            return '<div style="border-bottom:1px solid #f1f5f9; padding:8px 0;">' +
+                '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">' +
+                '<div><strong>' + esc(li.description || 'Untitled task') + '</strong>' +
+                (li.task_scope ? '<div style="font-size:0.78rem; color:#475569; margin-top:3px;">' + esc(li.task_scope) + '</div>' : '') +
+                '</div>' +
+                '<strong style="white-space:nowrap; color:#0f172a;">' + fmt(li.line_total) + '</strong>' +
+                '</div></div>';
+        }).join('');
+    }
+
+    document.getElementById('cop-total').textContent = fmt(co.total_cost);
+    document.getElementById('cop-due').textContent = fmt(co.total_cost);
+
+    document.getElementById('cop-signer-company').textContent = company ? company.name : '';
+    document.getElementById('cop-signer-name').textContent = (state.currentUser && state.currentUser.name) || '—';
+
+    if (co.status === 'sent' || co.status === 'signed') {
+        var sendBtn = document.getElementById('cop-send-btn');
+        sendBtn.textContent = 'Download PDF (sent ' + fmtDate(co.sent_at) + ')';
+        sendBtn.setAttribute('onclick', 'downloadChangeOrderPdf()');
+    }
+
+})();
+</script>

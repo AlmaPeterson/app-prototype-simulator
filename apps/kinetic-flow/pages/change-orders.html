@@ -1,0 +1,68 @@
+<div class="page">
+    <button class="btn btn-secondary btn-sm mb-4" onclick="openJob(state.currentJobId)">&larr; Job Detail</button>
+
+    <div class="page-header">
+        <div class="page-title">Change Orders</div>
+        <div class="page-subtitle" id="co-page-subtitle"></div>
+    </div>
+
+    <div id="co-gate"></div>
+
+    <div class="section-header">
+        <span class="section-title">All Change Orders</span>
+        <button class="section-action" id="co-new-btn" onclick="createChangeOrder()">+ New Change Order</button>
+    </div>
+    <div id="co-list"></div>
+</div>
+
+<script>
+(function initChangeOrdersList() {
+
+    var job = DB.getById('jobs', state.currentJobId);
+    var bid = job && job.bid_id ? DB.getById('bids', job.bid_id) : null;
+
+    document.getElementById('co-page-subtitle').textContent = job ? job.name : '';
+
+    function fmt(n) {
+        return '$' + (n || 0).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
+    }
+    function statusBadge(status) {
+        var label = status === 'signed' ? 'Signed' : (status === 'sent' ? 'Sent' : 'Draft');
+        var cls = status === 'draft' ? 'badge-gray' : '';
+        return '<span class="badge ' + cls + '">' + label + '</span>';
+    }
+
+    // A change order only makes sense once the underlying bid has actually
+    // gone out — gated on sent/signed (not signed-only: there's no e-sign
+    // flow in this app, so 'signed' is never reachable, and gating on it
+    // would make this feature permanently unreachable).
+    var canCreate = bid && (bid.status === 'sent' || bid.status === 'signed');
+    document.getElementById('co-new-btn').style.display = canCreate ? '' : 'none';
+    if (!bid) {
+        document.getElementById('co-gate').innerHTML =
+            '<p style="font-size:0.85rem; color:#94a3b8; padding:8px 0;">This job has no bid yet — create and send a bid before adding change orders.</p>';
+    } else if (!canCreate) {
+        document.getElementById('co-gate').innerHTML =
+            '<p style="font-size:0.85rem; color:#94a3b8; padding:8px 0;">Send the bid to the customer before creating a change order against it.</p>';
+    }
+
+    function render() {
+        var rows = bid ? DB.find('change_orders', function (c) { return c.bid_id === bid.id && !c.deleted_at; })
+            .sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); }) : [];
+        document.getElementById('co-list').innerHTML = rows.map(function (co, i) {
+            var isLast = i === rows.length - 1;
+            return '<div class="list-item" style="padding:10px 0;' + (isLast ? ' border-bottom:none;' : '') + ' cursor:pointer;" onclick="openChangeOrder(\'' + co.id + '\')">' +
+                '<div class="list-item-body">' +
+                    '<div class="list-item-title">' + (co.co_number || '') + ' &mdash; ' + esc(co.title || 'Change Order') + '</div>' +
+                    '<div class="list-item-sub">' + statusBadge(co.status) + '</div>' +
+                '</div>' +
+                '<div class="list-item-right"><div class="list-item-value">' + fmt(co.total_cost) + '</div></div>' +
+                '<span class="card-arrow">&#8250;</span>' +
+            '</div>';
+        }).join('') || '<div class="list-item" style="border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">No change orders yet.</div></div>';
+    }
+
+    render();
+
+})();
+</script>
