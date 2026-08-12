@@ -71,16 +71,10 @@
 
 <script>
 (function () {
-    // ── Synthetic invoices are computed (not persisted) from bids.total_cost
-    // via the shared computeSyntheticPaymentSchedule() helper — see app.js.
-    // "Paid" vs "Due" is a simple heuristic: a signed bid has collected its
-    // deposit + first draw; a merely-sent bid has collected nothing yet;
-    // drafts never appear on an invoice because no bid has gone out.
-    function dueAmountForBid(bid) {
-        var sched = computeSyntheticPaymentSchedule(bid.total_cost);
-        if (bid.status === 'signed') return sched.draw2 + sched.final;
-        return bid.total_cost; // sent, not yet signed — nothing collected
-    }
+    // Tracks whichever tier is currently rendered so markInvoicePaid() can
+    // re-render the same view after a status change, without every caller
+    // needing to know which tier is active.
+    var activeTier = 'nationwide';
 
     function fmtMoney(n) { return '$' + Math.round(n).toLocaleString(); }
     function fmtMoneyK(n) { return '$' + (n / 1000).toFixed(0) + 'K'; }
@@ -129,28 +123,44 @@
         }).join('');
     }
 
+    // Real, persisted invoice rows (see app.js's generateInvoicesForBid()/
+    // generateInvoiceForChangeOrder()) — one row per milestone/draw, created
+    // when a bid or change order is sent. ensureInvoicesForBid() self-heals
+    // any bid that reached sent/signed before this existed.
     function renderInvoices(bids) {
-        var billable = bids.filter(function (b) { return b.status === 'sent' || b.status === 'signed'; });
-        document.getElementById('finance-invoices-badge').textContent = billable.length + ' pending';
-        document.getElementById('finance-invoices-list').innerHTML = billable.map(function (b, i) {
-            var customer = DB.getById('customers', b.customer_id);
-            var due = dueAmountForBid(b);
-            var isLast = i === billable.length - 1;
+        bids.forEach(function (b) { ensureInvoicesForBid(b); });
+        var bidIds = bids.map(function (b) { return b.id; });
+        var coIds = DB.find('change_orders', function (c) { return bidIds.indexOf(c.bid_id) !== -1 && !c.deleted_at; })
+            .map(function (c) { return c.id; });
+        var rows = DB.find('invoices', function (inv) {
+            return !inv.deleted_at && (bidIds.indexOf(inv.bid_id) !== -1 || coIds.indexOf(inv.change_order_id) !== -1);
+        });
+        var unpaid = rows.filter(function (inv) { return inv.status === 'unpaid'; });
+
+        document.getElementById('finance-invoices-badge').textContent = unpaid.length + ' pending';
+        document.getElementById('finance-invoices-list').innerHTML = unpaid.map(function (inv, i) {
+            var customer = DB.getById('customers', inv.customer_id);
+            var isLast = i === unpaid.length - 1;
             return '<div class="list-item"' + (isLast ? ' style="border-bottom:none;"' : '') + '>' +
                 '<div class="list-item-body">' +
                     '<div class="list-item-title">' + (customer ? customer.full_name : 'Unknown') + '</div>' +
-                    '<div class="list-item-sub">' + b.title + ' &bull; ' + (b.status === 'signed' ? 'Signed' : 'Sent, awaiting signature') + '</div>' +
+                    '<div class="list-item-sub">' + esc(inv.milestone_label) + ' &bull; ' + inv.invoice_number + '</div>' +
                 '</div>' +
                 '<div class="list-item-right">' +
-                    '<div class="list-item-value">' + fmtMoney(due) + '</div>' +
-                    '<div class="list-item-detail">' + (b.status === 'signed' ? 'Balance due' : 'Full amount due') + '</div>' +
+                    '<div class="list-item-value">' + fmtMoney(inv.amount) + '</div>' +
+                    '<button class="btn btn-secondary btn-sm" style="margin-top:4px;" onclick="window.markInvoicePaid(\'' + inv.id + '\')">Mark Paid</button>' +
                 '</div>' +
             '</div>';
         }).join('') || '<div class="list-item" style="border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">No outstanding invoices.</div></div>';
 
-        var outstandingTotal = billable.reduce(function (sum, b) { return sum + dueAmountForBid(b); }, 0);
-        return { total: outstandingTotal, count: billable.length };
+        var outstandingTotal = unpaid.reduce(function (sum, inv) { return sum + inv.amount; }, 0);
+        return { total: outstandingTotal, count: unpaid.length };
     }
+
+    window.markInvoicePaid = function (invoiceId) {
+        DB.update('invoices', invoiceId, { status: 'paid', paid_at: new Date().toISOString() });
+        window.selectFinanceTier(activeTier);
+    };
 
     function renderTier(view) {
         document.getElementById('finance-tier-subtitle').innerHTML = view.subtitle;
@@ -176,6 +186,7 @@
         if (tier === 'nationwide' && !perm.can_view_nationwide) return;
         if (tier === 'branch' && !perm.can_view_branch) return;
         if (tier === 'job' && !perm.can_view_job) return;
+        activeTier = tier;
 
         ['nationwide', 'branch', 'job'].forEach(function (key) {
             var btn = document.getElementById('tier-btn-' + key);

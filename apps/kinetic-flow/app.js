@@ -62,6 +62,7 @@ const state = {
 const TABLES = [
     'companies', 'branches', 'users', 'roles', 'user_roles', 'customers',
     'addresses', 'jobs', 'bids', 'bid_divisions', 'bid_line_items', 'divisions',
+    'invoices',
     'materials', 'inventory_kits', 'kit_checkouts', 'kit_audits',
     'replacement_tickets', 'locations',
     'job_assignments', 'task_modules', 'tasks', 'task_materials', 'task_photos',
@@ -1416,6 +1417,7 @@ function sendBidToCustomer() {
         status: bid.status === 'signed' ? 'signed' : 'sent',
         sent_at: new Date().toISOString(),
     });
+    generateInvoicesForBid(DB.getById('bids', bid.id));
     loadPage('job-detail');
     showToast(resend ? 'Proposal Re-Sent' : 'Proposal Sent',
         [gotPdf ? 'PDF downloaded — that document is what the customer receives. (Demo — no real email/text goes out.)'
@@ -2681,19 +2683,75 @@ function openCustomerProperty(jobId) {
     loadPage('customer-home');
 }
 
-// There's no real `invoices` table (confirmed schema gap — out of scope to
-// build in this phase), so finance.html's "Outstanding Invoices" tile
-// derives a synthetic 50/20/20/10 deposit/draw/draw/final split from a bid's
-// total_cost. (The old customer-bid/customer-invoice pages shared this
-// helper before the customer surface moved to the PDF + property page.)
+// ── Invoices ─────────────────────────────────────────────────────────────────
+// Real, persisted invoice rows — replaces the old computeSyntheticPaymentSchedule()
+// (formerly here), which derived an in-memory-only 50/20/20/10 split from
+// bids.total_cost with nothing ever saved. Generated at *send* time
+// (sendBidToCustomer(), and sendChangeOrderToCustomer() once that lands)
+// since that's the only real lifecycle transition this app has — there's no
+// e-sign UI, so bids.status never actually reaches 'signed' through user
+// action, and gating invoice creation on that would mean invoices never get
+// created.
 function round2(n) { return Math.round((n || 0) * 100) / 100; }
-function computeSyntheticPaymentSchedule(totalCost) {
-    const cost = totalCost || 0;
-    const deposit = round2(cost * 0.5);
-    const draw1 = round2(cost * 0.2);
-    const draw2 = round2(cost * 0.2);
+
+function nextInvoiceNumber() {
+    const seq = DB.find('invoices', function (i) { return i.company_id === state.currentCompanyId; }).length + 1;
+    return 'INV-' + new Date().getFullYear() + '-' + String(seq).padStart(3, '0');
+}
+
+// One row per milestone/draw (not one row per bid) — a bid's 50/20/20/10
+// schedule becomes 4 real invoices. Idempotent: re-sending an already-sent
+// bid (see sendBidToCustomer()) must not duplicate rows, so this is a no-op
+// if the bid already has any non-deleted invoices.
+function generateInvoicesForBid(bid) {
+    if (DB.find('invoices', function (i) { return i.bid_id === bid.id && !i.deleted_at; }).length) return;
+    const job = DB.findOne('jobs', function (j) { return j.bid_id === bid.id; });
+    const cost = bid.total_cost || 0;
+    const deposit = round2(cost * 0.5), draw1 = round2(cost * 0.2), draw2 = round2(cost * 0.2);
     const final = round2(cost - deposit - draw1 - draw2); // remainder absorbs rounding
-    return { deposit: deposit, draw1: draw1, draw2: draw2, final: final };
+    const milestones = [
+        { label: 'Deposit', amount: deposit },
+        { label: 'Progress Draw 1' + (bid.milestone_1 ? ' — ' + bid.milestone_1 : ''), amount: draw1 },
+        { label: 'Progress Draw 2' + (bid.milestone_2 ? ' — ' + bid.milestone_2 : ''), amount: draw2 },
+        { label: 'Final Balance', amount: final },
+    ];
+    milestones.forEach(function (m, i) {
+        DB.insert('invoices', {
+            company_id: bid.company_id, branch_id: bid.branch_id,
+            job_id: job ? job.id : null, customer_id: bid.customer_id,
+            bid_id: bid.id, change_order_id: null,
+            invoice_number: nextInvoiceNumber(), milestone_label: m.label, amount: m.amount,
+            status: 'unpaid', due_date: null, issued_at: new Date().toISOString(), paid_at: null,
+            notes: null, sort_order: i,
+        });
+    });
+}
+
+// One row for the full change-order amount — the source template's own
+// change-order policy is paid in full on acceptance, not split into draws.
+// (Called once change orders land — see sendChangeOrderToCustomer().)
+function generateInvoiceForChangeOrder(co) {
+    if (DB.find('invoices', function (i) { return i.change_order_id === co.id && !i.deleted_at; }).length) return;
+    const bid = DB.getById('bids', co.bid_id);
+    DB.insert('invoices', {
+        company_id: co.company_id, branch_id: co.branch_id,
+        job_id: co.job_id, customer_id: bid ? bid.customer_id : null,
+        bid_id: null, change_order_id: co.id,
+        invoice_number: nextInvoiceNumber(), milestone_label: (co.co_number || 'Change Order') + ' Payment',
+        amount: co.total_cost || 0,
+        status: 'unpaid', due_date: null, issued_at: new Date().toISOString(), paid_at: null,
+        notes: null, sort_order: 0,
+    });
+}
+
+// Any bid/CO that reached 'sent'/'signed' before this feature existed (or
+// through some future path that skips the generator above) self-heals here
+// rather than showing a permanently-empty invoice list — called from
+// finance.html on every render.
+function ensureInvoicesForBid(bid) {
+    if (bid.status === 'sent' || bid.status === 'signed') generateInvoicesForBid(bid);
+    DB.find('change_orders', function (c) { return c.bid_id === bid.id && !c.deleted_at && (c.status === 'sent' || c.status === 'signed'); })
+        .forEach(function (c) { generateInvoiceForChangeOrder(c); });
 }
 
 // ── Tab Switching (generic) ──────────────────────────────────────────────────
@@ -2839,7 +2897,8 @@ function activate() {
         openScoreboard, openStats, openFinance, openCustomerHome, showToast,
         updateAppHeader, showHeaderMenu, closeHeaderMenu, showProfileSheet, closeProfileSheet,
         switchTab, toggleChip,
-        CUSTOMER_DEMO_JOB_ID, computeSyntheticPaymentSchedule, openCustomerProperty,
+        CUSTOMER_DEMO_JOB_ID, openCustomerProperty,
+        generateInvoicesForBid, generateInvoiceForChangeOrder, ensureInvoicesForBid, nextInvoiceNumber,
     });
 }
 
