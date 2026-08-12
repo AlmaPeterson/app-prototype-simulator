@@ -17,7 +17,7 @@ const STORAGE_KEY = 'kineticFlow.state';
 // Bump whenever db/*.json seed data or table shapes change: restoreState()
 // discards localStorage DB snapshots from older versions and re-fetches the
 // fresh seeds, so users don't need a manual "Reset Demo Data".
-const DB_VERSION = 17;
+const DB_VERSION = 18;
 
 // ── App State ──────────────────────────────────────────────────────────────
 const state = {
@@ -73,6 +73,7 @@ const TABLES = [
     'training_assignments', 'job_history_library', 'finance_snapshots',
     'expense_entries', 'finance_dashboard_permissions', 'property_records',
     'phase_logs', 'system_state', 'label_templates',
+    'kit_debriefs', 'stewardship_logs',
 ];
 
 let _tables = {};
@@ -378,7 +379,7 @@ function updateBottomNav() {
 
     const tabs = userIsSupplier() ? supplierNav : workerNav;
 
-    const jobPages = ['job-home', 'job-detail', 'job-detail-nobid', 'bid', 'bid-division', 'bid-proposal', 'create-job'];
+    const jobPages = ['job-home', 'job-detail', 'job-detail-nobid', 'bid', 'bid-division', 'bid-proposal', 'create-job', 'job-closeout'];
     nav.innerHTML = tabs.map(t => {
         const isActive = state.currentPage === t.page
             || (t.page === 'jobs' && jobPages.includes(state.currentPage))
@@ -1015,6 +1016,136 @@ function requiredKitsForJob(job) {
     });
     return ids.map(function (id) { return DB.getById('inventory_kits', id); }).filter(Boolean);
 }
+
+// ── Job Close-Out: Kit Debrief + Surprise & Delight ─────────────────────────
+// Both "Closed-Loop Kit Debrief" and "Surprise & Delight" gate the same
+// event — a job reaching 100%/Demobilization — so they share one close-out
+// screen (job-closeout.html) and one completion gate (jobCloseoutReady()/
+// markJobComplete() below) instead of two independent flows.
+
+const STEWARDSHIP_ITEMS = [
+    'Tightened a loose fixture or hardware',
+    'Touched up a scuff, scratch, or paint mark',
+    'Reset a door or cabinet alignment',
+    'Swept & vacuumed the final walkthrough area',
+    'Replaced a burnt-out bulb',
+    'Other',
+];
+
+const FRICTION_SOURCES = {
+    none: 'None — smooth run',
+    tool_failure: 'Tool Failure',
+    missing_component: 'Missing Component',
+    site_conditions: 'Hidden Site Conditions',
+    other: 'Other',
+};
+
+// The one stewardship_logs row for a job, if the mandatory closeout fix has
+// already been logged (D2 is a one-time-per-job gate, not a running list).
+function jobStewardshipLog(jobId) {
+    return DB.findOne('stewardship_logs', function (s) { return s.job_id === jobId && !s.deleted_at; });
+}
+
+// Inserts the paired +$75/-$75 invoice line (a goodwill fix billed, then
+// comped, so it's visible on the invoice history instead of invisible) and
+// stamps their ids back onto the stewardship log. Idempotent the same way
+// generateInvoicesForBid() is — called once, from submitStewardshipLog().
+function generateStewardshipInvoiceLines(job, log) {
+    const now = new Date().toISOString();
+    const addOn = DB.insert('invoices', {
+        company_id: job.company_id, branch_id: job.branch_id,
+        job_id: job.id, customer_id: job.customer_id, bid_id: job.bid_id, change_order_id: null,
+        invoice_number: nextInvoiceNumber(), milestone_label: 'Stewardship Add-On (Surprise & Delight)',
+        amount: 75, status: 'paid', due_date: null, issued_at: now, paid_at: now,
+        notes: 'Auto-generated at close-out alongside a matching credit — see stewardship log ' + log.id + '.',
+        sort_order: 900,
+    });
+    const credit = DB.insert('invoices', {
+        company_id: job.company_id, branch_id: job.branch_id,
+        job_id: job.id, customer_id: job.customer_id, bid_id: job.bid_id, change_order_id: null,
+        invoice_number: nextInvoiceNumber(), milestone_label: 'Stewardship Credit (Surprise & Delight)',
+        amount: -75, status: 'paid', due_date: null, issued_at: now, paid_at: now,
+        notes: 'Comps the paired add-on above — net effect is a documented, no-cost gesture.',
+        sort_order: 901,
+    });
+    DB.update('stewardship_logs', log.id, { invoice_ids: [addOn.id, credit.id] });
+    return [addOn, credit];
+}
+
+// item: one of STEWARDSHIP_ITEMS ('Other' pairs with customNote). Blocked by
+// job-closeout.html from firing twice per job (see jobStewardshipLog()).
+function submitStewardshipLog(jobId, item, customNote, photoAssetId) {
+    const job = DB.getById('jobs', jobId);
+    const log = DB.insert('stewardship_logs', {
+        company_id: job.company_id, job_id: jobId, logged_by: state.currentUserId,
+        item: item, custom_note: item === 'Other' ? (customNote || '') : null,
+        photo_asset_id: photoAssetId || null, invoice_ids: [],
+    });
+    generateStewardshipInvoiceLines(job, log);
+    return log;
+}
+
+// Kits (kind: 'kit' — carts aren't in scope, see B2's kit/cart split) still
+// checked out to this job with no kit_debriefs row yet for this job+kit pair.
+// An empty result means the debrief half of close-out is satisfied.
+function jobKitsPendingDebrief(jobId) {
+    return DB.find('kit_checkouts', function (c) { return c.job_id === jobId && !c.checked_in_at; })
+        .map(function (c) { return DB.getById('inventory_kits', c.kit_id); })
+        .filter(function (kit) { return kit && (kit.kind || 'kit') === 'kit'; })
+        .filter(function (kit) {
+            return !DB.findOne('kit_debriefs', function (d) { return d.job_id === jobId && d.kit_id === kit.id && !d.deleted_at; });
+        });
+}
+
+// One kit_debriefs row plus an auto-generated replacement_tickets "maintenance
+// work order" per flagged tool (and one more if inventory came back
+// incomplete) — same one-ticket-per-issue shape submitKitAudit() already
+// uses for the daily audit, so Shop Logistics' Reorder tab picks these up
+// for free. Also checks the kit back in, closing the loop on its checkout.
+function submitKitDebrief(jobId, kitId, passed, frictionSource, toolIssues, inventoryStatus, photoAssetId) {
+    const debrief = DB.insert('kit_debriefs', {
+        company_id: state.currentCompanyId, job_id: jobId, kit_id: kitId,
+        debriefed_by: state.currentUserId, debrief_date: new Date().toISOString().slice(0, 10),
+        performance_audit_pass: !!passed, friction_source: frictionSource || 'none',
+        tool_issues: toolIssues || [], inventory_status: inventoryStatus,
+        photo_asset_id: photoAssetId || null,
+    });
+    (toolIssues || []).forEach(function (issue) {
+        DB.insert('replacement_tickets', {
+            company_id: state.currentCompanyId, kit_audit_id: null, kit_debrief_id: debrief.id,
+            job_id: jobId, kit_id: kitId, material_id: issue.material_id || null,
+            item_name: issue.name, issue_type: 'needs_maintenance',
+            status: 'open', fulfilled_at: null, fulfilled_by: null,
+        });
+    });
+    if (inventoryStatus === 'incomplete') {
+        DB.insert('replacement_tickets', {
+            company_id: state.currentCompanyId, kit_audit_id: null, kit_debrief_id: debrief.id,
+            job_id: jobId, kit_id: kitId, material_id: null,
+            item_name: 'Kit inventory incomplete at close-out', issue_type: 'missing',
+            status: 'open', fulfilled_at: null, fulfilled_by: null,
+        });
+    }
+    if (getOpenCheckout(kitId)) checkInKit(kitId);
+    return debrief;
+}
+
+// The "Mark Job Complete" gate: both close-out halves (D2's mandatory
+// stewardship fix, B1's kit debrief) must be done. Deliberately does NOT
+// require every bid division/task to be finished — this prototype has no
+// real task-completion rollup (see job-detail.html's placeholder progress
+// bar), so close-out is the one hard gate that exists today.
+function jobCloseoutReady(job) {
+    return !!jobStewardshipLog(job.id) && jobKitsPendingDebrief(job.id).length === 0;
+}
+
+function markJobComplete(jobId) {
+    const job = DB.getById('jobs', jobId);
+    if (!job || !jobCloseoutReady(job)) return null;
+    return DB.update('jobs', jobId, { status: 'closed', closed_at: new Date().toISOString() });
+}
+
+function openJobCloseout() { loadPage('job-closeout'); }
 
 // ── Company Configuration: Divisions / Levels / Competency Levels ───────────
 // Bid divisions live in the real `divisions` DB table (per company, ordered
@@ -3068,6 +3199,8 @@ function activate() {
         canManageInventory, openShopLogistics, getKitStatus, KIT_STATUS_LABELS,
         getOpenCheckout, checkOutKitToJob, checkInKit, submitKitAudit, fulfillReplacementTicket,
         requiredKitsForJob,
+        STEWARDSHIP_ITEMS, FRICTION_SOURCES, jobStewardshipLog, submitStewardshipLog,
+        jobKitsPendingDebrief, submitKitDebrief, jobCloseoutReady, markJobComplete, openJobCloseout,
         LEVELS, COMPETENCY_LEVELS, companyDivisions,
         openCompanyDivisions,
         companyLocations, findOrCreateLocation,

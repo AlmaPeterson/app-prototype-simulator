@@ -4,10 +4,11 @@
         <div class="page-subtitle">Daily kit audits, audit history, and open replacement/restock tickets.</div>
     </div>
 
-    <div style="display:flex; gap:6px; margin-bottom:14px;">
+    <div style="display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap;">
         <div id="sl-tab-audits" class="chip selected" onclick="slSwitchTab('audits')">Active Audits</div>
         <div id="sl-tab-history" class="chip" onclick="slSwitchTab('history')">History</div>
         <div id="sl-tab-reorder" class="chip" onclick="slSwitchTab('reorder')">Reorder</div>
+        <div id="sl-tab-debriefs" class="chip" onclick="slSwitchTab('debriefs')">Rig Dashboard</div>
     </div>
 
     <div id="sl-content"></div>
@@ -18,7 +19,7 @@
 <script>
 (function () {
 
-    var slState = { tab: 'audits', selectedKitId: null, passed: null, flagged: {} };
+    var slState = { tab: 'audits', selectedKitId: null, passed: null, flagged: {}, debriefPeriod: 'week' };
 
     function kitsOfKind() {
         return DB.find('inventory_kits', function (k) {
@@ -199,6 +200,54 @@
         return html;
     }
 
+    // ── Rig Dashboard tab — Closed-Loop Kit Debrief rollup ─────────────────
+    // Doubles as both the spec's "Rig Management Dashboard" (per-kit history,
+    // "All Time") and its "Weekly System Debrief" (the "This Week" filter) —
+    // one dashboard rather than two separate pages, matching how this app
+    // already keeps kit ops in a single Shop Logistics hub.
+    function debriefsHtml() {
+        var all = DB.find('kit_debriefs', function (d) { return d.company_id === state.currentCompanyId && !d.deleted_at; })
+            .slice().sort(function (a, b) { return b.debrief_date.localeCompare(a.debrief_date) || b.created_at.localeCompare(a.created_at); });
+        var weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        var rows = slState.debriefPeriod === 'week' ? all.filter(function (d) { return d.debrief_date >= weekAgo; }) : all;
+
+        var html = '<div style="display:flex; gap:6px; margin-bottom:12px;">' +
+            '<div class="chip' + (slState.debriefPeriod === 'week' ? ' selected' : '') + '" onclick="slSetDebriefPeriod(\'week\')">This Week</div>' +
+            '<div class="chip' + (slState.debriefPeriod === 'all' ? ' selected' : '') + '" onclick="slSetDebriefPeriod(\'all\')">All Time</div>' +
+            '</div>';
+
+        if (rows.length === 0) {
+            html += '<div class="kit-empty">No kit debriefs logged' + (slState.debriefPeriod === 'week' ? ' this week' : '') + '.</div>';
+            return html;
+        }
+
+        var flaggedCount = rows.filter(function (d) { return !d.performance_audit_pass || d.inventory_status === 'incomplete' || (d.tool_issues || []).length; }).length;
+        html += '<div class="section-header"><span class="section-title">' + rows.length + ' Debrief' + (rows.length > 1 ? 's' : '') + '</span>' +
+            '<span class="kit-row-count">' + flaggedCount + ' flagged</span></div>';
+
+        html += '<div class="card" style="cursor:default; padding:0 14px;">' + rows.map(function (d) {
+            var kit = DB.getById('inventory_kits', d.kit_id);
+            var job = DB.getById('jobs', d.job_id);
+            var issueCount = (d.tool_issues || []).length + (d.inventory_status === 'incomplete' ? 1 : 0);
+            var statusLabel = !d.performance_audit_pass ? 'Flagged: ' + esc(FRICTION_SOURCES[d.friction_source] || d.friction_source)
+                : issueCount ? issueCount + ' maintenance item' + (issueCount > 1 ? 's' : '')
+                : 'Clean';
+            return '<div class="list-item">' +
+                '<div class="list-item-body">' +
+                    '<div class="list-item-title">' + esc(kit ? kit.name : 'Unknown Kit') + '</div>' +
+                    '<div class="list-item-sub">' + esc(job ? job.name : 'Unknown Job') + ' &bull; ' + esc(d.debrief_date) + '</div>' +
+                    '<div class="list-item-sub">' + statusLabel + '</div>' +
+                '</div>' +
+            '</div>';
+        }).join('') + '</div>';
+        return html;
+    }
+
+    window.slSetDebriefPeriod = function (period) {
+        slState.debriefPeriod = period;
+        slRender();
+    };
+
     window.slFulfillTicket = function (ticketId) {
         fulfillReplacementTicket(ticketId);
         slRender();
@@ -217,7 +266,7 @@
     window.slSwitchTab = function (tab) {
         slState.tab = tab;
         slState.selectedKitId = null;
-        ['audits', 'history', 'reorder'].forEach(function (t) {
+        ['audits', 'history', 'reorder', 'debriefs'].forEach(function (t) {
             document.getElementById('sl-tab-' + t).classList.toggle('selected', t === tab);
         });
         slRender();
@@ -234,6 +283,8 @@
             }
         } else if (slState.tab === 'history') {
             el.innerHTML = historyHtml();
+        } else if (slState.tab === 'debriefs') {
+            el.innerHTML = debriefsHtml();
         } else {
             el.innerHTML = reorderHtml();
         }

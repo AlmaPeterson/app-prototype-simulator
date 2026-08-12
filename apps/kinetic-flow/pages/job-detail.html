@@ -15,6 +15,11 @@
         <button class="btn btn-secondary" style="margin:0;" onclick="openKits()">Kits</button>
     </div>
 
+    <!-- Close-Out — manager/admin only (see isManagerOrAdmin() gating below),
+         same close-out screen for both the mandatory stewardship fix and the
+         kit debrief regardless of whether the job's already closed. -->
+    <div id="job-detail-closeout" style="margin-bottom:16px;"></div>
+
     <!-- Bid / Finance -->
     <div class="section-header">
         <span class="section-title">Bid &amp; Finance</span>
@@ -59,6 +64,11 @@
     var dateRange = fmtDate(job.scheduled_start) + (job.scheduled_end ? ' – ' + fmtDate(job.scheduled_end) : '');
     var shortCode = 'JOB-' + job.id.replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase();
 
+    // A closed job is the one case with a real completion number (100, from
+    // markJobComplete() in job-closeout.html) — everything short of that is
+    // still the static placeholder noted below, since no task/phase rollup
+    // is wired to jobs yet.
+    var pctComplete = job.status === 'closed' ? 100 : 65;
     document.getElementById('job-detail-header').innerHTML =
         '<div style="font-size:1.2rem; font-weight:700; margin-bottom:6px;">' + job.name + '</div>' +
         '<div class="flex-between mb-2">' +
@@ -69,10 +79,24 @@
         '<div style="font-size:0.82rem; margin-top:2px;">' + (dateRange || 'Not scheduled') + '</div>' +
         '<div class="progress-bar mt-4">' +
             // No real per-job completion tracking exists yet (no task/phase
-            // rollup wired to jobs in this phase) — static placeholder value.
-            '<div style="width:65%; height:100%; border-radius:99px;"></div>' +
+            // rollup wired to jobs in this phase) — static placeholder value
+            // short of 100, which only markJobComplete() ever sets.
+            '<div style="width:' + pctComplete + '%; height:100%; border-radius:99px;"></div>' +
         '</div>' +
-        '<div style="font-size:0.72rem; margin-top:4px;">65% complete</div>';
+        '<div style="font-size:0.72rem; margin-top:4px;">' + pctComplete + '% complete</div>';
+
+    // Close-Out entry point — gated to managers/admins, same as Shop
+    // Logistics/Manage Users, since it's the action that finalizes a job.
+    function renderCloseoutBox() {
+        var box = document.getElementById('job-detail-closeout');
+        if (!isManagerOrAdmin()) { box.innerHTML = ''; return; }
+        if (job.status === 'closed') {
+            box.innerHTML = '<button class="btn btn-outline" style="margin:0;" onclick="openJobCloseout()">View Close-Out Record</button>';
+        } else {
+            box.innerHTML = '<button class="btn btn-secondary" style="margin:0;" onclick="openJobCloseout()">Close Out Job</button>';
+        }
+    }
+    renderCloseoutBox();
 
     var expenses = DB.find('expense_entries', function (e) { return e.job_id === job.id; });
     var laborTotal = expenses.filter(function (e) { return e.category === 'employee'; }).reduce(function (s, e) { return s + e.amount; }, 0);

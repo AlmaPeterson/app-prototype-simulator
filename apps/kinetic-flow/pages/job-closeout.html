@@ -1,0 +1,266 @@
+<div class="page" style="padding-bottom:80px;">
+    <button class="btn btn-secondary btn-sm mb-4" onclick="openJob(state.currentJobId)">&larr; Job</button>
+
+    <div class="page-title" id="jc-title"></div>
+    <div class="page-subtitle mb-4" id="jc-subtitle"></div>
+
+    <div id="jc-content"></div>
+</div>
+
+<script>
+(function () {
+    var jobId = state.currentJobId;
+    var job = jobId ? DB.getById('jobs', jobId) : null;
+    if (!job) {
+        document.getElementById('jc-title').textContent = 'Job Close-Out';
+        document.getElementById('jc-content').innerHTML = '<div class="alert">No job selected.</div>';
+        return;
+    }
+
+    var jcState = { debriefKitId: null, passed: null, friction: 'none', flagged: {}, inventory: null, photoTaken: false, photoTakenAt: null, stewardItem: null, stewardPhotoTaken: false, stewardPhotoTakenAt: null };
+
+    document.getElementById('jc-title').textContent = job.name;
+    document.getElementById('jc-subtitle').textContent = 'Job Close-Out & Demobilization';
+
+    // ── Simulated camera capture — same pattern as field-clock.html's
+    // captureKitPhoto(): no real camera in this prototype, but the checkbox
+    // is earned via a button press + delay, not just ticked for free.
+    // takenAt (a pre-formatted time string, or null) restores the button/
+    // status text across re-renders — render() rebuilds the form from scratch
+    // on every state change, so without this a photo already captured this
+    // visit would look un-taken again the moment any other field changes.
+    function wireCapture(btnId, statusId, takenAt, onDone) {
+        var btn = document.getElementById(btnId);
+        var status = document.getElementById(statusId);
+        if (!btn) return;
+        if (takenAt) {
+            btn.textContent = 'Retake Photo';
+            if (status) status.textContent = 'Photo captured at ' + takenAt;
+        }
+        btn.onclick = function () {
+            btn.disabled = true;
+            btn.textContent = 'Capturing…';
+            setTimeout(function () {
+                var now = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                onDone(now);
+                btn.disabled = false;
+                btn.textContent = 'Retake Photo';
+                if (status) status.textContent = 'Photo captured at ' + now;
+            }, 900);
+        };
+    }
+
+    // ── Section A: Surprise & Delight stewardship fix (D2) ─────────────────
+    function stewardshipHtml() {
+        var log = jobStewardshipLog(job.id);
+        var html = '<div class="section-header"><span class="section-title">Surprise &amp; Delight</span></div>';
+
+        if (log) {
+            var invoiceNote = (log.invoice_ids || []).length === 2 ? 'Paired +$75 / −$75 invoice lines posted.' : '';
+            html += '<div class="card" style="cursor:default;">' +
+                '<div class="list-item-title">Logged &#10003;</div>' +
+                '<div class="list-item-sub">' + esc(log.item === 'Other' ? log.custom_note : log.item) + '</div>' +
+                '<div class="list-item-sub">' + esc(invoiceNote) + '</div>' +
+                '</div>';
+            return html;
+        }
+
+        html += '<div class="page-subtitle mb-2">Every job gets one small proactive fix for the homeowner before it can be marked complete.</div>';
+        html += '<div class="form-group"><label>Stewardship Item</label><select id="jc-steward-item" onchange="jcStewardItemChange(this.value)">' +
+            '<option value="">Select an item&hellip;</option>' +
+            STEWARDSHIP_ITEMS.map(function (item) { return '<option value="' + esc(item) + '">' + esc(item) + '</option>'; }).join('') +
+            '</select></div>';
+        html += '<div class="form-group" id="jc-steward-note-group" style="display:none;"><label>Describe the fix</label><input type="text" id="jc-steward-note" placeholder="What did you do?"></div>';
+        html += '<div class="card mb-2" style="cursor:default;">' +
+            '<div class="list-item-title">Photo of the fix</div>' +
+            '<div class="list-item-sub" id="jc-steward-photo-status"></div>' +
+            '<button class="btn btn-secondary btn-sm mt-2" id="jc-steward-photo-btn" style="width:auto;">Take Photo</button>' +
+            '</div>';
+        html += '<button class="btn btn-primary" id="jc-steward-save" disabled onclick="jcSaveStewardship()">Log Stewardship Fix</button>';
+        return html;
+    }
+
+    window.jcStewardItemChange = function (value) {
+        jcState.stewardItem = value;
+        document.getElementById('jc-steward-note-group').style.display = value === 'Other' ? 'block' : 'none';
+        syncStewardSave();
+    };
+
+    function syncStewardSave() {
+        var btn = document.getElementById('jc-steward-save');
+        if (!btn) return;
+        btn.disabled = !(jcState.stewardItem && jcState.stewardPhotoTaken);
+    }
+
+    window.jcSaveStewardship = function () {
+        var item = jcState.stewardItem;
+        var note = (document.getElementById('jc-steward-note') && document.getElementById('jc-steward-note').value || '').trim();
+        if (!item || (item === 'Other' && !note)) { alert('Select an item (and describe it, if "Other").'); return; }
+        submitStewardshipLog(job.id, item, note, null);
+        showToast('Stewardship Fix Logged', ['Paired invoice lines posted to Bid & Finance.'], '#166534');
+        render();
+    };
+
+    // ── Section B: Closed-Loop Kit Debrief (B1) ─────────────────────────────
+    function debriefListHtml() {
+        var pending = jobKitsPendingDebrief(job.id);
+        var done = DB.find('kit_debriefs', function (d) { return d.job_id === job.id && !d.deleted_at; });
+        var html = '<div class="section-header mt-4"><span class="section-title">Kit Debrief</span></div>';
+
+        if (pending.length === 0 && done.length === 0) {
+            html += '<div class="kit-empty">No kits checked out to this job &mdash; nothing to debrief.</div>';
+            return html;
+        }
+
+        html += '<div class="card" style="cursor:default; padding:0 14px;">';
+        html += pending.map(function (kit) {
+            return '<div class="list-item" style="cursor:pointer;" onclick="jcSelectDebriefKit(\'' + kit.id + '\')">' +
+                '<div class="list-item-body"><div class="list-item-title">' + esc(kit.name) + '</div>' +
+                '<div class="list-item-sub">Needs Debrief</div></div>' +
+                '<span class="card-arrow">&rsaquo;</span></div>';
+        }).join('');
+        html += done.map(function (d) {
+            var kit = DB.getById('inventory_kits', d.kit_id);
+            return '<div class="list-item" style="opacity:0.65;">' +
+                '<div class="list-item-body"><div class="list-item-title">' + esc(kit ? kit.name : 'Unknown Kit') + '</div>' +
+                '<div class="list-item-sub">Debriefed &bull; ' + (d.performance_audit_pass ? 'Passed' : 'Flagged') + '</div></div>' +
+                '</div>';
+        }).join('');
+        html += '</div>';
+        return html;
+    }
+
+    window.jcSelectDebriefKit = function (kitId) {
+        jcState.debriefKitId = kitId;
+        jcState.passed = null;
+        jcState.friction = 'none';
+        jcState.flagged = {};
+        jcState.inventory = null;
+        jcState.photoTaken = false;
+        jcState.photoTakenAt = null;
+        render();
+    };
+
+    function debriefFormHtml(kit) {
+        var tools = DB.find('materials', function (m) { return m.kit_id === kit.id && m.item_type === 'tool' && !m.deleted_at; });
+        var html = '<div class="flex-between mb-2">' +
+            '<div class="page-title-sm">' + esc(kit.name) + ' &mdash; Debrief</div>' +
+            '<button class="btn btn-outline btn-sm" onclick="jcSelectDebriefKit(null)">&larr; List</button>' +
+            '</div>';
+
+        html += '<div class="section-header"><span class="section-title">Performance Audit</span></div>';
+        html += '<div style="display:flex; gap:8px; margin-bottom:14px;">' +
+            '<button class="btn ' + (jcState.passed === true ? 'btn-primary' : 'btn-outline') + '" style="flex:1;" onclick="jcSetPassed(true)">Yes &mdash; Performed Well</button>' +
+            '<button class="btn ' + (jcState.passed === false ? 'btn-primary' : 'btn-outline') + '" style="flex:1;" onclick="jcSetPassed(false)">No &mdash; Issues</button>' +
+            '</div>';
+
+        html += '<div class="form-group"><label>Friction Source</label><select id="jc-friction" onchange="jcSetFriction(this.value)">' +
+            Object.keys(FRICTION_SOURCES).map(function (key) {
+                return '<option value="' + key + '"' + (jcState.friction === key ? ' selected' : '') + '>' + esc(FRICTION_SOURCES[key]) + '</option>';
+            }).join('') + '</select></div>';
+
+        html += '<div class="section-header"><span class="section-title">Per-Tool Maintenance Check</span></div>';
+        if (tools.length === 0) {
+            html += '<div class="kit-empty">This kit has no tool rows to check.</div>';
+        } else {
+            html += '<div class="card" style="cursor:default; padding:0 14px;">' + tools.map(function (t) {
+                var flagged = !!jcState.flagged[t.id];
+                return '<div class="list-item">' +
+                    '<div class="list-item-body"><label style="display:flex; align-items:center; gap:8px; cursor:pointer;">' +
+                        '<input type="checkbox" ' + (flagged ? 'checked' : '') + ' onchange="jcToggleTool(\'' + t.id + '\', \'' + jsArg(t.name) + '\', this.checked)">' +
+                        '<span>' + esc(t.name) + (flagged ? ' &mdash; Needs Maintenance' : ' &mdash; OK') + '</span>' +
+                    '</label></div></div>';
+            }).join('') + '</div>';
+        }
+
+        html += '<div class="section-header mt-4"><span class="section-title">Inventory Status</span></div>';
+        html += '<div style="display:flex; gap:8px; margin-bottom:14px;">' +
+            '<button class="btn ' + (jcState.inventory === 'complete' ? 'btn-primary' : 'btn-outline') + '" style="flex:1;" onclick="jcSetInventory(\'complete\')">Complete</button>' +
+            '<button class="btn ' + (jcState.inventory === 'incomplete' ? 'btn-primary' : 'btn-outline') + '" style="flex:1;" onclick="jcSetInventory(\'incomplete\')">Incomplete</button>' +
+            '</div>';
+
+        html += '<div class="card mb-2" style="cursor:default;">' +
+            '<div class="list-item-title">Kit Photo</div>' +
+            '<div class="list-item-sub" id="jc-debrief-photo-status"></div>' +
+            '<button class="btn btn-secondary btn-sm mt-2" id="jc-debrief-photo-btn" style="width:auto;">Take Photo</button>' +
+            '</div>';
+
+        html += '<button class="btn btn-primary" id="jc-debrief-save" disabled onclick="jcSubmitDebrief(\'' + kit.id + '\')">Submit Debrief</button>';
+        return html;
+    }
+
+    window.jcSetPassed = function (v) { jcState.passed = v; render(); };
+    window.jcSetFriction = function (v) { jcState.friction = v; };
+    window.jcSetInventory = function (v) { jcState.inventory = v; syncDebriefSave(); render(); };
+    window.jcToggleTool = function (id, name, checked) {
+        if (checked) jcState.flagged[id] = { material_id: id, name: name, issue_type: 'needs_maintenance' };
+        else delete jcState.flagged[id];
+    };
+
+    function syncDebriefSave() {
+        var btn = document.getElementById('jc-debrief-save');
+        if (!btn) return;
+        btn.disabled = !(jcState.passed !== null && jcState.inventory && jcState.photoTaken);
+    }
+
+    window.jcSubmitDebrief = function (kitId) {
+        var toolIssues = Object.keys(jcState.flagged).map(function (k) { return jcState.flagged[k]; });
+        submitKitDebrief(job.id, kitId, jcState.passed, jcState.friction, toolIssues, jcState.inventory, null);
+        var flaggedCount = toolIssues.length + (jcState.inventory === 'incomplete' ? 1 : 0);
+        showToast('Kit Debrief Logged', [flaggedCount ? flaggedCount + ' maintenance ticket' + (flaggedCount > 1 ? 's' : '') + ' created.' : 'No issues flagged — kit is clean.'], flaggedCount ? '#b91c1c' : '#166534');
+        jcState.debriefKitId = null;
+        render();
+    };
+
+    // ── Mark Job Complete ───────────────────────────────────────────────────
+    function completeSectionHtml() {
+        if (job.status === 'closed') {
+            var when = job.closed_at ? new Date(job.closed_at).toLocaleDateString() : '';
+            return '<div class="alert" style="margin-top:16px; background:#dcfce7; color:#166534;">Job closed out' + (when ? ' on ' + when : '') + '.</div>';
+        }
+        var ready = jobCloseoutReady(job);
+        var reasons = [];
+        if (!jobStewardshipLog(job.id)) reasons.push('log the Surprise &amp; Delight fix');
+        if (jobKitsPendingDebrief(job.id).length) reasons.push(jobKitsPendingDebrief(job.id).length + ' kit(s) still need a debrief');
+        return '<div class="section-header mt-4"><span class="section-title">Finish Close-Out</span></div>' +
+            (ready ? '' : '<div class="kit-empty">Still needed: ' + reasons.join('; ') + '.</div>') +
+            '<button class="btn btn-primary mt-2" ' + (ready ? '' : 'disabled') + ' onclick="jcMarkComplete()">Mark Job Complete</button>';
+    }
+
+    window.jcMarkComplete = function () {
+        if (!confirm('Mark "' + job.name + '" as complete? This closes the job out.')) return;
+        markJobComplete(job.id);
+        job = DB.getById('jobs', job.id);
+        showToast('Job Closed Out', [job.name + ' is now 100% complete.'], '#166534');
+        render();
+    };
+
+    function render() {
+        var html = stewardshipHtml();
+        html += debriefListHtml();
+        var el = document.getElementById('jc-content');
+        if (jcState.debriefKitId) {
+            var kit = DB.getById('inventory_kits', jcState.debriefKitId);
+            el.innerHTML = kit ? debriefFormHtml(kit) : html + completeSectionHtml();
+        } else {
+            html += completeSectionHtml();
+            el.innerHTML = html;
+        }
+
+        wireCapture('jc-steward-photo-btn', 'jc-steward-photo-status', jcState.stewardPhotoTakenAt, function (now) {
+            jcState.stewardPhotoTaken = true;
+            jcState.stewardPhotoTakenAt = now;
+            syncStewardSave();
+        });
+        wireCapture('jc-debrief-photo-btn', 'jc-debrief-photo-status', jcState.photoTakenAt, function (now) {
+            jcState.photoTaken = true;
+            jcState.photoTakenAt = now;
+            syncDebriefSave();
+        });
+        syncStewardSave();
+        syncDebriefSave();
+    }
+
+    render();
+})();
+</script>
