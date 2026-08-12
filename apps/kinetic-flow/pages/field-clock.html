@@ -41,6 +41,23 @@
                 <input type="checkbox" id="gate-cleanliness" class="label-checkbox" onchange="syncClockoutButton()">
             </div>
         </div>
+
+        <!-- Time & Energy Audit — separate from the checklist above (that's
+             site wrap-up tasks; this is a friction/energy check on the shift
+             itself) and routed to a manager on submit, not just logged. -->
+        <div class="section-header">
+            <span class="section-title">Any Friction Points Today?</span>
+        </div>
+        <div class="card" style="cursor:default; margin-bottom:16px;">
+            <div id="friction-status" style="font-size:0.78rem; color:#64748b; margin-bottom:10px;">Pick one before you clock out.</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <button class="btn btn-outline btn-sm" style="margin:0;" onclick="selectFriction('tool_failure')">Tool Failure</button>
+                <button class="btn btn-outline btn-sm" style="margin:0;" onclick="selectFriction('material_kit_delay')">Material / Kit Delay</button>
+                <button class="btn btn-outline btn-sm" style="margin:0;" onclick="selectFriction('hidden_site_conditions')">Hidden Site Conditions / Scope Creep</button>
+                <button class="btn btn-outline btn-sm" style="margin:0;" onclick="selectFriction('smooth_run')">Smooth Run</button>
+            </div>
+            <input type="checkbox" id="gate-friction" style="display:none;">
+        </div>
     </div>
 
     <button id="clock-btn" class="btn btn-primary" onclick="toggleClock()">Clock In</button>
@@ -161,6 +178,23 @@
             if (status) status.textContent = 'Kit photo captured at '
                 + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
         }, 900);
+    };
+
+    // Submits immediately on tap — one report per shift, not a draft that
+    // needs a separate save step (matches the rest of this gate: each item
+    // resolves itself the moment it's satisfied).
+    window.selectFriction = function (category) {
+        var routedTo = resolveFrictionRouting(state.currentUserId, state.currentJobId);
+        var routedUser = routedTo ? DB.getById('users', routedTo) : null;
+        submitFrictionReport(state.currentJobId, category, null);
+        var box = document.getElementById('gate-friction');
+        if (box) box.checked = true;
+        syncClockoutButton();
+        var status = document.getElementById('friction-status');
+        if (status) {
+            status.textContent = 'Logged: ' + FRICTION_CATEGORIES[category] +
+                (routedUser ? ' — routed to ' + routedUser.full_name : '');
+        }
     };
 })();
 </script>

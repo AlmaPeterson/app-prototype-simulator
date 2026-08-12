@@ -16,6 +16,11 @@
     <div id="tt-flagged" style="border:1px solid #fca5a5; padding:0 14px; margin-bottom:16px;"></div>
 
     <div class="section-header">
+        <span class="section-title">Friction Reports</span>
+    </div>
+    <div id="tt-friction" style="border:1px solid #e2e8f0; padding:0 14px; margin-bottom:16px;"></div>
+
+    <div class="section-header">
         <span class="section-title">Submitted &mdash; Awaiting Export</span>
     </div>
     <div id="tt-workers"></div>
@@ -72,6 +77,35 @@
             approved_by: state.currentUserId,
             approved_at: new Date().toISOString(),
         });
+        loadPage('team-time');
+    };
+
+    // Time & Energy Audit reports routed to this manager, plus any from a
+    // managed worker that resolveFrictionRouting() couldn't route (no branch
+    // manager and no job lead) — otherwise those would never surface anywhere.
+    var friction = DB.find('friction_reports', function (f) {
+        return !f.resolved_at && (f.routed_to_user_id === state.currentUserId
+            || (workerIds.indexOf(f.user_id) !== -1 && !f.routed_to_user_id));
+    }).sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); });
+
+    var frictionHtml = friction.map(function (f, i) {
+        var u = workers.find(function (w) { return w.id === f.user_id; }) || DB.getById('users', f.user_id);
+        var job = f.job_id ? DB.getById('jobs', f.job_id) : null;
+        var isSmooth = f.category === 'smooth_run';
+        return '<div class="list-item"' + (i === friction.length - 1 ? ' style="border-bottom:none;"' : '') + '>' +
+            '<div class="list-item-body">' +
+                '<div class="list-item-title">' + (u ? esc(u.full_name) : 'Team member') + '</div>' +
+                '<div class="list-item-sub" style="color:' + (isSmooth ? '#166534' : '#b91c1c') + ';">' + esc(FRICTION_CATEGORIES[f.category] || f.category) + '</div>' +
+                '<div class="list-item-detail">' + (job ? esc(job.name) : 'No job') + ' &bull; ' + fmtDate(f.created_at) + '</div>' +
+            '</div>' +
+            '<button class="btn btn-secondary btn-sm" style="margin:0;" onclick="ttAcknowledgeFriction(\'' + f.id + '\')">Acknowledge</button>' +
+        '</div>';
+    }).join('');
+    document.getElementById('tt-friction').innerHTML = frictionHtml ||
+        '<div class="list-item" style="border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">No open friction reports.</div></div>';
+
+    window.ttAcknowledgeFriction = function (reportId) {
+        acknowledgeFrictionReport(reportId);
         loadPage('team-time');
     };
 

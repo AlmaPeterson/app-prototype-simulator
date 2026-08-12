@@ -17,7 +17,7 @@ const STORAGE_KEY = 'kineticFlow.state';
 // Bump whenever db/*.json seed data or table shapes change: restoreState()
 // discards localStorage DB snapshots from older versions and re-fetches the
 // fresh seeds, so users don't need a manual "Reset Demo Data".
-const DB_VERSION = 19;
+const DB_VERSION = 20;
 
 // ── App State ──────────────────────────────────────────────────────────────
 const state = {
@@ -73,7 +73,7 @@ const TABLES = [
     'training_assignments', 'job_history_library', 'finance_snapshots',
     'expense_entries', 'finance_dashboard_permissions', 'property_records',
     'phase_logs', 'system_state', 'label_templates',
-    'kit_debriefs', 'stewardship_logs', 'material_orders',
+    'kit_debriefs', 'stewardship_logs', 'material_orders', 'friction_reports',
 ];
 
 let _tables = {};
@@ -2604,7 +2604,8 @@ function toggleClock() {
         // About to clock OUT — require the pre-clock-out checklist first.
         const gateOk = document.getElementById('gate-materials').checked
             && document.getElementById('gate-kit-photo').checked
-            && document.getElementById('gate-cleanliness').checked;
+            && document.getElementById('gate-cleanliness').checked
+            && document.getElementById('gate-friction').checked;
         if (!gateOk) {
             alert('Complete the "Before You Clock Out" checklist before clocking out.');
             return;
@@ -2620,7 +2621,7 @@ function toggleClock() {
         elapsedSeconds = 0;
         clockStartedAt = Date.now();
         timerInterval = setInterval(tickTimer, 1000);
-        ['gate-materials', 'gate-kit-photo', 'gate-cleanliness'].forEach(function (id) {
+        ['gate-materials', 'gate-kit-photo', 'gate-cleanliness', 'gate-friction'].forEach(function (id) {
             const el = document.getElementById(id);
             if (el) el.checked = false;
         });
@@ -2706,7 +2707,7 @@ function syncClockoutButton() {
         btn.style.opacity = '';
         return;
     }
-    const done = ['gate-materials', 'gate-kit-photo', 'gate-cleanliness'].every(function (id) {
+    const done = ['gate-materials', 'gate-kit-photo', 'gate-cleanliness', 'gate-friction'].every(function (id) {
         const el = document.getElementById(id);
         return el && el.checked;
     });
@@ -3107,6 +3108,49 @@ function submitTeamTimeToQuickBooks(entryIds) {
     loadPage('team-time');
 }
 
+// ── Time & Energy Audit / Friction Check ────────────────────────────────────
+// A mandatory clock-out prompt distinct from the pre-existing "Before You
+// Clock Out" checklist (materials/kit-photo/cleanliness) — this asks about
+// friction encountered during the shift, not site wrap-up tasks, and routes
+// the answer to a manager instead of just logging it.
+const FRICTION_CATEGORIES = {
+    tool_failure: 'Tool Failure',
+    material_kit_delay: 'Material / Kit Delay',
+    hidden_site_conditions: 'Hidden Site Conditions / Scope Creep',
+    smooth_run: 'Smooth Run',
+};
+
+// "The right manager": the branch manager for this worker's branch (real
+// managed-by relationship, same one managedWorkers()/team-time.html use),
+// falling back to the job's lead if the worker has no branch manager (or
+// *is* the branch manager) — never routes a report back to its own author.
+function resolveFrictionRouting(userId, jobId) {
+    const user = DB.getById('users', userId);
+    const branch = user && user.branch_id ? DB.getById('branches', user.branch_id) : null;
+    if (branch && branch.manager_id && branch.manager_id !== userId) return branch.manager_id;
+    const job = jobId ? DB.getById('jobs', jobId) : null;
+    if (job && job.lead_id && job.lead_id !== userId) return job.lead_id;
+    return null;
+}
+
+// Only "Smooth Run" skips a note by default — the other three are exactly
+// the situations a manager would want a sentence of context on, though none
+// are hard-required (the spec describes four buttons, not a mandatory essay).
+function submitFrictionReport(jobId, category, note) {
+    return DB.insert('friction_reports', {
+        company_id: state.currentCompanyId, job_id: jobId, user_id: state.currentUserId,
+        time_entry_id: currentTimeEntryId, category: category, note: note || null,
+        routed_to_user_id: resolveFrictionRouting(state.currentUserId, jobId),
+        resolved_at: null, resolved_by: null,
+    });
+}
+
+function acknowledgeFrictionReport(reportId) {
+    return DB.update('friction_reports', reportId, {
+        resolved_at: new Date().toISOString(), resolved_by: state.currentUserId,
+    });
+}
+
 // ── Dashboard pages ──────────────────────────────────────────────────────────
 function openScoreboard() { loadPage('scoreboard'); }
 function openStats() { loadPage('stats'); }
@@ -3339,6 +3383,7 @@ function activate() {
         openMaterialLog, closeMaterialModal, saveMaterialLog,
         submitTimeSheet, saveTimesheetDraft, openEndOfDay, syncClockoutButton,
         openTeamTime, managedWorkers, submitTeamTimeToQuickBooks,
+        FRICTION_CATEGORIES, submitFrictionReport, acknowledgeFrictionReport, resolveFrictionRouting,
         jobSiteCoords, metersBetween, formatDistanceM,
         openScoreboard, openStats, openFinance, openCustomerHome, showToast,
         updateAppHeader, showHeaderMenu, closeHeaderMenu, showProfileSheet, closeProfileSheet,
