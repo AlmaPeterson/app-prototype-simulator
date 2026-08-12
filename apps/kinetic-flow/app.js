@@ -50,6 +50,7 @@ const state = {
     kitVideoId: null,         // inventory_kits.id whose video is being watched on kit-video.html (set by openKitVideo() in kits.html)
     kitVideoEntryId: null,    // the specific kit.videos[].video_asset_id being watched (a kit can have several videos)
     kitVideoReturnKitId: null, // inventory_kits.id to re-select on landing back in kits.html after kit-video.html
+    simulateSabbath: false,  // header ⋯ menu toggle: pretend it's Sunday, for testing the Sabbath Lock without waiting for a real one (see isSabbathLocked())
 };
 
 // ── Mock DB ──────────────────────────────────────────────────────────────
@@ -314,6 +315,17 @@ let isNavigatingBack = false;
 const PAGE_ANIM_CLASSES = ['page-exit-forward', 'page-exit-back', 'page-enter-forward', 'page-enter-back'];
 
 function loadPage(name) {
+    // Checked before anything else touches pageHistory/state — a blocked
+    // destination shouldn't leave a back-stack entry, and re-checking on
+    // every call (not just once at sign-in) means the lock re-asserts itself
+    // no matter which nav tap, deep link, or redirect tries to get past it.
+    if (isSabbathLocked() && SABBATH_EXEMPT_PAGES.indexOf(name) === -1) {
+        state.currentPage = name;
+        saveState();
+        ensureSabbathOverlay();
+        return;
+    }
+    removeSabbathOverlay();
     const wasBack = isNavigatingBack;
     if (!isNavigatingBack && state.currentPage && state.currentPage !== name) {
         pageHistory.push(state.currentPage);
@@ -518,8 +530,8 @@ function showHeaderMenu() {
                 : '') +
             (canManageInventory() ? item('Shop Logistics', 'openShopLogistics()') : '') +
             item('Stock Inventory', "loadPage('inventory')") +
-            '<div class="header-menu-section">Preview</div>' +
-            item('Sabbath Lock', 'showSabbathLock()') +
+            '<div class="header-menu-section">Testing</div>' +
+            item((state.simulateSabbath ? '&#10003; ' : '') + 'Simulate Sabbath Lock', 'toggleSimulateSabbath()') +
             '<div class="header-menu-section">Account</div>' +
             item('Sign Out', 'signOut()', 'danger') +
         '</div>';
@@ -820,24 +832,56 @@ function submitAccount() {
 function goToSignIn() { loadPage('sign-in'); }
 
 // ── Sabbath Lock ─────────────────────────────────────────────────────────────
-// Real behavior would be a server-enforced Sunday lockout (see project
-// reference doc) — this is a manually-triggered UI preview only, since the
-// prototype has no cron/date logic.
-function showSabbathLock() {
+// Real, not a preview: driven off the actual device clock (new Date() —
+// there's no server to enforce this from in a static prototype, so "real"
+// here means "reacts to the real current day" rather than only firing when
+// someone taps a menu item). state.simulateSabbath is the one manual
+// override, for testing without waiting for an actual Sunday — same idea as
+// field-clock's GPS simulator toggle. Customers are exempt: the spec's own
+// list of frozen surfaces (check-ins, time tracking, inventory, project
+// views) is all worker-side; the read-only customer property page isn't.
+function isSabbathLocked() {
+    return (new Date().getDay() === 0 || state.simulateSabbath === true) && state.role !== 'customer';
+}
+
+// Pages that stay reachable even while locked — signing in/up/out has to
+// keep working or nobody could ever exit or re-enter the app, and the lock
+// itself needs to re-assert on top of whatever they land on.
+const SABBATH_EXEMPT_PAGES = ['sign-in', 'sign-up', 'account-pending'];
+
+// A full #phone-covering overlay (same element/CSS the old manual preview
+// used) — appended as a sibling of #main/#app-header/#bottom-nav rather than
+// swapped into #main, so it genuinely covers the entire app (header, nav,
+// and content) instead of just the page area. loadPage()'s gate calls this
+// every time it blocks a navigation; ensureSabbathOverlay() is idempotent so
+// repeated calls (tapping different nav tabs while locked) are harmless.
+// Only the simulated lock gets an exit button — a real Sunday is meant to be
+// un-bypassable, so there's nothing to tap out of.
+function ensureSabbathOverlay() {
     if (document.getElementById('sabbath-lock-overlay')) return;
+    const phone = document.getElementById('phone');
+    if (!phone) return;
     const overlay = document.createElement('div');
     overlay.id = 'sabbath-lock-overlay';
     overlay.className = 'sabbath-overlay';
     overlay.innerHTML =
         '<div class="sabbath-title">Day of Rest</div>' +
         '<div class="sabbath-sub">Kinetic Flow locks every Sunday, midnight to midnight.<br>Rest well &mdash; see you Monday.</div>' +
-        '<button class="btn btn-secondary" style="margin-top:24px; width:auto; padding:10px 24px;" onclick="hideSabbathLock()">Exit Preview</button>';
-    document.getElementById('phone').appendChild(overlay);
+        (state.simulateSabbath && new Date().getDay() !== 0
+            ? '<button class="btn btn-secondary" style="margin-top:24px; width:auto; padding:10px 24px;" onclick="toggleSimulateSabbath()">Exit Simulation</button>'
+            : '');
+    phone.appendChild(overlay);
 }
 
-function hideSabbathLock() {
+function removeSabbathOverlay() {
     const overlay = document.getElementById('sabbath-lock-overlay');
     if (overlay) overlay.remove();
+}
+
+function toggleSimulateSabbath() {
+    state.simulateSabbath = !state.simulateSabbath;
+    saveState();
+    loadPage(state.currentPage || 'jobs');
 }
 
 // ── Company / Membership ────────────────────────────────────────────────────
@@ -2580,6 +2624,15 @@ function toggleClock() {
     const status = document.getElementById('clock-status');
     if (!btn) return;
 
+    // Covers the one path that doesn't go through loadPage() — someone still
+    // clocked in on field-clock when midnight rolled into Sunday. The lock
+    // itself is enforced on every navigation (see loadPage()); this just
+    // keeps a mid-session clock button from being an escape hatch around it.
+    if (isSabbathLocked()) {
+        loadPage('field-clock');
+        return;
+    }
+
     if (!clockedIn && !state.currentJobId) {
         // A punch with no job would insert job_id: null — "Unknown Job" on
         // the timesheet and no geofence to check. Send them to pick one; the
@@ -3356,7 +3409,7 @@ function activate() {
         setRole,
         signIn, afterSignIn, signOut, showSignUp, closeSignUp, submitAccount, goToSignIn,
         showAccountSearch, hideAccountSearch, filterAccountSearch, pickAccount, accountPositionLabel,
-        showSabbathLock, hideSabbathLock,
+        isSabbathLocked, toggleSimulateSabbath,
         continueFromSetup, openBranch,
         companyMemberUsers, userIsSupplier, companyRoles, roleDisplayName,
         canManageUsers, pendingAccountCount, openManageUsers, COMPANY_ID,
