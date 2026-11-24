@@ -1,18 +1,98 @@
 [
-  {
-    "id": "sys-sabbath-lock",
-    "company_id": "company-kineticflow",
-    "key": "sabbath_lock",
-    "value": "false",
-    "updated_at": "2026-07-01T12:00:00Z",
-    "updated_by": null
-  },
-  {
-    "id": "sys-maintenance-mode",
-    "company_id": "company-kineticflow",
-    "key": "maintenance_mode",
-    "value": "false",
-    "updated_at": "2026-05-18T12:00:00Z",
-    "updated_by": "user-master"
-  }
+ {
+  "id": "sys-sabbath-lock",
+  "company_id": "company-kineticflow",
+  "key": "sabbath_lock",
+  "value": "false",
+  "updated_at": "2026-07-01T12:00:00Z",
+  "updated_by": null
+ },
+ {
+  "id": "sys-maintenance-mode",
+  "company_id": "company-kineticflow",
+  "key": "maintenance_mode",
+  "value": "false",
+  "updated_at": "2026-05-18T12:00:00Z",
+  "updated_by": "user-master"
+ },
+ {
+  "id": "fca7ded8-2ae1-579e-8c36-dc5a9e21f02c",
+  "company_id": "company-kineticflow",
+  "key": "tax_multiplier",
+  "value": "1.0745",
+  "updated_at": "2026-11-24T12:00:00Z",
+  "updated_by": null
+ },
+ {
+  "id": "80d86815-895c-5f6b-8a75-cf7e798fb9c0",
+  "company_id": "company-kineticflow",
+  "key": "friction_pct",
+  "value": "0.10",
+  "updated_at": "2026-11-24T12:00:00Z",
+  "updated_by": null
+ },
+ {
+  "id": "3e542315-f328-5b9e-8ace-07f993a57003",
+  "company_id": "company-kineticflow",
+  "key": "contingency_pct",
+  "value": "0.10",
+  "updated_at": "2026-11-24T12:00:00Z",
+  "updated_by": null
+ },
+ {
+  "id": "aa56039e-b70b-5ebd-81a0-cb80d2dbbb71",
+  "company_id": "company-kineticflow",
+  "key": "include_contingency",
+  "value": "false",
+  "updated_at": "2026-11-24T12:00:00Z",
+  "updated_by": null
+ },
+ {
+  "id": "65170706-77dd-5d06-8cfe-39db410a8154",
+  "company_id": "company-kineticflow",
+  "key": "round_step",
+  "value": "5",
+  "updated_at": "2026-11-24T12:00:00Z",
+  "updated_by": null
+ },
+ {
+  "id": "3b95fa3f-ef99-5065-8b90-50e153936078",
+  "company_id": "company-kineticflow",
+  "key": "mileage_rate_per_mile",
+  "value": "2.80",
+  "updated_at": "2026-11-24T12:00:00Z",
+  "updated_by": null
+ },
+ {
+  "id": "e0658c0d-cd40-531f-a742-8e9c7a6840e5",
+  "company_id": "company-kineticflow",
+  "key": "execution_fuel_allowance",
+  "value": "12.00",
+  "updated_at": "2026-11-24T12:00:00Z",
+  "updated_by": null
+ },
+ {
+  "id": "e108f0f6-b6b2-50cb-a570-0b85fa261901",
+  "company_id": "company-kineticflow",
+  "key": "sprint_max_days",
+  "value": "4",
+  "updated_at": "2026-11-24T12:00:00Z",
+  "updated_by": null
+ },
+ {
+  "id": "451a2f16-c5cb-59f5-a9a5-f15c282bcc3f",
+  "company_id": "company-kineticflow",
+  "key": "small_job_threshold",
+  "value": "5000",
+  "updated_at": "2026-11-24T12:00:00Z",
+  "updated_by": null
+ },
+ {
+  "id": "d4766eb2-f397-5401-b93f-46e5481694cc",
+  "company_id": "company-kineticflow",
+  "key": "planning_trips",
+  "value": "1",
+  "updated_at": "2026-11-24T12:00:00Z",
+  "updated_by": null
+ }
 ]

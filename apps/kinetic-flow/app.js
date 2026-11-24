@@ -17,7 +17,26 @@ const STORAGE_KEY = 'kineticFlow.state';
 // Bump whenever db/*.json seed data or table shapes change: restoreState()
 // discards localStorage DB snapshots from older versions and re-fetches the
 // fresh seeds, so users don't need a manual "Reset Demo Data".
-const DB_VERSION = 20;
+const DB_VERSION = 21;
+
+// ── Feature flags ───────────────────────────────────────────────────────────
+// Default ON. Toggle from the header ⋯ menu (Testing section); persisted in
+// the state snapshot. See docs/decisions/006-feature-flags.md for what OFF does.
+//   libraryBids - bid/change-order lines pick library tasks + materials. OFF =
+//                 free-typed "custom" lines only (the pre-library behavior).
+//   bidGates    - 4-Day Sprint warning + payment-terms gate. OFF = no gate
+//                 panels and the legacy fixed 50/20/20/10 payment schedule.
+const FLAGS = { libraryBids: true, bidGates: true };
+
+// pricing.js is a pure-function module shared with tests/pricing.html; load it
+// next to app.js so the engine is ready long before any bid page opens.
+(function loadPricing() {
+    if (window.KFPricing || document.getElementById('kf-pricing-js')) return;
+    const sc = document.createElement('script');
+    sc.id = 'kf-pricing-js';
+    sc.src = 'apps/kinetic-flow/pricing.js';
+    document.head.appendChild(sc);
+})();
 
 // ── App State ──────────────────────────────────────────────────────────────
 const state = {
@@ -50,6 +69,7 @@ const state = {
     kitVideoId: null,         // inventory_kits.id whose video is being watched on kit-video.html (set by openKitVideo() in kits.html)
     kitVideoEntryId: null,    // the specific kit.videos[].video_asset_id being watched (a kit can have several videos)
     kitVideoReturnKitId: null, // inventory_kits.id to re-select on landing back in kits.html after kit-video.html
+    flags: FLAGS,             // feature flags (see FLAGS) — same object, so the snapshot saves them
     simulateSabbath: false,  // header ⋯ menu toggle: pretend it's Sunday, for testing the Sabbath Lock without waiting for a real one (see isSabbathLocked())
 };
 
@@ -75,6 +95,8 @@ const TABLES = [
     'expense_entries', 'finance_dashboard_permissions', 'property_records',
     'phase_logs', 'system_state', 'label_templates',
     'kit_debriefs', 'stewardship_logs', 'material_orders', 'friction_reports',
+    // Library tables (Google Sheets LIB_02-06) + labor rates — see docs/decisions/001-005
+    'scope_tasks', 'labor_rates', 'kits', 'rooms', 'scope_statuses',
 ];
 
 let _tables = {};
@@ -532,6 +554,9 @@ function showHeaderMenu() {
             item('Stock Inventory', "loadPage('inventory')") +
             '<div class="header-menu-section">Testing</div>' +
             item((state.simulateSabbath ? '&#10003; ' : '') + 'Simulate Sabbath Lock', 'toggleSimulateSabbath()') +
+            '<div class="header-menu-section">Feature Flags</div>' +
+            item((FLAGS.libraryBids ? '&#10003; ' : '') + 'libraryBids (library tasks &amp; materials)', "toggleFlag('libraryBids')") +
+            item((FLAGS.bidGates ? '&#10003; ' : '') + 'bidGates (4-Day Sprint &amp; payment terms)', "toggleFlag('bidGates')") +
             '<div class="header-menu-section">Account</div>' +
             item('Sign Out', 'signOut()', 'danger') +
         '</div>';
@@ -659,12 +684,16 @@ function signIn() {
         signInError('No account found for "' + typed + '". Check the email or tap Request Access below.');
         return;
     }
-    // Accounts created through sign-up start as approval_status 'pending' and
+    // Accounts created through sign-up start as status 'pending' (the real users.status column) and
     // stay locked out until someone with the manage-users permission approves
-    // them on manage-users. Seeded users have no approval_status — treated as
+    // them on manage-users. Seeded users are 'approved' — treated as
     // approved.
-    if (user.approval_status === 'pending') {
+    if (user.status === 'pending') {
         loadPage('account-pending');
+        return;
+    }
+    if (user.status === 'rejected') {
+        signInError('This account request was not approved.');
         return;
     }
     afterSignIn(user);
@@ -809,7 +838,7 @@ function submitAccount() {
         // New accounts are requests, not memberships — anyone with the
         // manage-users permission approves them on manage-users (and can
         // change the requested position there) before they can sign in.
-        approval_status: 'pending',
+        status: 'pending',
         request_note: val('signup-notes') || null,
     });
     const roleId = val('signup-role');
@@ -878,6 +907,13 @@ function removeSabbathOverlay() {
     if (overlay) overlay.remove();
 }
 
+function toggleFlag(name) {
+    if (!(name in FLAGS)) return;
+    FLAGS[name] = !FLAGS[name];
+    saveState();
+    showToast('Flag ' + name, [FLAGS[name] ? 'ON' : 'OFF - reopen the bid screens to see the change.'], '#1e40af');
+}
+
 function toggleSimulateSabbath() {
     state.simulateSabbath = !state.simulateSabbath;
     saveState();
@@ -904,7 +940,7 @@ function companyMemberUsers(companyId) {
     const rows = [];
     // approval_status 'pending' = an unapproved sign-up request — those show
     // in manage-users' Account Requests, never as members.
-    DB.find('users', function (u) { return u.company_id === companyId && !u.deleted_at && u.approval_status !== 'pending'; })
+    DB.find('users', function (u) { return u.company_id === companyId && !u.deleted_at && u.status !== 'pending' && u.status !== 'rejected'; })
         .forEach(function (u) { seen[u.id] = true; rows.push(u); });
     DB.get('user_roles').forEach(function (ur) {
         // Pending rows are join *requests*, not memberships — they only
@@ -937,22 +973,34 @@ function userIsSupplier() {
 // (or their per-member override). Gates the ⋯ menu's Manage Users entry, the
 // pending-account indicator, and the manage-users page itself — there is no
 // special admin account; any position can carry this permission.
-function canManageUsers() {
-    if (!state.currentUserId) return false;
-    return DB.get('user_roles').some(function (ur) {
-        if (ur.user_id !== state.currentUserId || ur.deleted_at || ur.status !== 'active') return false;
+function canManageUsers() { return hasPermission('manageUsers'); }
+
+// Real-backend model: permissions live on company-scoped roles as a
+// map[string]bool and a user's permissions are the UNION across their roles
+// (a key mapped to false grants nothing). A per-member override (this
+// prototype's extra) replaces that membership's role map. Old snake_case keys
+// from before the alignment are still honoured for saved overrides.
+const LEGACY_PERMISSION_KEYS = { manageUsers: 'manage_users', manageBids: 'manage_bids', manageInventory: 'manage_inventory' };
+function userPermissions(userId) {
+    const out = {};
+    if (!userId) return out;
+    DB.get('user_roles').forEach(function (ur) {
+        if (ur.user_id !== userId || ur.deleted_at || ur.status !== 'active') return;
         const role = DB.getById('roles', ur.role_id);
-        if (!role || role.deleted_at) return false;
+        if (!role || role.deleted_at) return;
         const perms = ur.overrides || role.permissions || {};
-        return !!perms.manage_users;
+        Object.keys(perms).forEach(function (k) { if (perms[k] === true) out[k] = true; });
+        Object.keys(LEGACY_PERMISSION_KEYS).forEach(function (k) { if (perms[LEGACY_PERMISSION_KEYS[k]] === true) out[k] = true; });
     });
+    return out;
 }
+function hasPermission(key) { return !!userPermissions(state.currentUserId)[key]; }
 
 // Sign-up requests waiting on approval — drives the red dot on the ⋯ button
 // and the count on the Manage Users menu row (admins only, see canManageUsers).
 function pendingAccountCount() {
     return DB.find('users', function (u) {
-        return !u.deleted_at && u.approval_status === 'pending';
+        return !u.deleted_at && u.status === 'pending';
     }).length;
 }
 
@@ -964,16 +1012,7 @@ function openManageUsers() {
 // Same shape as canManageUsers() — gates the ⋯ menu's Shop Logistics entry
 // and the page itself. A separate flag from manage_users since a shop hand
 // running daily kit audits isn't necessarily who manages team accounts.
-function canManageInventory() {
-    if (!state.currentUserId) return false;
-    return DB.get('user_roles').some(function (ur) {
-        if (ur.user_id !== state.currentUserId || ur.deleted_at || ur.status !== 'active') return false;
-        const role = DB.getById('roles', ur.role_id);
-        if (!role || role.deleted_at) return false;
-        const perms = ur.overrides || role.permissions || {};
-        return !!perms.manage_inventory;
-    });
-}
+function canManageInventory() { return hasPermission('manageInventory'); }
 
 function openShopLogistics() {
     if (!canManageInventory()) { alert('Only someone with the manage-inventory permission can open Shop Logistics.'); return; }
@@ -1241,6 +1280,18 @@ function companyDivisions(companyId) {
     }
     let result = rows();
     if (!result.length && companyId) {
+        // New company: copy the Kinetic Master Sequence (58 divisions with scope
+        // text) from the first company that has one; the 41-name list below is
+        // only the last-resort fallback if no library rows were ever loaded.
+        const template = DB.find('divisions', function (d) { return !d.deleted_at && d.scope_inclusions != null; });
+        if (template.length) {
+            template.sort(function (a, b) { return a.division_number - b.division_number; });
+            const firstCompany = template[0].company_id;
+            template.filter(function (d) { return d.company_id === firstCompany; }).forEach(function (d) {
+                DB.insert('divisions', { company_id: companyId, division_number: d.division_number, name: d.name, scope_inclusions: d.scope_inclusions, scope_exclusions: d.scope_exclusions, sort_order: d.sort_order, is_active: true });
+            });
+            return rows();
+        }
         DIVISIONS.forEach(function (d, i) {
             DB.insert('divisions', {
                 company_id: companyId, division_number: d.csi,
@@ -1412,7 +1463,7 @@ const BID_VALIDITY_DAYS = 30;
 // IRS-style standard mileage rate — a sane default $/mile for a brand-new
 // bid; fully editable per bid on bid.html (a job with an unusually far or
 // close site should override it there, not here).
-const DEFAULT_MILEAGE_RATE = 0.67;
+const DEFAULT_MILEAGE_RATE = null; // rate now comes from system_state (mileage_rate_per_mile) via pricing.js
 
 function openBid() {
     const job = DB.getById('jobs', state.currentJobId);
@@ -1429,7 +1480,7 @@ function openBid() {
             total_labor: 0, total_materials: 0, total_mileage: 0, total_cost: 0,
             created_by: state.currentUserId, sent_at: null, signed_at: null,
             signature_url: null, notes: null,
-            miles_to_site: null, mileage_rate: DEFAULT_MILEAGE_RATE,
+            miles_to_site: null, mileage_rate: null, is_millwork: false,
         });
         DB.update('jobs', job.id, { bid_id: bid.id });
     }
@@ -1450,6 +1501,11 @@ function submitBid() { loadPage('job-detail'); }
 // manual "+ Add" entries (bid_division_id null) alone.
 const SCHEDULE_DIVISION_COLORS = ['#2563eb', '#7c3aed', '#0d9488', '#d97706', '#db2777', '#475569'];
 
+// Friction-adjusted crew hours for one bid line (0 for materials / unpriced tasks).
+function lineHours(li) {
+    return KFPricing.priceLine(resolveLine(li), pricingSettings(), laborRates()).hoursAdjusted || 0;
+}
+
 function generateScheduleFromBid(jobId) {
     const job = DB.getById('jobs', jobId);
     const bid = job && job.bid_id ? DB.getById('bids', job.bid_id) : null;
@@ -1461,13 +1517,13 @@ function generateScheduleFromBid(jobId) {
             const guys = (div.form_data && div.form_data.guys) || 1;
             DB.find('bid_line_items', function (li) {
                 return li.bid_division_id === div.id && !li.deleted_at
-                    && li.type === 'labor' && li.task_included !== false;
+                    && li.kind === 'task' && li.included !== false;
             }).sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); })
                 .forEach(function (li) {
                     tasks.push({
                         divisionId: div.id,
-                        title: li.description || div.division_name,
-                        days: Math.max(1, Math.ceil((li.quantity || 0) / (8 * guys))),
+                        title: lineTitle(li) || div.division_name,
+                        days: Math.max(1, Math.ceil(lineHours(li) / (8 * guys))),
                         color: SCHEDULE_DIVISION_COLORS[di % SCHEDULE_DIVISION_COLORS.length],
                     });
                 });
@@ -1631,29 +1687,20 @@ function generateBidPdf(bid) {
     const company = DB.getById('companies', bid.company_id);
     const customer = bid.customer_id ? DB.getById('customers', bid.customer_id) : null;
     const address = bid.address_id ? DB.getById('addresses', bid.address_id) : null;
-    const divisions = DB.find('bid_divisions', function (d) { return d.bid_id === bid.id && !d.deleted_at; });
+    // Client document: built from bidProposalModel() only — fixed totals and
+    // library scope text, never hours, tiers, kits or internal costs.
+    const model = bidProposalModel(bid.id);
+    const gates = bidGates(bid.id);
 
-    function money(n) { return '$' + (n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-    function divTotal(row) {
-        const labor = row.labor_cost || 0, mat = row.material_cost || 0, mi = row.mileage_cost || 0;
-        return labor + mat + mi + labor * 0.10 + mat * 0.10 + mi * 0.10;
-    }
-    const grandTotal = divisions.reduce(function (s, d) { return s + divTotal(d); }, 0);
-    const totalDays = bid.construction_days || divisions.reduce(function (sum, row) {
-        const hours = DB.find('bid_line_items', function (li) {
-            return li.bid_division_id === row.id && !li.deleted_at && li.type === 'labor' && li.task_included !== false;
-        }).reduce(function (s, li) { return s + (li.quantity || 0); }, 0);
-        const guys = (row.form_data && row.form_data.guys) || 1;
-        return sum + Math.ceil(hours / (8 * guys));
-    }, 0);
-
+    function money(n) { return KFPricing.fmt(n); }
     const left = 54, right = 558;
     let y = 60;
     function line(label, value, bold) {
         doc.setFont(undefined, bold ? 'bold' : 'normal');
-        doc.text(label, left, y);
+        const parts = doc.splitTextToSize(String(label), value != null ? 380 : 500);
+        doc.text(parts, left, y);
         if (value != null) doc.text(String(value), right, y, { align: 'right' });
-        y += 16;
+        y += 14 * parts.length + 2;
         if (y > 740) { doc.addPage(); y = 60; }
     }
     function heading(text) {
@@ -1677,26 +1724,42 @@ function generateBidPdf(bid) {
     if (bid.expires_at) line('Expires', bid.expires_at.slice(0, 10));
 
     heading('Construction Sequence of Divisions');
-    divisions.forEach(function (d, i) {
-        line((i + 1) + '. ' + d.division_name, money(divTotal(d)));
+    model.divisions.forEach(function (d) {
+        line(d.number + '. ' + d.name, money(d.total), true);
+        if (d.inclusions) line(d.inclusions);
+        d.tasks.forEach(function (t) { line('- ' + t.text + (t.qty ? ' (Qty: ' + t.qty + ' ' + t.unit + ')' : '')); });
+        if (d.exclusions) line('Excludes: ' + d.exclusions);
     });
-    line('Grand Total', money(grandTotal), true);
+    line('Grand Total', money(model.grandTotal), true);
 
     heading('Project Schedule');
     line('Estimated Start', bid.start_date || '—');
     line('Material Procurement', '~' + (bid.procurement_days || 10) + ' business days from deposit');
-    line('On-Site Duration', '~' + (totalDays || '—') + ' business days');
+    line('On-Site Duration', '~' + (bid.construction_days || gates.result.days || '—') + ' business days');
     line('Est. Completion', bid.completion_date || '—');
 
     heading('Schedule of Payments');
-    line('Deposit — 50% (due on acceptance)', money(grandTotal * 0.50));
-    line('Progress Draw 1 — 20%' + (bid.milestone_1 ? ' (' + bid.milestone_1 + ')' : ''), money(grandTotal * 0.20));
-    line('Progress Draw 2 — 20%' + (bid.milestone_2 ? ' (' + bid.milestone_2 + ')' : ''), money(grandTotal * 0.20));
-    line('Final Balance — 10% (on punch-list completion)', money(grandTotal * 0.10));
+    bidPaymentSchedule(bid, model.grandTotal).forEach(function (p) { line(p.label, money(p.amount)); });
 
     const slug = ((bid.title || 'bid').replace(/ — Bid$/, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')) || 'bid';
     doc.save(slug + '-proposal.pdf');
     return true;
+}
+
+// The payment schedule the client sees (and invoices are cut from). With the
+// bidGates flag ON this is the terms gate: 100% upfront under $5,000 or for
+// millwork, otherwise 50% deposit + balance at the Thursday handover. OFF =
+// the legacy fixed 50/20/20/10 draw schedule.
+function bidPaymentSchedule(bid, total) {
+    if (FLAGS.bidGates) return KFPricing.paymentTerms(total, bidIsMillwork(bid), pricingSettings()).schedule;
+    const cost = total || 0;
+    const deposit = round2(cost * 0.5), draw1 = round2(cost * 0.2), draw2 = round2(cost * 0.2);
+    return [
+        { label: 'Deposit - 50% (due on acceptance)', amount: deposit },
+        { label: 'Progress Draw 1 - 20%' + (bid.milestone_1 ? ' (' + bid.milestone_1 + ')' : ''), amount: draw1 },
+        { label: 'Progress Draw 2 - 20%' + (bid.milestone_2 ? ' (' + bid.milestone_2 + ')' : ''), amount: draw2 },
+        { label: 'Final Balance - 10% (on punch-list completion)', amount: round2(cost - deposit - draw1 - draw2) },
+    ];
 }
 
 // "Send to Customer" on bid-proposal.html: generate the customer-facing PDF
@@ -1706,6 +1769,11 @@ function sendBidToCustomer() {
     if (!state.currentBidId) return;
     const bid = DB.getById('bids', state.currentBidId);
     if (!bid) return;
+    const open = computeBid(bid.id).needsPricingCount;
+    if (open > 0) {
+        showToast('Cannot send yet', [open + ' line' + (open === 1 ? '' : 's') + ' still need pricing. Add production hours or a price - an unpriced line is never sent as $0.'], '#b91c1c');
+        return;
+    }
     const gotPdf = generateBidPdf(bid);
     const resend = bid.status === 'sent' || bid.status === 'signed';
     DB.update('bids', bid.id, {
@@ -1745,21 +1813,334 @@ function downloadBidPdf() {
 // jobs.html surface as "Estimated Value". Shared by bid.html (division
 // checkbox toggle) and bid-division.html (saveDivision's persist path) — the
 // two places that can change a division's labor_cost/material_cost.
+
+
+// ── Library bids ─────────────────────────────────────────────────────────────
+// Bid lines no longer carry free-typed descriptions: a line points at a library
+// row (scope_tasks / materials / kits / rooms / scope_statuses) plus a
+// quantity and friction toggles, and pricing.js turns that into money. A line
+// can still be a "custom" task/material (snapshot values on the line) because
+// divisions 28-58 have no task grids yet. See docs/decisions/001-005.
+function pricingSettings() {
+    return KFPricing.settingsFromRows(DB.find('system_state', function (r) { return r.company_id === state.currentCompanyId; }));
+}
+function laborRates() {
+    return KFPricing.ratesFromRows(DB.find('labor_rates', function (r) { return r.company_id === state.currentCompanyId && !r.deleted_at; }));
+}
+function scopeStatusByCode(code) {
+    let row = DB.findOne('scope_statuses', function (s) { return s.scope_code === code && !s.deleted_at; });
+    if (!row && /^CO-\d+$/.test(code)) { // sheet seeds CO-001..CO-020 here; later numbers are created on demand
+        row = DB.insert('scope_statuses', {
+            company_id: state.currentCompanyId, sort_order: 30 + 10 * parseInt(code.slice(3), 10), scope_code: code,
+            display_name: 'Change Order ' + code.slice(3), classification: 'Formal Addendum', is_billable: true,
+            triggers_client_signoff: true, signoff_note: 'Yes (Sequential Form)', ledger_allocation: 'Net Approved Additions / Deductions',
+        });
+    }
+    return row;
+}
+function companyScopeStatuses() {
+    return DB.find('scope_statuses', function (s) { return s.company_id === state.currentCompanyId && !s.deleted_at; })
+        .sort(function (a, b) { return a.sort_order - b.sort_order; });
+}
+function lineStatus(li) {
+    return (li.scope_status_id && DB.getById('scope_statuses', li.scope_status_id)) || scopeStatusByCode('BASE');
+}
+function lineTask(li) {
+    if (li.kind !== 'task') return null;
+    return li.scope_task_id ? DB.getById('scope_tasks', li.scope_task_id) : li.custom_task;
+}
+function lineMaterial(li) {
+    if (li.kind !== 'material') return null;
+    if (li.material_id) {
+        const m = DB.getById('materials', li.material_id);
+        return m ? { name: m.name, unit: m.unit, price: m.price_per_unit != null ? m.price_per_unit : m.unit_cost, waste: m.waste_pct, freight: m.freight, markup: m.markup_pct, supplier: m.supplier } : null;
+    }
+    return li.custom_material || null;
+}
+function lineTitle(li) {
+    const t = lineTask(li), m = lineMaterial(li);
+    return (t && t.task_name) || (m && m.name) || li.description || '(untitled)';
+}
+function resolveLine(li) {
+    const st = lineStatus(li);
+    const r = {
+        id: li.id, kind: li.kind, quantity: li.quantity, frictions: li.frictions || {}, included: li.included !== false,
+        status: { scope_code: st.scope_code, is_billable: st.is_billable },
+    };
+    if (li.kind === 'material') r.material = lineMaterial(li);
+    else { r.task = lineTask(li); r.kit = li.kit_id ? DB.getById('kits', li.kit_id) : null; }
+    return r;
+}
+function bidDivisionRows(bidId) {
+    return DB.find('bid_divisions', function (d) { return d.bid_id === bidId && !d.deleted_at; })
+        .sort(function (a, b) { return a.division_number - b.division_number; });
+}
+function divisionLineRows(divisionId) {
+    return DB.find('bid_line_items', function (li) { return li.bid_division_id === divisionId && !li.deleted_at; })
+        .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+}
+function computeBid(bidId) {
+    const bid = DB.getById('bids', bidId);
+    return KFPricing.bidTotals(bidDivisionRows(bidId).map(function (d) {
+        return {
+            id: d.id, divisionNumber: d.division_number, name: d.division_name,
+            guys: (d.form_data && d.form_data.guys) || 1, lines: divisionLineRows(d.id).map(resolveLine),
+        };
+    }), { milesAway: bid && bid.miles_to_site }, pricingSettings(), laborRates());
+}
+function bidIsMillwork(bid) {
+    return !!bid.is_millwork || bidDivisionRows(bid.id).some(function (d) { return d.division_number === 38; });
+}
+function bidGates(bidId) {
+    const bid = DB.getById('bids', bidId), res = computeBid(bidId), s = pricingSettings();
+    return {
+        result: res,
+        sprint: KFPricing.sprintCheck(res.days, s),
+        payment: KFPricing.paymentTerms(res.clientTotal, bidIsMillwork(bid), s),
+        needsPricing: res.needsPricingCount,
+    };
+}
+
+// Writes the rollups every other screen reads (bids.total_*, bid_divisions.*_cost).
+// total_cost is the client price: the sum of the per-division fixed totals.
 function recalcBidTotals(bidId) {
-    const divisions = DB.find('bid_divisions', function (d) { return d.bid_id === bidId && !d.deleted_at; });
-    let labor = 0, materials = 0, mileage = 0;
-    divisions.forEach(function (d) {
-        labor += d.labor_cost || 0;
-        materials += d.material_cost || 0;
-        mileage += d.mileage_cost || 0;
+    const res = computeBid(bidId);
+    let mileage = 0;
+    res.divisions.forEach(function (t) {
+        mileage += t.mileage.total;
+        DB.update('bid_divisions', t.id, {
+            labor_cost: t.labor, material_cost: t.materialCost, mileage_cost: t.mileage.total, client_total: t.clientTotal,
+            hours: Math.round(t.hoursAdjusted * 100) / 100, days: t.days, needs_pricing_count: t.needsPricingCount,
+        });
     });
     return DB.update('bids', bidId, {
-        total_labor: labor,
-        total_materials: materials,
-        total_mileage: mileage,
-        total_cost: labor + materials + mileage,
+        total_labor: res.labor, total_materials: res.materialCost, total_mileage: KFPricing.cents(mileage), total_cost: res.clientTotal,
     });
 }
+
+// Client-facing model: scope text from the division library, one fixed total
+// per division. Deliberately has NO hours, tiers, kits, unit costs or contingency.
+function clientDivisionModel(div, lines, total) {
+    const lib = div.division_id ? DB.getById('divisions', div.division_id) : null;
+    const tasks = lines.filter(function (li) {
+        return li.kind === 'task' && li.included !== false && lineStatus(li).is_billable && lineStatus(li).scope_code !== 'VOID';
+    }).map(function (li) {
+        const t = lineTask(li) || {};
+        const room = li.room_id ? DB.getById('rooms', li.room_id) : null;
+        return { text: t.scope_of_work || t.task_name || li.description, name: t.task_name, qty: li.quantity, unit: t.unit || li.unit || '', room: room ? room.name : null };
+    });
+    return {
+        number: div.division_number, name: div.division_name,
+        inclusions: lib ? lib.scope_inclusions : '', exclusions: lib ? lib.scope_exclusions : '',
+        tasks: tasks, total: total,
+    };
+}
+function bidProposalModel(bidId) {
+    const res = computeBid(bidId);
+    const divisions = bidDivisionRows(bidId).map(function (d) {
+        const t = res.divisions.find(function (x) { return x.id === d.id; });
+        return clientDivisionModel(d, divisionLineRows(d.id), t ? t.clientTotal : 0);
+    }).filter(function (m) { return m.total > 0 || m.tasks.length; });
+    return { divisions: divisions, grandTotal: res.clientTotal, needsPricing: res.needsPricingCount };
+}
+
+// ── Shared line editor (bid-division.html and change-order.html) ────────────
+// Internal-side UI: shows hours, tiers, kit fees and costs. The client side
+// (bid-proposal / change-order-proposal) never mounts this.
+const KFLE = {
+    cfg: null, draft: null,
+    mount: function (cfg) {
+        this.cfg = cfg;
+        this.draft = { mode: FLAGS.libraryBids ? 'task' : 'custom', division: cfg.divisionNumber || 4, category: '', task: '', material: '', matSearch: '', status: cfg.defaultStatusCode, room: '', kit: '', qty: 1, frictions: {} };
+        this.renderAdd(); this.renderLines();
+    },
+    el: function (id) { return document.getElementById(id); },
+    readDraft: function () {
+        const d = this.draft, g = this.el.bind(this);
+        function val(id) { const e = g(id); return e ? e.value : null; }
+        ['le-division', 'le-category', 'le-task', 'le-material', 'le-matsearch', 'le-status', 'le-room', 'le-kit', 'le-qty'].forEach(function (id) {
+            const v = val(id); if (v == null) return;
+            const key = { 'le-division': 'division', 'le-category': 'category', 'le-task': 'task', 'le-material': 'material', 'le-matsearch': 'matSearch', 'le-status': 'status', 'le-room': 'room', 'le-kit': 'kit', 'le-qty': 'qty' }[id];
+            d[key] = key === 'division' ? parseInt(v, 10) : v;
+        });
+        KFPricing.FRICTION_KEYS.forEach(function (k) { const e = g('le-fr-' + k); if (e) d.frictions[k] = e.checked; });
+    },
+    setMode: function (m) { this.readDraft(); this.draft.mode = m; this.renderAdd(); },
+    redraw: function () { this.readDraft(); this.draft.task = ''; this.renderAdd(); },
+    redrawKeep: function () { this.readDraft(); this.renderAdd(); },
+    statusOptions: function (sel) {
+        const allowed = this.cfg.statusCodes;
+        return companyScopeStatuses().filter(function (s) { return !allowed || allowed.indexOf(s.scope_code) !== -1 || s.scope_code === sel; })
+            .map(function (s) { return '<option value="' + s.scope_code + '"' + (s.scope_code === sel ? ' selected' : '') + '>' + esc(s.scope_code + ' — ' + s.display_name) + '</option>'; }).join('');
+    },
+    roomOptions: function (sel) {
+        return '<option value="">No room</option>' + DB.find('rooms', function (r) { return !r.deleted_at; }).sort(function (a, b) { return a.sort_order - b.sort_order; })
+            .map(function (r) { return '<option value="' + r.id + '"' + (r.id === sel ? ' selected' : '') + '>' + esc(r.name) + '</option>'; }).join('');
+    },
+    renderAdd: function () {
+        const d = this.draft, cfg = this.cfg, S = 'font-size:0.8rem;';
+        const tab = function (m, label) {
+            return '<button class="btn btn-sm ' + (d.mode === m ? 'btn-primary' : 'btn-secondary') + '" style="margin:0 4px 0 0; width:auto;" onclick="KFLE.setMode(\'' + m + '\')">' + label + '</button>';
+        };
+        let h = '<div class="card" style="cursor:default; padding:12px; margin-bottom:12px;" id="le-add-card">' +
+            '<div style="margin-bottom:8px;">' + (FLAGS.libraryBids ? tab('task', 'Library task') + tab('material', 'Material') : '') + tab('custom', 'Custom task') + '</div>';
+        if (d.mode === 'task') {
+            if (cfg.divisionNumber == null) {
+                h += '<div class="form-group"><label>Division</label><select id="le-division" onchange="KFLE.redraw()">' +
+                    DB.find('divisions', function (x) { return x.company_id === state.currentCompanyId && !x.deleted_at; }).sort(function (a, b) { return a.division_number - b.division_number; })
+                        .map(function (x) { return '<option value="' + x.division_number + '"' + (x.division_number === d.division ? ' selected' : '') + '>' + x.division_number + ' — ' + esc(x.name) + '</option>'; }).join('') + '</select></div>';
+            }
+            const dn = cfg.divisionNumber != null ? cfg.divisionNumber : d.division;
+            const tasks = DB.find('scope_tasks', function (t) { return t.division_number === dn && !t.deleted_at; }).sort(function (a, b) { return a.sort_order - b.sort_order; });
+            const cats = []; tasks.forEach(function (t) { if (cats.indexOf(t.category) === -1) cats.push(t.category); });
+            if (!tasks.length) {
+                h += '<p style="' + S + ' color:#94a3b8; margin:0;">No library tasks for this division yet. Use <b>Custom task</b> (it will show as needing pricing until it has production hours).</p>';
+            } else {
+                if (!d.category || cats.indexOf(d.category) === -1) d.category = cats[0];
+                const inCat = tasks.filter(function (t) { return t.category === d.category; });
+                if (!d.task || !inCat.some(function (t) { return t.id === d.task; })) d.task = inCat[0].id;
+                const t = DB.getById('scope_tasks', d.task);
+                h += '<div class="form-group"><label>Category</label><select id="le-category" onchange="KFLE.redraw()">' +
+                    cats.map(function (c) { return '<option' + (c === d.category ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('') + '</select></div>' +
+                    '<div class="form-group"><label>Task</label><select id="le-task" onchange="KFLE.redrawKeep()">' +
+                    inCat.map(function (x) { return '<option value="' + x.id + '"' + (x.id === d.task ? ' selected' : '') + '>' + esc(x.task_name) + (x.needs_pricing ? ' (needs pricing)' : '') + '</option>'; }).join('') + '</select></div>';
+                if (t) {
+                    const hpu = KFPricing.TIERS.filter(function (k) { return t.hours_per_unit[k]; }).map(function (k) { return k + ' ' + t.hours_per_unit[k] + ' h/' + t.unit; }).join(', ');
+                    h += '<div style="' + S + ' color:#475569; margin-bottom:8px;">' + esc(t.scope_of_work || '') + '<br>' +
+                        (t.needs_pricing ? '<span class="badge" style="background:#fef3c7; color:#92400e;">Needs pricing - no production hours in the library</span>' : '<span style="color:#64748b;">Library hours: ' + esc(hpu) + '</span>') + '</div>';
+                }
+                h += this.commonFields(true, t ? t.unit : '');
+                h += '<button class="btn btn-primary btn-sm" style="width:auto;" onclick="KFLE.addTask()">+ Add task</button>';
+            }
+        } else if (d.mode === 'material') {
+            const dn = cfg.divisionNumber;
+            let mats = DB.find('materials', function (m) { return !m.deleted_at && m.company_id === state.currentCompanyId && m.item_type === 'material' && !m.kit_id; });
+            const q = (d.matSearch || '').toLowerCase();
+            if (q) mats = mats.filter(function (m) { return m.name.toLowerCase().indexOf(q) !== -1; });
+            else if (dn != null) { const inDiv = mats.filter(function (m) { return m.division_number === dn; }); if (inDiv.length) mats = inDiv; }
+            mats = mats.sort(function (a, b) { return a.name.localeCompare(b.name); }).slice(0, 60);
+            if (!d.material || !mats.some(function (m) { return m.id === d.material; })) d.material = mats.length ? mats[0].id : '';
+            h += '<div class="form-group"><label>Search materials</label><input type="text" id="le-matsearch" value="' + esc(d.matSearch) + '" placeholder="Search the material library..." onchange="KFLE.redrawKeep()"></div>' +
+                '<div class="form-group"><label>Material</label><select id="le-material">' + mats.map(function (m) {
+                    const p = m.price_per_unit != null ? m.price_per_unit : m.unit_cost;
+                    return '<option value="' + m.id + '"' + (m.id === d.material ? ' selected' : '') + '>' + esc(m.name) + ' - ' + (p == null ? 'needs pricing' : KFPricing.fmt(p) + '/' + esc(m.unit || 'ea')) + '</option>';
+                }).join('') + '</select></div>' + this.commonFields(false, '') +
+                '<button class="btn btn-primary btn-sm" style="width:auto;" onclick="KFLE.addMaterial()">+ Add material</button>';
+        } else {
+            h += '<div class="form-row"><div class="form-group"><label>Task name</label><input type="text" id="le-cname" placeholder="e.g. Install shut-off valve"></div>' +
+                '<div class="form-group"><label>Unit</label><input type="text" id="le-cunit" value="EA" style="max-width:80px;"></div></div>' +
+                '<div class="form-group"><label>Scope of work (for the proposal)</label><textarea id="le-cscope" rows="2"></textarea></div>' +
+                '<div class="form-group"><label>Lead hours per unit (leave 0 if unknown - shows as needs pricing)</label><input type="number" id="le-chours" min="0" step="0.01" value="0"></div>' +
+                this.commonFields(true, '') + '<button class="btn btn-primary btn-sm" style="width:auto;" onclick="KFLE.addCustom()">+ Add custom task</button>';
+        }
+        this.el('le-add').innerHTML = h + '</div>';
+    },
+    commonFields: function (withFriction, unit) {
+        const d = this.draft;
+        let h = '<div class="form-row"><div class="form-group"><label>Quantity' + (unit ? ' (' + esc(unit) + ')' : '') + '</label><input type="number" id="le-qty" min="0" step="any" value="' + esc(d.qty) + '"></div>' +
+            '<div class="form-group"><label>Room</label><select id="le-room">' + this.roomOptions(d.room) + '</select></div></div>' +
+            '<div class="form-group"><label>Scope status</label><select id="le-status">' + this.statusOptions(d.status) + '</select></div>';
+        if (withFriction) {
+            h += '<div style="margin-bottom:8px;">' + KFPricing.FRICTION_KEYS.map(function (k) {
+                return '<label style="display:block; font-size:0.8rem;"><input type="checkbox" id="le-fr-' + k + '"' + (d.frictions[k] ? ' checked' : '') + '> ' + KFPricing.FRICTION_LABELS[k] + ' (+10%)</label>';
+            }).join('') + '</div>';
+            const dn = this.cfg.divisionNumber != null ? this.cfg.divisionNumber : d.division;
+            const kits = DB.find('kits', function (k) { return k.division_number === dn && !k.deleted_at && k.pod_type !== 'BK'; });
+            h += '<div class="form-group"><label>Kit (deployment fee)</label><select id="le-kit"><option value="">No kit</option>' + kits.map(function (k) {
+                return '<option value="' + k.id + '"' + (k.id === d.kit ? ' selected' : '') + '>' + esc(k.pod_id + ' ' + k.pod_name) + (k.deployment_fee == null ? ' - needs pricing' : ' - ' + KFPricing.fmt(k.deployment_fee)) + '</option>';
+            }).join('') + '</select></div>';
+        }
+        return h;
+    },
+    insertLine: function (spec) {
+        const cfg = this.cfg, d = this.draft;
+        const st = scopeStatusByCode(d.status) || scopeStatusByCode(cfg.defaultStatusCode);
+        const row = Object.assign({
+            company_id: state.currentCompanyId, kind: 'task', scope_task_id: null, material_id: null, kit_id: null,
+            room_id: d.room || null, scope_status_id: st.id, quantity: Math.max(0, parseFloat(d.qty) || 0), frictions: {}, included: true,
+            custom_task: null, custom_material: null, notes: null, task_included: true,
+            sort_order: DB.find(cfg.table, function (x) { return x[cfg.parentField] === cfg.parentId; }).length,
+        }, spec);
+        row[cfg.parentField] = cfg.parentId;
+        row.type = row.kind === 'task' ? 'labor' : 'material';
+        DB.insert(cfg.table, row);
+        d.qty = 1; d.frictions = {};
+        this.changed();
+    },
+    addTask: function () {
+        this.readDraft();
+        const t = DB.getById('scope_tasks', this.draft.task); if (!t) return;
+        const fr = {}; KFPricing.FRICTION_KEYS.forEach(function (k) { if (KFLE.draft.frictions[k]) fr[k] = true; });
+        this.insertLine({ kind: 'task', scope_task_id: t.id, description: t.task_name, unit: t.unit, frictions: fr, kit_id: this.draft.kit || null });
+        this.renderAdd();
+    },
+    addMaterial: function () {
+        this.readDraft();
+        const m = DB.getById('materials', this.draft.material); if (!m) return;
+        this.insertLine({ kind: 'material', material_id: m.id, description: m.name, unit: m.unit });
+        this.renderAdd();
+    },
+    addCustom: function () {
+        this.readDraft();
+        const name = (this.el('le-cname').value || '').trim(); if (!name) { alert('Give the custom task a name.'); return; }
+        const h = parseFloat(this.el('le-chours').value) || 0, unit = (this.el('le-cunit').value || 'EA').trim().toUpperCase();
+        const fr = {}; KFPricing.FRICTION_KEYS.forEach(function (k) { if (KFLE.draft.frictions[k]) fr[k] = true; });
+        this.insertLine({ kind: 'task', description: name, unit: unit, frictions: fr, custom_task: { task_name: name, unit: unit, scope_of_work: this.el('le-cscope').value || '', category: 'Custom', hours_per_unit: { lead: h, master: 0, apprentice: 0, specialist: 0, certified: 0 } } });
+        this.renderAdd();
+    },
+    rows: function () {
+        const cfg = this.cfg;
+        return DB.find(cfg.table, function (li) { return li[cfg.parentField] === cfg.parentId && !li.deleted_at; }).sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+    },
+    changed: function () { this.renderLines(); if (this.cfg.onChange) this.cfg.onChange(); },
+    patch: function (id, p) { DB.update(this.cfg.table, id, p); this.changed(); },
+    setQty: function (id, v) { this.patch(id, { quantity: Math.max(0, parseFloat(v) || 0) }); },
+    setFriction: function (id, key, on) {
+        const li = DB.getById(this.cfg.table, id), fr = Object.assign({}, li.frictions || {}); fr[key] = !!on; this.patch(id, { frictions: fr });
+    },
+    setKit: function (id, v) { this.patch(id, { kit_id: v || null }); },
+    setLineStatus: function (id, code) { const s = scopeStatusByCode(code); if (s) this.patch(id, { scope_status_id: s.id }); },
+    setCustomHours: function (id, v) {
+        const li = DB.getById(this.cfg.table, id), ct = Object.assign({}, li.custom_task); ct.hours_per_unit = Object.assign({}, ct.hours_per_unit, { lead: parseFloat(v) || 0 }); this.patch(id, { custom_task: ct });
+    },
+    setCustomPrice: function (id, v) {
+        const li = DB.getById(this.cfg.table, id), cm = Object.assign({}, li.custom_material); cm.price = v === '' ? null : parseFloat(v); this.patch(id, { custom_material: cm });
+    },
+    remove: function (id) { DB.softDelete(this.cfg.table, id); this.changed(); },
+    renderLines: function () {
+        const s = pricingSettings(), rates = laborRates(), rows = this.rows();
+        let h = '';
+        rows.forEach(function (li) {
+            const p = KFPricing.priceLine(resolveLine(li), s, rates), st = lineStatus(li);
+            const excluded = !p.included || !p.billable, room = li.room_id ? DB.getById('rooms', li.room_id) : null;
+            const kit = li.kit_id ? DB.getById('kits', li.kit_id) : null, t = lineTask(li);
+            h += '<div class="card" style="cursor:default; padding:10px; margin-bottom:8px;' + (excluded ? ' opacity:0.65;' : '') + '" data-line="' + li.id + '">' +
+                '<div style="display:flex; justify-content:space-between; gap:8px;"><div style="font-weight:700;">' + esc(lineTitle(li)) + (li.kind === 'material' ? ' <span class="badge badge-gray">material</span>' : '') + '</div>' +
+                '<button class="btn btn-secondary btn-sm" style="margin:0; width:auto;" onclick="KFLE.remove(\'' + li.id + '\')">Remove</button></div>' +
+                '<div style="font-size:0.75rem; color:#64748b; margin:2px 0 6px;">' + esc(room ? room.name : 'No room') + ' &middot; ' +
+                '<select style="font-size:0.75rem;" onchange="KFLE.setLineStatus(\'' + li.id + '\', this.value)">' + KFLE.statusOptions(st.scope_code) + '</select></div>' +
+                '<div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; font-size:0.8rem;">' +
+                '<label>Qty <input type="number" min="0" step="any" value="' + li.quantity + '" style="width:70px;" onchange="KFLE.setQty(\'' + li.id + '\', this.value)"> ' + esc((t && t.unit) || li.unit || '') + '</label>';
+            if (li.kind === 'task') {
+                if (!li.scope_task_id) h += '<label>Lead h/unit <input type="number" min="0" step="0.01" value="' + ((t && t.hours_per_unit && t.hours_per_unit.lead) || 0) + '" style="width:70px;" onchange="KFLE.setCustomHours(\'' + li.id + '\', this.value)"></label>';
+                h += KFPricing.FRICTION_KEYS.map(function (k) {
+                    return '<label title="' + KFPricing.FRICTION_LABELS[k] + '"><input type="checkbox"' + ((li.frictions || {})[k] ? ' checked' : '') + ' onchange="KFLE.setFriction(\'' + li.id + '\', \'' + k + '\', this.checked)"> ' + KFPricing.FRICTION_LABELS[k].split(' ')[0] + '</label>';
+                }).join('');
+            } else if (!li.material_id) {
+                const cm = li.custom_material || {};
+                h += '<label>Price <input type="number" min="0" step="0.01" value="' + (cm.price == null ? '' : cm.price) + '" style="width:80px;" onchange="KFLE.setCustomPrice(\'' + li.id + '\', this.value)"></label>';
+            }
+            h += '</div><div style="font-size:0.78rem; color:#334155; margin-top:6px; border-top:1px dashed #e2e8f0; padding-top:6px;">';
+            if (p.needsPricing) h += '<span class="badge" style="background:#fef3c7; color:#92400e;">NEEDS PRICING</span> ' + (li.kind === 'task' ? 'No production hours' : 'No price') + ' - not counted as $0, fix before sending. ';
+            else if (li.kind === 'task') h += 'Hours ' + (Math.round(p.hoursRaw * 100) / 100) + ' (x' + (Math.round(p.frictionMultiplier * 100) / 100) + ' friction) &middot; Labor ' + KFPricing.fmt(p.labor);
+            else h += 'Material ' + KFPricing.fmt(p.material) + ' (incl. waste, freight, markup)';
+            if (kit) h += ' &middot; Kit ' + esc(kit.pod_id) + (kit.deployment_fee == null ? ' <span class="badge" style="background:#fef3c7; color:#92400e;">fee needs pricing</span>' : ' ' + KFPricing.fmt(kit.deployment_fee));
+            if (excluded) h += '<div style="color:#b45309;">Excluded from totals: ' + esc(st.scope_code) + (st.is_billable ? '' : ' is not billable') + '.</div>';
+            h += '</div></div>';
+        });
+        this.el('le-lines').innerHTML = h || '<p style="font-size:0.8rem; color:#94a3b8;">No lines yet.</p>';
+    },
+};
 
 // ── Bid Flow ─────────────────────────────────────────────────────────────────
 function openDivision(bidDivisionId) {
@@ -1797,9 +2178,13 @@ function previewProposal() {
 // Order Proposal template uses "Expired if not accepted by" = date + 7.
 const CHANGE_ORDER_VALIDITY_DAYS = 7;
 
-function nextChangeOrderNumber() {
-    const seq = DB.find('change_orders', function (c) { return c.company_id === state.currentCompanyId; }).length + 1;
-    return 'CO-' + new Date().getFullYear() + '-' + String(seq).padStart(3, '0');
+// Change orders take the library's sequential scope codes (LIB-05): the Nth
+// change order on a bid is CO-00N. Draft lines sit at PCO (pending, not billed)
+// until the customer signs, then flip to this code.
+function nextChangeOrderNumber(bidId) {
+    const bid = bidId || state.currentBidId;
+    const seq = DB.find('change_orders', function (c) { return c.bid_id === bid; }).length + 1;
+    return 'CO-' + String(seq).padStart(3, '0');
 }
 
 function openChangeOrders() { loadPage('change-orders'); }
@@ -1818,13 +2203,10 @@ function createChangeOrder() {
     const co = DB.insert('change_orders', {
         company_id: state.currentCompanyId, branch_id: state.currentBranchId,
         bid_id: bid.id, job_id: job.id,
-        co_number: nextChangeOrderNumber(), title: 'Change Order', description: '',
+        co_number: nextChangeOrderNumber(bid.id), title: 'Change Order', description: '', pending_amount: 0, billable_amount: 0,
         status: 'draft', created_by: state.currentUserId,
         sent_at: null, signed_at: null, signature_url: null, notes: null,
         expires_at: expires.toISOString().slice(0, 10),
-        // Same sheet-sourced default tiers as a fresh bid division (see
-        // bid-division.html's DEFAULT_RATE_* comment) — 500/300/120.
-        labor_rate_master: 500, labor_rate_fellow_craft: 300, labor_rate_apprentice: 120,
         total_labor: 0, total_materials: 0, total_mileage: 0, total_cost: 0,
     });
     state.currentChangeOrderId = co.id;
@@ -1849,30 +2231,58 @@ function previewChangeOrderProposal() {
 // Recomputes a change order's total_labor/total_materials/total_mileage/
 // total_cost from its non-deleted change_order_line_items — same plain
 // (no-contingency) rollup convention as recalcBidTotals().
-function recalcChangeOrderTotals(changeOrderId) {
-    const items = DB.find('change_order_line_items', function (li) {
-        return li.change_order_id === changeOrderId && !li.deleted_at && li.task_included !== false;
-    });
-    // Mileage isn't its own line-item type (same convention as
-    // bid_line_items — see bid-division.html's calcTask): it's derived per
-    // labor row from task_trips × the originating bid's miles/rate.
-    const bid = DB.getById('bids', DB.getById('change_orders', changeOrderId).bid_id);
-    const milesToSite = (bid && bid.miles_to_site) || 0;
-    const mileageRate = (bid && bid.mileage_rate) || 0;
+function changeOrderLineRows(coId) {
+    return DB.find('change_order_line_items', function (li) { return li.change_order_id === coId && !li.deleted_at; })
+        .sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
+}
+function computeChangeOrder(coId) {
+    return KFPricing.changeOrderTotals(changeOrderLineRows(coId).map(resolveLine), pricingSettings(), laborRates());
+}
 
-    let labor = 0, materials = 0, mileage = 0;
-    items.forEach(function (li) {
-        if (li.type === 'labor') {
-            labor += li.line_total || 0;
-            mileage += (li.task_trips || 0) * milesToSite * mileageRate;
-        } else if (li.type === 'material') {
-            materials += li.line_total || 0;
-        }
-    });
+// A change order's total is what the customer is asked to pay: lines at a
+// billable status (CO-nnn, FIELD-TM, ALLOW-RECON) plus lines still at PCO
+// (proposed). VOID and non-billable statuses (PUNCH-INT, WAR-RPR) never count.
+function recalcChangeOrderTotals(changeOrderId) {
+    const r = computeChangeOrder(changeOrderId);
     return DB.update('change_orders', changeOrderId, {
-        total_labor: labor, total_materials: materials, total_mileage: mileage,
-        total_cost: labor + materials + mileage,
+        total_labor: r.labor, total_materials: r.materialCost, total_mileage: 0, total_cost: r.proposedTotal,
+        billable_amount: r.total, pending_amount: r.pendingAmount,
     });
+}
+
+// Customer signs: PCO lines become this change order's own CO-nnn code.
+function signChangeOrder(coId) {
+    const co = DB.getById('change_orders', coId);
+    if (!co || co.status === 'signed') return;
+    const code = scopeStatusByCode(co.co_number);
+    changeOrderLineRows(coId).forEach(function (li) {
+        const st = lineStatus(li);
+        if (st.scope_code === 'PCO' && code) DB.update('change_order_line_items', li.id, { scope_status_id: code.id });
+    });
+    DB.update('change_orders', coId, { status: 'signed', signed_at: new Date().toISOString() });
+    recalcChangeOrderTotals(coId);
+    showToast('Change Order Signed', [co.co_number + ' is now billable; its pending lines moved from PCO to ' + co.co_number + '.'], '#166534');
+    loadPage('change-orders');
+}
+
+function changeOrderProposalModel(coId) {
+    const rows = changeOrderLineRows(coId);
+    const byDiv = {};
+    rows.forEach(function (li) {
+        const st = lineStatus(li);
+        if (li.kind !== 'task' || li.included === false || !st.is_billable && st.scope_code !== 'PCO' || st.scope_code === 'VOID') return;
+        const t = lineTask(li) || {};
+        const dn = t.division_number || 0;
+        (byDiv[dn] = byDiv[dn] || []).push({ text: t.scope_of_work || t.task_name || li.description, qty: li.quantity, unit: t.unit || li.unit || '' });
+    });
+    const r = computeChangeOrder(coId);
+    return {
+        groups: Object.keys(byDiv).map(Number).sort(function (a, b) { return a - b; }).map(function (dn) {
+            const d = dn ? DB.findOne('divisions', function (x) { return x.division_number === dn && !x.deleted_at; }) : null;
+            return { number: dn || null, name: d ? d.name : 'Added scope', tasks: byDiv[dn] };
+        }),
+        total: r.proposedTotal, needsPricing: r.needsPricingCount, excludedCount: r.excludedCount,
+    };
 }
 
 // Mirrors generateBidPdf()'s structure (jsPDF, same line()/heading() cursor
@@ -1924,10 +2334,12 @@ function generateChangeOrderPdf(co) {
     if (co.description) line('Reason for Change', co.description);
 
     heading('Scope of Change');
-    items.filter(function (li) { return li.type === 'labor'; }).forEach(function (li) {
-        line(li.description || '(untitled task)', money(li.line_total));
+    const comodel = changeOrderProposalModel(co.id);
+    comodel.groups.forEach(function (g) {
+        line((g.number ? g.number + '. ' : '') + g.name, null, true);
+        g.tasks.forEach(function (t) { line('- ' + t.text + (t.qty ? ' (Qty: ' + t.qty + ' ' + t.unit + ')' : '')); });
     });
-    line('Grand Total', money(grandTotal), true);
+    line('Grand Total', money(comodel.total), true);
 
     // The source template's own policy for change orders: paid in full on
     // acceptance, not split into progress draws like the original bid.
@@ -1943,7 +2355,13 @@ function sendChangeOrderToCustomer() {
     if (!state.currentChangeOrderId) return;
     const co = DB.getById('change_orders', state.currentChangeOrderId);
     if (!co) return;
-    const gotPdf = generateChangeOrderPdf(co);
+    recalcChangeOrderTotals(co.id);
+    const open = computeChangeOrder(co.id).needsPricingCount;
+    if (open > 0) {
+        showToast('Cannot send yet', [open + ' line' + (open === 1 ? '' : 's') + ' still need pricing.'], '#b91c1c');
+        return;
+    }
+    const gotPdf = generateChangeOrderPdf(DB.getById('change_orders', co.id));
     const resend = co.status === 'sent' || co.status === 'signed';
     DB.update('change_orders', co.id, {
         status: co.status === 'signed' ? 'signed' : 'sent',
@@ -3245,21 +3663,15 @@ function nextInvoiceNumber() {
 function generateInvoicesForBid(bid) {
     if (DB.find('invoices', function (i) { return i.bid_id === bid.id && !i.deleted_at; }).length) return;
     const job = DB.findOne('jobs', function (j) { return j.bid_id === bid.id; });
-    const cost = bid.total_cost || 0;
-    const deposit = round2(cost * 0.5), draw1 = round2(cost * 0.2), draw2 = round2(cost * 0.2);
-    const final = round2(cost - deposit - draw1 - draw2); // remainder absorbs rounding
-    const milestones = [
-        { label: 'Deposit', amount: deposit },
-        { label: 'Progress Draw 1' + (bid.milestone_1 ? ' — ' + bid.milestone_1 : ''), amount: draw1 },
-        { label: 'Progress Draw 2' + (bid.milestone_2 ? ' — ' + bid.milestone_2 : ''), amount: draw2 },
-        { label: 'Final Balance', amount: final },
-    ];
+    // One invoice per row of the payment schedule the client was shown
+    // (terms gate when bidGates is on, legacy 50/20/20/10 when off).
+    const milestones = bidPaymentSchedule(bid, bid.total_cost || 0);
     milestones.forEach(function (m, i) {
         DB.insert('invoices', {
             company_id: bid.company_id, branch_id: bid.branch_id,
             job_id: job ? job.id : null, customer_id: bid.customer_id,
             bid_id: bid.id, change_order_id: null,
-            invoice_number: nextInvoiceNumber(), milestone_label: m.label, amount: m.amount,
+            invoice_number: nextInvoiceNumber(), milestone_label: m.label.replace(/ - \d+%.*$/, ''), amount: m.amount,
             status: 'unpaid', due_date: null, issued_at: new Date().toISOString(), paid_at: null,
             notes: null, sort_order: i,
         });
@@ -3370,6 +3782,8 @@ function restoreState() {
     if (!saved) return;
 
     if (saved.state) Object.assign(state, saved.state);
+    Object.assign(FLAGS, (saved.state && saved.state.flags) || {});
+    state.flags = FLAGS;
     restoreDbSnapshot(saved);
 
     if (saved.clock && saved.clock.clockedIn) {
@@ -3423,6 +3837,10 @@ function activate() {
         companyLocations, findOrCreateLocation,
         openJob, createJob, submitJob,
         openBid, submitBid, recalcBidTotals, sendBidToCustomer, downloadBidPdf, nextBidNumber, DEFAULT_MILEAGE_RATE,
+        FLAGS, toggleFlag, userPermissions, hasPermission,
+        KFLE, computeBid, bidGates, bidProposalModel, bidPaymentSchedule, bidIsMillwork, bidDivisionRows, divisionLineRows,
+        pricingSettings, laborRates, lineTitle, lineStatus, lineTask, scopeStatusByCode, companyScopeStatuses,
+        signChangeOrder, computeChangeOrder, changeOrderProposalModel, changeOrderLineRows,
         openDivision, saveDivision, previewProposal,
         openChangeOrders, createChangeOrder, openChangeOrder, saveChangeOrder, previewChangeOrderProposal,
         recalcChangeOrderTotals, sendChangeOrderToCustomer, downloadChangeOrderPdf, nextChangeOrderNumber,

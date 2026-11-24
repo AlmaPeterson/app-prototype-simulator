@@ -1,74 +1,129 @@
 [
-  {
-    "id": "biddiv-1",
-    "company_id": "company-kineticflow",
-    "bid_id": "bid-riverside",
-    "division_number": 23,
-    "division_name": "Rough HVAC",
-    "form_data": {},
-    "labor_cost": 2650,
-    "material_cost": 4200,
-    "created_at": "2026-06-06T12:00:00Z",
-    "updated_at": "2026-07-01T12:00:00Z",
-    "sync_status": "synced",
-    "required_kit_ids": [
-      "kit-hvac-install-kit",
-      "kit-hvac-kit"
-    ],
-    "mileage_cost": 0
+ {
+  "id": "biddiv-1",
+  "company_id": "company-kineticflow",
+  "bid_id": "bid-riverside",
+  "division_number": 18,
+  "division_name": "Rough HVAC & Mechanicals",
+  "form_data": {
+   "guys": 1
   },
-  {
-    "id": "biddiv-2",
-    "company_id": "company-kineticflow",
-    "bid_id": "bid-riverside",
-    "division_number": 26,
-    "division_name": "Rough Electrical",
-    "form_data": {},
-    "labor_cost": 800,
-    "material_cost": 1200,
-    "created_at": "2026-06-06T12:00:00Z",
-    "updated_at": "2026-07-01T12:00:00Z",
-    "sync_status": "synced",
-    "required_kit_ids": [
-      "kit-basic-electrical-kit",
-      "kit-electrical-cart-01"
-    ],
-    "mileage_cost": 0
+  "labor_cost": 3403,
+  "material_cost": 0,
+  "created_at": "2026-06-06T12:00:00Z",
+  "updated_at": "2026-07-01T12:00:00Z",
+  "sync_status": "synced",
+  "required_kit_ids": [
+   "kit-hvac-install-kit",
+   "kit-hvac-kit"
+  ],
+  "mileage_cost": 0,
+  "division_id": "850f9650-359f-5513-bb3e-8fb16bd0a828",
+  "deleted_at": null,
+  "client_total": 3405,
+  "hours": 33.2,
+  "days": 5,
+  "needs_pricing_count": 0
+ },
+ {
+  "id": "biddiv-2",
+  "company_id": "company-kineticflow",
+  "bid_id": "bid-riverside",
+  "division_number": 20,
+  "division_name": "Rough Electrical & Renewable Energy Prep",
+  "form_data": {
+   "guys": 1
   },
-  {
-    "id": "biddiv-3",
-    "company_id": "company-kineticflow",
-    "bid_id": "bid-northview",
-    "division_number": 22,
-    "division_name": "Rough Plumbing",
-    "form_data": {},
-    "labor_cost": 2840,
-    "material_cost": 2450,
-    "created_at": "2026-06-16T12:00:00Z",
-    "updated_at": "2026-07-01T12:00:00Z",
-    "sync_status": "synced",
-    "required_kit_ids": [
-      "kit-basic-plumbing-kit",
-      "kit-plumbing-cart-01"
-    ],
-    "mileage_cost": 0
+  "labor_cost": 2400,
+  "material_cost": 0,
+  "created_at": "2026-06-06T12:00:00Z",
+  "updated_at": "2026-07-01T12:00:00Z",
+  "sync_status": "synced",
+  "required_kit_ids": [
+   "kit-basic-electrical-kit",
+   "kit-electrical-cart-01"
+  ],
+  "mileage_cost": 0,
+  "division_id": "32017d68-a286-5ccf-a53f-06cd424c393a",
+  "deleted_at": null,
+  "client_total": 2400,
+  "hours": 8,
+  "days": 1,
+  "needs_pricing_count": 0
+ },
+ {
+  "id": "biddiv-3",
+  "company_id": "company-kineticflow",
+  "bid_id": "bid-northview",
+  "division_number": 19,
+  "division_name": "Rough Plumbing & Life Safety Systems",
+  "form_data": {
+   "guys": 1
   },
-  {
-    "id": "biddiv-4",
-    "company_id": "company-kineticflow",
-    "bid_id": "bid-summit",
-    "division_number": 26,
-    "division_name": "Rough Electrical",
-    "form_data": {},
-    "labor_cost": 5400,
-    "material_cost": 5100,
-    "created_at": "2026-06-25T12:00:00Z",
-    "updated_at": "2026-07-01T12:00:00Z",
-    "sync_status": "synced",
-    "required_kit_ids": [
-      "kit-basic-electrical-kit",
-      "kit-electrical-cart-01"
-    ],
-    "mileage_cost": 0
-  }
+  "labor_cost": 2074,
+  "material_cost": 56.8,
+  "created_at": "2026-06-16T12:00:00Z",
+  "updated_at": "2026-07-01T12:00:00Z",
+  "sync_status": "synced",
+  "required_kit_ids": [
+   "kit-basic-plumbing-kit",
+   "kit-plumbing-cart-01"
+  ],
+  "mileage_cost": 56.8,
+  "division_id": "2dc92cbd-182e-5b17-b91c-381642b06f44",
+  "deleted_at": null,
+  "client_total": 2135,
+  "hours": 19.5,
+  "days": 3,
+  "needs_pricing_count": 0
+ },
+ {
+  "id": "biddiv-4",
+  "company_id": "company-kineticflow",
+  "bid_id": "bid-summit",
+  "division_number": 20,
+  "division_name": "Rough Electrical & Renewable Energy Prep",
+  "form_data": {
+   "guys": 1
+  },
+  "labor_cost": 9823,
+  "material_cost": 56.8,
+  "created_at": "2026-06-25T12:00:00Z",
+  "updated_at": "2026-07-01T12:00:00Z",
+  "sync_status": "synced",
+  "required_kit_ids": [
+   "kit-basic-electrical-kit",
+   "kit-electrical-cart-01"
+  ],
+  "mileage_cost": 56.8,
+  "division_id": "32017d68-a286-5ccf-a53f-06cd424c393a",
+  "deleted_at": null,
+  "client_total": 9880,
+  "hours": 45.6,
+  "days": 6,
+  "needs_pricing_count": 0
+ },
+ {
+  "id": "biddiv-1d",
+  "company_id": "company-kineticflow",
+  "bid_id": "bid-riverside",
+  "division_number": 4,
+  "division_name": "Demo/ Hazardous Abatement",
+  "division_id": "1e29bfc9-97d9-5043-a44c-d6cd1383377e",
+  "form_data": {
+   "guys": 1
+  },
+  "labor_cost": 1140,
+  "material_cost": 664.84,
+  "mileage_cost": 56.8,
+  "created_at": "2026-11-24T12:00:00Z",
+  "updated_at": "2026-11-24T12:00:00Z",
+  "sync_status": "synced",
+  "required_kit_ids": [],
+  "deleted_at": null,
+  "client_total": 1805,
+  "hours": 3.8,
+  "days": 1,
+  "needs_pricing_count": 0
+ }
 ]

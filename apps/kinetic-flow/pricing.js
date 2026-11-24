@@ -245,13 +245,18 @@ function paymentTerms(total, isMillwork, settings) {
         schedule: [{ label: 'Deposit - due on acceptance', pct: 50, amount: dep }, { label: 'Balance - due at Thursday handover', pct: 50, amount: cents(t - dep) }] };
 }
 
-// Change orders: only billable, non-VOID statuses count; PCO is a proposal (shown, not totalled).
+// Change orders: only billable, non-VOID statuses count toward the billable total; PCO (pending change
+// order) lines are a proposal - priced and shown, but not billable until the CO is signed and they flip to CO-nnn.
 function changeOrderTotals(lines, settings, rates) {
     const t = divisionTotals(lines, { guys: 1 }, settings, rates);
-    const pending = (lines || []).filter(function (l) { return l.status && l.status.scope_code === 'PCO' && l.included !== false; })
-        .map(function (l) { return priceLine(l, settings, rates); });
-    const pendingAmount = cents(pending.reduce(function (a, p) { return a + p.labor + p.materialTaxed + p.kitFee; }, 0));
-    return { total: t.clientTotal, exact: t.total, labor: t.labor, materialCost: t.materialCost, pendingAmount: pendingAmount, needsPricingCount: t.needsPricingCount, excludedCount: t.excludedCount, days: t.days };
+    const pcoAsBillable = (lines || []).filter(function (l) { return l.status && l.status.scope_code === 'PCO' && l.included !== false; })
+        .map(function (l) { return Object.assign({}, l, { status: { scope_code: 'PCO', is_billable: true } }); });
+    const p = divisionTotals(pcoAsBillable, { guys: 1 }, settings, rates);
+    return {
+        total: t.clientTotal, exact: t.total, labor: cents(t.labor + p.labor), materialCost: cents(t.materialCost + p.materialCost),
+        pendingAmount: p.total, proposedTotal: ceilStep(cents(t.total + p.total), (settings || DEFAULTS).roundStep),
+        needsPricingCount: t.needsPricingCount + p.needsPricingCount, excludedCount: t.excludedCount - pcoAsBillable.length, days: t.days + p.days,
+    };
 }
 
 const API = {

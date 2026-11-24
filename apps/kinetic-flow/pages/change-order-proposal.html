@@ -59,6 +59,7 @@
     </div>
 
     <button class="btn btn-primary" style="margin-bottom:8px;" id="cop-send-btn" onclick="sendChangeOrderToCustomer()">Send to Customer</button>
+    <button class="btn btn-outline" id="cop-sign-btn" style="margin-bottom:8px; display:none;" onclick="signChangeOrder(state.currentChangeOrderId)">Customer signed &mdash; mark signed</button>
     <button class="btn btn-secondary" onclick="loadPage('change-order')">&larr; Back to Change Order</button>
 </div>
 
@@ -71,6 +72,7 @@
     }
 
     var co = DB.getById('change_orders', state.currentChangeOrderId);
+    document.getElementById('cop-sign-btn').style.display = (co.status === 'sent') ? 'block' : 'none';
     var bid = DB.getById('bids', co.bid_id);
     var customer = bid.customer_id ? DB.getById('customers', bid.customer_id) : null;
     var address = bid.address_id ? DB.getById('addresses', bid.address_id) : null;
@@ -106,23 +108,24 @@
         (co.description ? '<div style="margin-top:4px; grid-column:1/-1;"><span style="color:#64748b; font-size:0.72rem; display:block;">REASON FOR CHANGE</span><strong>' + esc(co.description) + '</strong></div>' : '') +
         '</div></div>';
 
-    var items = DB.find('change_order_line_items', function (li) {
-        return li.change_order_id === co.id && !li.deleted_at && li.type === 'labor' && li.task_included !== false;
-    }).sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
-
-    if (items.length === 0) {
+    // Client side: scope text + one total. No hours, tiers or per-line costs.
+    recalcChangeOrderTotals(co.id);
+    co = DB.getById('change_orders', co.id);
+    var model = changeOrderProposalModel(co.id);
+    if (model.groups.length === 0) {
         document.getElementById('cop-tasks').innerHTML =
-            '<p style="color:#94a3b8; font-size:0.85rem; padding:12px 0;">No tasks added.</p>';
+            '<p style="color:#94a3b8; font-size:0.85rem; padding:12px 0;">No billable or pending scope on this change order.</p>';
     } else {
-        document.getElementById('cop-tasks').innerHTML = items.map(function (li) {
-            return '<div style="border-bottom:1px solid #f1f5f9; padding:8px 0;">' +
-                '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">' +
-                '<div><strong>' + esc(li.description || 'Untitled task') + '</strong>' +
-                (li.task_scope ? '<div style="font-size:0.78rem; color:#475569; margin-top:3px;">' + esc(li.task_scope) + '</div>' : '') +
-                '</div>' +
-                '<strong style="white-space:nowrap; color:#0f172a;">' + fmt(li.line_total) + '</strong>' +
-                '</div></div>';
+        document.getElementById('cop-tasks').innerHTML = model.groups.map(function (g) {
+            return '<div style="border-bottom:1px solid #f1f5f9; padding:8px 0;"><strong>' + (g.number ? 'Div ' + g.number + ' &mdash; ' : '') + esc(g.name) + '</strong>' +
+                '<ul style="font-size:0.78rem; color:#334155; margin:4px 0 0 16px; padding:0;">' + g.tasks.map(function (t) {
+                    return '<li>' + esc(t.text) + (t.qty ? ' <span style="color:#64748b;">(Qty: ' + t.qty + ' ' + esc(t.unit) + ')</span>' : '') + '</li>';
+                }).join('') + '</ul></div>';
         }).join('');
+    }
+    if (model.needsPricing > 0) {
+        var sb = document.getElementById('cop-send-btn');
+        sb.disabled = true; sb.textContent = 'Cannot send - ' + model.needsPricing + ' line(s) need pricing';
     }
 
     document.getElementById('cop-total').textContent = fmt(co.total_cost);

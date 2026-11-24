@@ -2,45 +2,30 @@
     <button class="btn btn-secondary btn-sm mb-4" onclick="saveDivision()">&larr; Bid Creation</button>
 
     <div id="div-name-label" style="font-size:1.2rem; font-weight:800; color:#0f172a; margin-bottom:2px;"></div>
-    <div id="div-num-label" style="font-size:0.78rem; color:#64748b; margin-bottom:12px;"></div>
+    <div id="div-num-label" style="font-size:0.78rem; color:#64748b; margin-bottom:8px;"></div>
 
-    <!-- Stats row -->
-    <div id="div-stats" style="font-size:0.85rem; color:#475569; border:1px solid #e2e8f0; border-radius:6px; padding:10px 12px; margin-bottom:16px; display:flex; flex-wrap:wrap; gap:12px;"></div>
+    <!-- Library scope text for this division (what the client proposal will say) -->
+    <details style="margin-bottom:12px;">
+        <summary style="font-size:0.8rem; font-weight:600; cursor:pointer;">Scope text from the library (client proposal wording)</summary>
+        <div id="div-scope-text" style="font-size:0.78rem; color:#475569; margin-top:6px;"></div>
+    </details>
 
-    <!-- Settings -->
+    <!-- INTERNAL: hours, tiers, costs -->
+    <div id="div-stats" class="card" style="cursor:default; font-size:0.82rem; padding:10px 12px; margin-bottom:12px;"></div>
+
     <div class="card" style="cursor:default; padding:12px; margin-bottom:12px;">
-        <label style="font-size:0.75rem; color:#64748b; font-weight:600; display:block; margin-bottom:6px;">Billed Labor Rates ($/hr)</label>
-        <div class="form-row">
-            <div class="form-group" style="margin:0; flex:1;">
-                <label id="rate-label-master">Master Specialist</label>
-                <input type="number" id="rate-master" min="0" step="1">
-            </div>
-            <div class="form-group" style="margin:0; flex:1;">
-                <label id="rate-label-fellow">Trade Professional</label>
-                <input type="number" id="rate-fellow" min="0" step="1">
-            </div>
-            <div class="form-group" style="margin:0; flex:1;">
-                <label id="rate-label-apprentice">Support &amp; Prep</label>
-                <input type="number" id="rate-apprentice" min="0" step="1">
-            </div>
-        </div>
-        <div class="form-group" style="margin:8px 0 0 0; max-width:50%;">
+        <div class="form-group" style="margin:0; max-width:50%;">
             <label>Guys on Site</label>
             <input type="number" id="guys-count" min="1" step="1">
         </div>
+        <p style="font-size:0.72rem; color:#64748b; margin:6px 0 0;">Labor rates come from the labor_rates table (Lead $300, Master $500, Apprentice $85, Specialist $120, Certified $200 per hour).</p>
     </div>
 
-    <!-- Division scope -->
-    <div class="form-group" style="margin-bottom:16px;">
-        <label>Division Scope <span style="font-weight:400; color:#94a3b8;">(shown on proposal)</span></label>
-        <textarea id="div-scope" rows="2" placeholder="Brief description shown on the bid proposal..."></textarea>
-    </div>
-
-    <!-- Kits & carts required -->
+    <!-- Kits & carts required (physical inventory kits - drives kit checkout) -->
     <div class="section-header">
         <span class="section-title">Kits &amp; Carts Required</span>
     </div>
-    <p style="font-size:0.78rem; color:#64748b; margin:0 0 8px 0;">Shown to the crew on Job Home so they know what to grab before heading out.</p>
+    <p style="font-size:0.78rem; color:#64748b; margin:0 0 8px 0;">Shown to the crew on Job Home so they know what to grab before heading out. (Pricing kits are picked per task below.)</p>
     <input class="search-bar mb-2" type="text" id="div-kit-search" placeholder="Search kits &amp; carts..." oninput="window.filterDivKits(this.value)">
     <div id="div-kit-chips" style="margin-bottom:16px;"></div>
 
@@ -52,301 +37,56 @@
     <div id="div-crew-picker" class="card" style="cursor:default; margin-bottom:8px; display:none;"></div>
     <div id="div-crew-list" style="margin-bottom:16px;"></div>
 
-    <!-- Tasks -->
+    <!-- Lines -->
     <div class="section-header">
-        <span class="section-title">Tasks</span>
-        <button class="section-action" onclick="window.addTask()">+ Add Task</button>
+        <span class="section-title">Tasks &amp; Materials</span>
     </div>
+    <div id="le-add"></div>
+    <div id="le-lines"></div>
 
-    <div id="task-list"></div>
-
-    <!-- Division total -->
-    <div id="div-totals"></div>
-
-    <button class="btn btn-primary" style="margin-top:8px;" onclick="saveDivision()">Save &amp; Return to Bid</button>
+    <button class="btn btn-primary" style="margin-top:8px;" onclick="saveDivision()">Done &mdash; Return to Bid</button>
 </div>
 
 <script>
 (function initDivisionPage() {
 
-    // ── Load the real bid_divisions row, and rebuild the nested
-    // task->materials working shape this page's UI edits, from the flatter
-    // bid_line_items table. bid_line_items has no native task-grouping
-    // column beyond description/quantity/unit/unit_cost/line_total/type/
-    // sort_order, so this app's schema (see db/bid_line_items.json) adds a
-    // handful of nullable columns to preserve the task shape losslessly:
-    //   task_key       — groups one labor row + N material rows into a task
-    //   task_category, task_scope, task_included, qty_type, task_qty,
-    //   hrs_each_master/hrs_each_fellow_craft/hrs_each_apprentice,
-    //   task_trips     — the task's own fields, carried on its labor row
-    //   supplier       — carried on material rows
-    // Every task is stored as exactly one 'labor'-type row (representing the
-    // task itself, even if its hours are 0) plus zero or more 'material'-type
-    // rows sharing the same task_key — written by persistDivision() below.
-    //
-    // Labor is billed across three rate tiers instead of one flat
-    // division-wide rate: each task splits its hours-per-unit across the
-    // tiers, and each division sets its own billed $/hr per tier (these are
-    // customer-facing bid rates, independent of what LEVELS/users.hourly_rate
-    // actually pays the crew — see kinetic-flow-bid-creation-sheet-review
-    // memory for why).
-    //
-    // UI labels are "Master Specialist" / "Trade Professional" /
-    // "Support & Prep" — deliberately NOT "Master"/"Fellow Craft"/
-    // "Apprentice" (LEVELS' own names, app.js). LEVELS is a worker's fixed
-    // career rank; these tiers describe what a *task* requires, a completely
-    // different axis. An apprentice-ranked worker can legitimately log hours
-    // against the Master Specialist tier on a task — reusing LEVELS' labels
-    // here would make that look like a contradiction instead of the normal
-    // case it is. Internal field/variable names below still use the short
-    // master/fellow/apprentice slugs (hrs_each_master etc.) purely as
-    // compact identifiers — only the user-facing text needed to change.
     var divRow = DB.getById('bid_divisions', state.currentDivisionId);
     var bidId  = divRow.bid_id;
-    var bid    = DB.getById('bids', bidId);
+    var libDiv = divRow.division_id ? DB.getById('divisions', divRow.division_id) : null;
+    var div = { requiredKitIds: (divRow.required_kit_ids || []).slice() };
 
-    var NAMES = companyDivisions(state.currentCompanyId)
-        .filter(function (d) { return d.is_active; })
-        .map(function (d) { return d.name; });
-    var idx   = NAMES.indexOf(divRow.division_name);
+    function fmt(n) { return KFPricing.fmt(n); }
 
-    var formData = divRow.form_data || {};
+    document.getElementById('div-name-label').textContent = divRow.division_name;
+    document.getElementById('div-num-label').textContent = 'Division ' + divRow.division_number + ' of the Kinetic Master Sequence';
+    document.getElementById('div-scope-text').innerHTML = libDiv
+        ? '<b>Includes:</b> ' + esc(libDiv.scope_inclusions) + '<br><br><b>Excludes:</b> ' + esc(libDiv.scope_exclusions)
+        : 'No library scope text for this division.';
+    var guysInput = document.getElementById('guys-count');
+    guysInput.value = (divRow.form_data && divRow.form_data.guys) || 1;
+    guysInput.addEventListener('input', function () {
+        DB.update('bid_divisions', divRow.id, { form_data: Object.assign({}, divRow.form_data, { guys: Math.max(1, +this.value || 1) }) });
+        divRow = DB.getById('bid_divisions', divRow.id);
+        updateStats();
+    });
 
-    // Default billed rates match the source Google Sheet's own per-tier
-    // rates (Master Consultation/High-risk/Engineer, Specialist Execution,
-    // Apprentice Prep/Task Support — shown as "500 PHR / 300 PHR / 120 PHR"
-    // in the sheet's per-division calculator). Fully editable per division.
-    var DEFAULT_RATE_MASTER = 500, DEFAULT_RATE_FELLOW = 300, DEFAULT_RATE_APPRENTICE = 120;
-
-    // Legacy single-rate divisions (form_data.laborRate, pre-tier schema)
-    // fall back to that one saved number for all three tiers, so an already-
-    // priced division doesn't silently reprice itself; brand-new divisions
-    // (no laborRate ever saved) get the sheet's defaults above instead.
-    var oldFlatRate = formData.laborRate != null ? formData.laborRate : null;
-    var resolvedRateMaster     = formData.laborRateMaster     != null ? formData.laborRateMaster     : (oldFlatRate != null ? oldFlatRate : DEFAULT_RATE_MASTER);
-    var resolvedRateFellow      = formData.laborRateFellowCraft != null ? formData.laborRateFellowCraft : (oldFlatRate != null ? oldFlatRate : DEFAULT_RATE_FELLOW);
-    var resolvedRateApprentice = formData.laborRateApprentice  != null ? formData.laborRateApprentice  : (oldFlatRate != null ? oldFlatRate : DEFAULT_RATE_APPRENTICE);
-
-    function buildTasksFromLineItems() {
-        var items = DB.find('bid_line_items', function (li) {
-            return li.bid_division_id === divRow.id && !li.deleted_at;
-        }).slice().sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0); });
-
-        var groups = {};
-        var order = [];
-
-        items.forEach(function (li) {
-            var key = li.task_key;
-            if (key == null) {
-                // Legacy/seeded rows predate this per-task grouping model —
-                // real seed data (e.g. Riverside HVAC Retrofit's "Rough HVAC"
-                // division) was written as flat labor/material lines with no
-                // task concept.
-                // Give every such row its own synthetic one-row task so
-                // nothing is silently merged or dropped; the user can
-                // reorganize into real multi-material tasks from here.
-                key = '__legacy_' + li.id;
-            }
-            if (!groups[key]) { groups[key] = { labor: null, materials: [], legacyMaterial: null }; order.push(key); }
-            if (li.type === 'labor') {
-                groups[key].labor = li;
-            } else if (li.task_key == null) {
-                groups[key].legacyMaterial = li;
-            } else {
-                groups[key].materials.push(li);
-            }
-        });
-
-        return order.map(function (key) {
-            var g = groups[key];
-
-            if (g.legacyMaterial) {
-                var m = g.legacyMaterial;
-                return {
-                    category: '', name: m.description || '(legacy material)', included: true, scope: '',
-                    qtyType: 'EA', qty: 0,
-                    hrsEachMaster: 0, hrsEachFellow: 0, hrsEachApprentice: 0, trips: 0,
-                    materials: [{ item: m.description || '', supplier: m.supplier || '', price: m.unit_cost || 0, qty: m.quantity || 0 }],
-                };
-            }
-
-            var labor = g.labor;
-            var qtyType, qty, hrsEachMaster, hrsEachFellow, hrsEachApprentice;
-            if (labor.hrs_each_master != null || labor.hrs_each_fellow_craft != null || labor.hrs_each_apprentice != null) {
-                qtyType = labor.qty_type || 'C';
-                qty = labor.task_qty != null ? labor.task_qty : (labor.quantity || 0);
-                hrsEachMaster     = labor.hrs_each_master || 0;
-                hrsEachFellow     = labor.hrs_each_fellow_craft || 0;
-                hrsEachApprentice = labor.hrs_each_apprentice || 0;
-            } else {
-                // Legacy labor row (pre-tier schema): real seed data carries
-                // its own per-line $/hr rate (unit_cost), but this UI used to
-                // have only one shared laborRate per division. Back out an
-                // hrsEach — using resolvedRateFellow, the same rate that
-                // ends up in div.rateFellow below — so
-                // qty * hrsEach * div.rateFellow reproduces this row's
-                // original line_total exactly regardless of what that
-                // resolved rate turns out to be, and put all of it on the
-                // Fellow Craft tier — the "standard" middle tier, and the one
-                // that best matches what a flat single rate used to mean.
-                qtyType = 'HR';
-                qty = labor.quantity || 0;
-                hrsEachMaster = 0;
-                hrsEachFellow = resolvedRateFellow ? (labor.unit_cost || 0) / resolvedRateFellow : 0;
-                hrsEachApprentice = 0;
-            }
-
-            return {
-                category: labor.task_category || '',
-                name: labor.description || '',
-                included: labor.task_included !== false,
-                scope: labor.task_scope || '',
-                qtyType: qtyType, qty: qty,
-                hrsEachMaster: hrsEachMaster, hrsEachFellow: hrsEachFellow, hrsEachApprentice: hrsEachApprentice,
-                trips: labor.task_trips || 0,
-                materials: g.materials.map(function (m) {
-                    return { item: m.description || '', supplier: m.supplier || '', price: m.unit_cost || 0, qty: m.quantity || 0 };
-                }),
-            };
-        });
-    }
-
-    // Page-local working copy — edited freely while this page is open (same
-    // responsive-editing UX as before), committed to bid_line_items only on
-    // Save (see window.saveDivision at the bottom).
-    var div = {
-        name: divRow.division_name,
-        rateMaster: resolvedRateMaster, rateFellow: resolvedRateFellow, rateApprentice: resolvedRateApprentice,
-        guys: formData.guys || 1,
-        scope: formData.scope || '',
-        tasks: buildTasksFromLineItems(),
-        requiredKitIds: (divRow.required_kit_ids || []).slice(),
-    };
-    // Also reachable as window.divWorking: the task/material card markup
-    // below is injected via innerHTML, so its inline oninput/onclick
-    // attributes run in global scope and can't close over the local `div`
-    // var the way the real closures (addTask, calcDiv, saveDivision, ...)
-    // below do — they need a window-scoped handle onto the same object.
-    window.divWorking = div;
-
-    // Mileage: miles-to-site and $/mile are one trip-distance setting per bid
-    // (a bid is one job site), edited on bid.html — this page just reads them
-    // to price each task's round trips.
-    var milesToSite  = bid.miles_to_site || 0;
-    var mileageRate  = bid.mileage_rate  || 0;
-
-    // Header
-    document.getElementById('div-name-label').textContent = div.name;
-    document.getElementById('div-num-label').textContent  = 'Division ' + (idx >= 0 ? idx + 1 : '?') + ' of ' + NAMES.length +
-        (divRow.division_number ? ' · CSI ' + divRow.division_number : '');
-
-    // Populate settings
-    var rateMasterEl     = document.getElementById('rate-master');
-    var rateFellowEl      = document.getElementById('rate-fellow');
-    var rateApprenticeEl = document.getElementById('rate-apprentice');
-    var guysEl  = document.getElementById('guys-count');
-    var scopeEl = document.getElementById('div-scope');
-    rateMasterEl.value     = div.rateMaster;
-    rateFellowEl.value      = div.rateFellow;
-    rateApprenticeEl.value = div.rateApprentice;
-    guysEl.value  = div.guys;
-    scopeEl.value = div.scope;
-    rateMasterEl.addEventListener('input',     function() { div.rateMaster     = +this.value || 0; window.bidRecalcDiv(); });
-    rateFellowEl.addEventListener('input',      function() { div.rateFellow      = +this.value || 0; window.bidRecalcDiv(); });
-    rateApprenticeEl.addEventListener('input', function() { div.rateApprentice = +this.value || 0; window.bidRecalcDiv(); });
-    guysEl.addEventListener('input',  function() { div.guys      = +this.value || 1;   window.bidRecalcDiv(); });
-    scopeEl.addEventListener('input', function() { div.scope = this.value; });
-
-    // ── Helpers ───────────────────────────────────────────────────────────
-    function fmt(n) {
-        return '$' + n.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
-    }
-    function esc(s) {
-        if (!s) return '';
-        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-    function calcTask(t) {
-        // Hours round to the nearest quarter hour (15 min) — matches how
-        // time is actually estimated/billed in the field. Each tier's hours
-        // are tracked (and rounded) independently since they're billed at
-        // different rates.
-        var hrsM = Math.round((t.qty || 0) * (t.hrsEachMaster     || 0) * 4) / 4;
-        var hrsF = Math.round((t.qty || 0) * (t.hrsEachFellow      || 0) * 4) / 4;
-        var hrsA = Math.round((t.qty || 0) * (t.hrsEachApprentice || 0) * 4) / 4;
-        var hrs  = hrsM + hrsF + hrsA;
-        var lc   = hrsM * (div.rateMaster || 0) + hrsF * (div.rateFellow || 0) + hrsA * (div.rateApprentice || 0);
-        var mc   = (t.materials || []).reduce(function(s, m) { return s + (m.price||0)*(m.qty||0); }, 0);
-        var mic  = (t.trips || 0) * milesToSite * mileageRate;
-        return { hrsM: hrsM, hrsF: hrsF, hrsA: hrsA, hrs: hrs, lc: lc, mc: mc, mic: mic };
-    }
-    function calcDiv() {
-        var labor = 0, mat = 0, mileage = 0, hours = 0;
-        (div.tasks || []).forEach(function(t) {
-            if (!t.included) return;
-            var c = calcTask(t);
-            labor += c.lc; mat += c.mc; mileage += c.mic; hours += c.hrs;
-        });
-        var conL = labor * 0.10, conM = mat * 0.10, conMi = mileage * 0.10;
-        var total = labor + mat + mileage + conL + conM + conMi;
-        var days = Math.ceil(hours / (8 * (div.guys || 1))) || 0;
-        return { labor:labor, mat:mat, mileage:mileage, hours:hours, days:days, conL:conL, conM:conM, conMi:conMi, total:total };
-    }
-
-    // ── Stats display ─────────────────────────────────────────────────────
+    // Internal stats: this is the estimator's side of the firewall.
     function updateStats() {
-        var c = calcDiv();
+        recalcBidTotals(bidId);
+        var res = computeBid(bidId), t = res.divisions.find(function (x) { return x.id === divRow.id; });
+        if (!t) return;
+        var h = t.tierHours;
         document.getElementById('div-stats').innerHTML =
-            '<span>Total: <strong style="color:#0f172a;" id="stat-total">' + fmt(c.total) + '</strong></span>' +
-            '<span>Labor: <strong id="stat-labor">' + fmt(c.labor) + '</strong></span>' +
-            '<span>Materials: <strong id="stat-mat">' + fmt(c.mat) + '</strong></span>' +
-            '<span>Mileage: <strong id="stat-mileage">' + fmt(c.mileage) + '</strong></span>' +
-            '<span>Hours: <strong id="stat-hours">' + c.hours.toFixed(2) + '</strong></span>' +
-            '<span>Days: <strong id="stat-days">' + c.days + '</strong></span>';
-
-        // Update per-task calc values in DOM
-        (div.tasks || []).forEach(function(t, ti) {
-            var tc = calcTask(t);
-            var hrsEl   = document.querySelector('[data-task-hrs="'   + ti + '"]');
-            var lcEl    = document.querySelector('[data-task-lc="'    + ti + '"]');
-            var micEl   = document.querySelector('[data-task-mic="'   + ti + '"]');
-            var totEl   = document.querySelector('[data-task-total="' + ti + '"]');
-            if (hrsEl) hrsEl.textContent = tc.hrs.toFixed(2);
-            if (lcEl)  lcEl.textContent  = fmt(tc.lc);
-            if (micEl) micEl.textContent = fmt(tc.mic);
-            if (totEl) totEl.textContent = fmt(tc.lc + tc.mc + tc.mic);
-            (t.materials || []).forEach(function(m, mi) {
-                var mEl = document.querySelector('[data-mat-total="' + ti + '-' + mi + '"]');
-                if (mEl) mEl.textContent = fmt((m.price||0)*(m.qty||0));
-            });
-        });
-
-        renderTotals(c);
-    }
-    window.bidRecalcDiv = updateStats;
-
-    // ── Division totals ───────────────────────────────────────────────────
-    function renderTotals(c) {
-        document.getElementById('div-totals').innerHTML =
-            '<div style="border:1px solid #e2e8f0; border-radius:6px; padding:12px; margin:12px 0;">' +
-            '<div style="display:flex; justify-content:space-between; padding:3px 0; font-size:0.85rem;"><span>Labor Subtotal</span><span>' + fmt(c.labor) + '</span></div>' +
-            '<div style="display:flex; justify-content:space-between; padding:3px 0; font-size:0.85rem;"><span>Materials Subtotal</span><span>' + fmt(c.mat) + '</span></div>' +
-            '<div style="display:flex; justify-content:space-between; padding:3px 0; font-size:0.85rem;"><span>Mileage Subtotal</span><span>' + fmt(c.mileage) + '</span></div>' +
-            '<div style="display:flex; justify-content:space-between; padding:3px 0; font-size:0.85rem; color:#94a3b8;"><span>Contingency — Labor (10%)</span><span>' + fmt(c.conL) + '</span></div>' +
-            '<div style="display:flex; justify-content:space-between; padding:3px 0; font-size:0.85rem; color:#94a3b8;"><span>Contingency — Materials (10%)</span><span>' + fmt(c.conM) + '</span></div>' +
-            '<div style="display:flex; justify-content:space-between; padding:3px 0 8px 0; font-size:0.85rem; color:#94a3b8; border-bottom:1px solid #e2e8f0;"><span>Contingency — Mileage (10%)</span><span>' + fmt(c.conMi) + '</span></div>' +
-            '<div style="display:flex; justify-content:space-between; padding:8px 0 0 0;"><strong>Division Total</strong><strong style="color:#0f172a; font-size:1.05rem;">' + fmt(c.total) + '</strong></div>' +
-            '</div>';
+            '<div style="display:flex; flex-wrap:wrap; gap:12px;">' +
+            '<span>Hours A/S/L/M: <b>' + [h.apprentice, h.specialist, h.lead, h.master].map(function (x) { return Math.round(x * 100) / 100; }).join(' / ') + '</b></span>' +
+            '<span>Days: <b>' + t.days + '</b></span><span>Labor: <b>' + fmt(t.labor) + '</b></span>' +
+            '<span>Kit fees: <b>' + fmt(t.kitFees) + '</b></span><span>Materials (taxed): <b>' + fmt(t.materialsTaxed) + '</b></span>' +
+            (t.mileage.total ? '<span>Mileage: <b>' + fmt(t.mileage.total) + '</b></span>' : '') +
+            '<span>Exact: <b>' + fmt(t.total) + '</b></span><span>Client price: <b>' + fmt(t.clientTotal) + '</b></span></div>' +
+            (t.needsPricingCount ? '<div style="margin-top:6px;"><span class="badge" style="background:#fef3c7; color:#92400e;">' + t.needsPricingCount + ' line(s) need pricing</span> not counted as $0.</div>' : '') +
+            (t.excludedCount ? '<div style="margin-top:4px; font-size:0.75rem; color:#b45309;">' + t.excludedCount + ' line(s) excluded by scope status.</div>' : '');
     }
 
-    // ── Kits & carts required ───────────────────────────────────────────────
-    // Grouped by category (same taxonomy kits.html's drawer uses) instead of
-    // one long flat list — a division only ever needs a handful of a
-    // company's 30+ kits/carts, and scanning past every trade's kits to find
-    // the relevant few doesn't scale. No attempt to auto-filter by matching
-    // division name to kit category: those are two independent free-text
-    // taxonomies (see docs/kinetic-flow-materials-kit-unification-plan.md)
-    // with no reliable mapping between them — a wrong guess that hides a
-    // kit someone needs is worse than an extra tap to find it via search.
     var kitCategories = (function () {
         var kits = DB.find('inventory_kits', function (k) {
             return k.company_id === state.currentCompanyId && !k.deleted_at;
@@ -638,77 +378,16 @@
         updateStats();
     };
 
-    // ── Save: flatten the working `div` object back into real bid_line_items
-    // rows, recompute this division's labor_cost/material_cost/mileage_cost
-    // rollup, then bubble the bid-level rollup via the shared app.js helper.
-    // Shadows app.js's window.saveDivision for as long as this page is
-    // displayed — same pattern this file already uses for
-    // addTask/bidRecalcDiv/etc.
-    window.saveDivision = function() {
-        var old = DB.find('bid_line_items', function (li) {
-            return li.bid_division_id === divRow.id && !li.deleted_at;
-        });
-        old.forEach(function (li) { DB.softDelete('bid_line_items', li.id); });
 
-        var sortOrder = 0;
-        var laborTotal = 0, materialTotal = 0, mileageTotal = 0;
-
-        div.tasks.forEach(function (t, ti) {
-            var taskKey = 'task-' + ti;
-            var tc = calcTask(t);
-            var matSum = 0;
-            (t.materials || []).forEach(function (m) { matSum += (m.price || 0) * (m.qty || 0); });
-
-            // quantity/unit_cost keep carrying "total hours"/"blended $/hr"
-            // on the labor row (not per-tier) — several other pages
-            // (bid.html's autoOnsiteDays, bid-proposal.html/generateBidPdf's
-            // day-count math, generateScheduleFromBid) read li.quantity
-            // directly as this task's hours and don't need to know about
-            // tiers; the tier breakdown lives in the hrs_each_* columns.
-            DB.insert('bid_line_items', {
-                company_id: state.currentCompanyId, bid_division_id: divRow.id,
-                description: t.name || '', quantity: tc.hrs, unit: 'hr',
-                unit_cost: tc.hrs ? (tc.lc / tc.hrs) : 0,
-                line_total: tc.lc, type: 'labor', sort_order: sortOrder++,
-                task_key: taskKey, task_category: t.category || null, task_scope: t.scope || null,
-                task_included: !!t.included, qty_type: t.qtyType || null, task_qty: t.qty || 0,
-                hrs_each: null,
-                hrs_each_master: t.hrsEachMaster || 0, hrs_each_fellow_craft: t.hrsEachFellow || 0,
-                hrs_each_apprentice: t.hrsEachApprentice || 0, task_trips: t.trips || 0,
-                supplier: null,
-            });
-
-            (t.materials || []).forEach(function (m) {
-                DB.insert('bid_line_items', {
-                    company_id: state.currentCompanyId, bid_division_id: divRow.id,
-                    description: m.item || '', quantity: m.qty || 0, unit: 'each', unit_cost: m.price || 0,
-                    line_total: (m.price || 0) * (m.qty || 0), type: 'material', sort_order: sortOrder++,
-                    task_key: taskKey, task_category: null, task_scope: null,
-                    task_included: null, qty_type: null, task_qty: null,
-                    hrs_each: null, hrs_each_master: null, hrs_each_fellow_craft: null, hrs_each_apprentice: null, task_trips: null,
-                    supplier: m.supplier || null,
-                });
-            });
-
-            if (t.included) { laborTotal += tc.lc; materialTotal += matSum; mileageTotal += tc.mic; }
-        });
-
-        DB.update('bid_divisions', divRow.id, {
-            labor_cost: laborTotal,
-            material_cost: materialTotal,
-            mileage_cost: mileageTotal,
-            form_data: {
-                scope: div.scope || '', guys: div.guys || 1,
-                laborRateMaster: div.rateMaster, laborRateFellowCraft: div.rateFellow, laborRateApprentice: div.rateApprentice,
-            },
-            required_kit_ids: div.requiredKitIds,
-        });
-
+    window.saveDivision = function () {
+        DB.update('bid_divisions', divRow.id, { required_kit_ids: div.requiredKitIds });
         recalcBidTotals(bidId);
         loadPage('bid');
     };
 
-    renderTasks();
+    KFLE.mount({ table: 'bid_line_items', parentField: 'bid_division_id', parentId: divRow.id, divisionNumber: divRow.division_number,
+        defaultStatusCode: 'BASE', statusCodes: ['BASE', 'FIELD-TM', 'ALLOW-RECON', 'PUNCH-INT', 'WAR-RPR', 'VOID'], onChange: updateStats });
+    updateStats();
     renderKitChips();
     renderCrewList();
 

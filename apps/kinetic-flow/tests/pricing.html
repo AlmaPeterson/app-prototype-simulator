@@ -95,7 +95,8 @@
   var cot = P.changeOrderTotals(co, undefined, rates);
   eq('Change order: only the billable CO line is totalled ($300 -> $300)', cot.total, 300);
   eq('Change order: PCO shown as pending ($600), not in total', cot.pendingAmount, 600);
-  eq('Change order: VOID and non-billable lines are excluded (3)', cot.excludedCount, 3);
+  eq('Change order: VOID and non-billable lines are excluded, PCO is pending not excluded (2)', cot.excludedCount, 2);
+  eq('Change order: proposed total = billable + PCO = $900', cot.proposedTotal, 900);
 
   // ---- needs-pricing never silently $0
   var np = P.divisionTotals([task(5, 0), mat(2, null)], {}, undefined, rates);

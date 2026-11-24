@@ -4,10 +4,10 @@
   "company_id": "company-kineticflow",
   "name": "admin",
   "permissions": {
-   "manageUsers": false,
-   "manageBids": false,
-   "manageInventory": false,
-   "financeNationwide": false,
+   "manageUsers": true,
+   "manageBids": true,
+   "manageInventory": true,
+   "financeNationwide": true,
    "financeBranch": false,
    "financeJob": false
   }
@@ -17,11 +17,11 @@
   "company_id": "company-kineticflow",
   "name": "manager",
   "permissions": {
-   "manageUsers": false,
-   "manageBids": false,
-   "manageInventory": false,
+   "manageUsers": true,
+   "manageBids": true,
+   "manageInventory": true,
    "financeNationwide": false,
-   "financeBranch": false,
+   "financeBranch": true,
    "financeJob": false
   }
  },
@@ -35,7 +35,7 @@
    "manageInventory": false,
    "financeNationwide": false,
    "financeBranch": false,
-   "financeJob": false
+   "financeJob": true
   }
  },
  {

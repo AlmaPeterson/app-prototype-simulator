@@ -86,11 +86,6 @@
         if (!iso) return '—';
         return new Date(iso.slice(0, 10) + 'T12:00:00').toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
     }
-    function divTotal(row) {
-        var labor = row.labor_cost || 0, mat = row.material_cost || 0, mi = row.mileage_cost || 0;
-        return labor + mat + mi + labor * 0.10 + mat * 0.10 + mi * 0.10;
-    }
-
     document.getElementById('prop-company-name').textContent = (company ? company.name : '').toUpperCase();
 
     // Header block — same real bids/customers/addresses join as bid.html.
@@ -112,41 +107,33 @@
         '<div style="margin-top:4px; grid-column:1/-1;"><span style="color:#64748b; font-size:0.72rem; display:block;">SITE ADDRESS</span><strong>' + siteAddress + '</strong></div>' +
         '</div></div>';
 
-    // Included divisions — every non-deleted bid_divisions row for this bid.
-    var divisions = DB.find('bid_divisions', function (d) { return d.bid_id === bidId && !d.deleted_at; });
-    var grandTotal = 0;
-    if (divisions.length === 0) {
+    // Client-facing side of the firewall: the model below holds scope text from
+    // the division library, task scope + quantities, and ONE fixed total per
+    // division. No hours, tiers, kits, unit costs or contingency ever reach
+    // this page (those live on the internal summary in bid.html).
+    var model = bidProposalModel(bidId);
+    var gates = bidGates(bidId);
+    var grandTotal = model.grandTotal;
+    if (model.divisions.length === 0) {
         document.getElementById('prop-divisions').innerHTML =
             '<p style="color:#94a3b8; font-size:0.85rem; padding:12px 0;">No divisions selected.</p>';
     } else {
-        var rows = divisions.map(function(row, i) {
-            var total = divTotal(row);
-            grandTotal += total;
-            var scope = row.form_data && row.form_data.scope;
+        document.getElementById('prop-divisions').innerHTML = model.divisions.map(function (d) {
             return '<div style="border-bottom:1px solid #f1f5f9; padding:8px 0;">' +
                 '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">' +
-                '<div><span style="font-size:0.72rem; color:#64748b;">Div ' + (i + 1) + ' &mdash; </span><strong>' + row.division_name + '</strong>' +
-                (scope ? '<div style="font-size:0.78rem; color:#475569; margin-top:3px;">' + scope + '</div>' : '') +
-                '</div>' +
-                '<strong style="white-space:nowrap; color:#0f172a;">' + fmt(total) + '</strong>' +
-                '</div></div>';
-        });
-        document.getElementById('prop-divisions').innerHTML = rows.join('');
+                '<div><span style="font-size:0.72rem; color:#64748b;">Div ' + d.number + ' &mdash; </span><strong>' + esc(d.name) + '</strong></div>' +
+                '<strong style="white-space:nowrap; color:#0f172a;">' + fmt(d.total) + '</strong></div>' +
+                (d.inclusions ? '<div style="font-size:0.75rem; color:#475569; margin-top:4px;"><b>Includes:</b> ' + esc(d.inclusions) + '</div>' : '') +
+                (d.tasks.length ? '<ul style="font-size:0.78rem; color:#334155; margin:4px 0 0 16px; padding:0;">' + d.tasks.map(function (t) {
+                    return '<li>' + esc(t.text) + (t.qty ? ' <span style="color:#64748b;">(Qty: ' + t.qty + ' ' + esc(t.unit) + ')</span>' : '') + '</li>';
+                }).join('') + '</ul>' : '') +
+                (d.exclusions ? '<div style="font-size:0.72rem; color:#64748b; margin-top:4px;"><b>Excludes:</b> ' + esc(d.exclusions) + '</div>' : '') +
+                '</div>';
+        }).join('');
     }
     document.getElementById('prop-total').textContent = fmt(grandTotal);
 
-    // Schedule — bid.construction_days overrides the auto-summed total, same
-    // as bid.html's "On-site days auto-sum..." note. The auto-sum reads each
-    // division's total labor hours (bid_line_items labor rows' `quantity`,
-    // which stores hours directly — see bid-division.html's saveDivision())
-    // divided by 8hrs * that division's crew size (form_data.guys).
-    var totalDays = bid.construction_days || divisions.reduce(function (sum, row) {
-        var hours = DB.find('bid_line_items', function (li) {
-            return li.bid_division_id === row.id && !li.deleted_at && li.type === 'labor' && li.task_included !== false;
-        }).reduce(function (s, li) { return s + (li.quantity || 0); }, 0);
-        var guys = (row.form_data && row.form_data.guys) || 1;
-        return sum + Math.ceil(hours / (8 * guys));
-    }, 0);
+    var totalDays = bid.construction_days || gates.result.days;
 
     document.getElementById('prop-schedule').innerHTML =
         '<div style="font-size:0.82rem; display:flex; flex-direction:column; gap:6px;">' +
@@ -156,20 +143,25 @@
         '<div style="display:flex; justify-content:space-between; border-top:1px solid #e2e8f0; padding-top:6px;"><span style="color:#64748b; font-weight:600;">Est. Completion</span><strong>' + fmtDate(bid.completion_date) + '</strong></div>' +
         '</div>';
 
-    // Payments
+    // Payments: the terms gate (100% upfront under $5,000 / millwork, else 50% + Thursday handover)
+    // or the legacy 50/20/20/10 schedule when the bidGates flag is off.
+    var sched = bidPaymentSchedule(bid, grandTotal);
     document.getElementById('prop-payments').innerHTML =
         '<div style="font-size:0.82rem; display:flex; flex-direction:column; gap:0;">' +
-        payRow('Deposit — 50%',           fmt(grandTotal*0.50), 'Due upon acceptance. Required to secure scheduling and initiate material orders.') +
-        payRow('Progress Draw 1 — 20%',   fmt(grandTotal*0.20), 'Due upon completion of: ' + (bid.milestone_1 || '_______________')) +
-        payRow('Progress Draw 2 — 20%',   fmt(grandTotal*0.20), 'Due upon completion of: ' + (bid.milestone_2 || '_______________')) +
-        payRow('Final Balance — 10%',     fmt(grandTotal*0.10), 'Due upon completion of agreed-upon punch list.', true) +
-        '</div>';
+        sched.map(function (p, i) { return payRow(p.label, fmt(p.amount), '', i === sched.length - 1); }).join('') + '</div>';
 
     function payRow(label, amount, note, last) {
         return '<div style="display:flex; justify-content:space-between; align-items:flex-start; padding:8px 0;' + (last ? '' : ' border-bottom:1px solid #f1f5f9;') + '">' +
-            '<div><strong>' + label + '</strong><div style="font-size:0.72rem; color:#64748b; margin-top:2px;">' + note + '</div></div>' +
+            '<div><strong>' + esc(label) + '</strong>' + (note ? '<div style="font-size:0.72rem; color:#64748b; margin-top:2px;">' + note + '</div>' : '') + '</div>' +
             '<strong style="color:#0f172a; white-space:nowrap; padding-left:12px;">' + amount + '</strong>' +
             '</div>';
+    }
+
+    // Unpriced lines are never sent as $0.
+    if (model.needsPricing > 0) {
+        var sb = document.getElementById('prop-send-btn');
+        sb.disabled = true;
+        sb.textContent = 'Cannot send - ' + model.needsPricing + ' line(s) need pricing';
     }
 
     // Signature block — no dedicated "authorized signer" concept yet (Phase

@@ -7,6 +7,7 @@
     </div>
 
     <div id="co-gate"></div>
+    <div id="co-ledger" class="card" style="cursor:default; padding:10px 12px; margin-bottom:12px; font-size:0.82rem;"></div>
 
     <div class="section-header">
         <span class="section-title">All Change Orders</span>
@@ -54,15 +55,28 @@
             return '<div class="list-item" style="padding:10px 0;' + (isLast ? ' border-bottom:none;' : '') + ' cursor:pointer;" onclick="openChangeOrder(\'' + co.id + '\')">' +
                 '<div class="list-item-body">' +
                     '<div class="list-item-title">' + (co.co_number || '') + ' &mdash; ' + esc(co.title || 'Change Order') + '</div>' +
-                    '<div class="list-item-sub">' + statusBadge(co.status) + '</div>' +
+                    '<div class="list-item-sub">' + statusBadge(co.status) + (co.status !== 'signed' && co.pending_amount ? ' <span class="badge badge-gray">PCO pending ' + fmt(co.pending_amount) + '</span>' : (co.status === 'signed' ? ' <span class="badge badge-green">' + esc(co.co_number) + ' billable</span>' : '')) + '</div>' +
                 '</div>' +
-                '<div class="list-item-right"><div class="list-item-value">' + fmt(co.total_cost) + '</div></div>' +
+                '<div class="list-item-right"><div class="list-item-value">' + fmt(co.status === 'signed' ? co.billable_amount : co.total_cost) + '</div></div>' +
                 '<span class="card-arrow">&#8250;</span>' +
             '</div>';
         }).join('') || '<div class="list-item" style="border-bottom:none;"><div class="list-item-body" style="color:#94a3b8;">No change orders yet.</div></div>';
     }
 
+    // Contract ledger: original base + signed change orders; PCO shown separately
+    function ledger() {
+        if (!bid) { document.getElementById('co-ledger').style.display = 'none'; return; }
+        var cos = DB.find('change_orders', function (c) { return c.bid_id === bid.id && !c.deleted_at; });
+        var signed = cos.filter(function (c) { return c.status === 'signed'; }).reduce(function (a, c) { return a + (c.billable_amount || 0); }, 0);
+        var pending = cos.filter(function (c) { return c.status !== 'signed'; }).reduce(function (a, c) { return a + (c.pending_amount || 0); }, 0);
+        document.getElementById('co-ledger').innerHTML =
+            '<div style="display:flex; justify-content:space-between;"><span>Original contract (BASE)</span><strong>' + fmt(bid.total_cost) + '</strong></div>' +
+            '<div style="display:flex; justify-content:space-between;"><span>Signed change orders</span><strong>' + fmt(signed) + '</strong></div>' +
+            '<div style="display:flex; justify-content:space-between; border-top:1px solid #e2e8f0; margin-top:4px; padding-top:4px;"><span>Contract sum</span><strong>' + fmt((bid.total_cost || 0) + signed) + '</strong></div>' +
+            '<div style="display:flex; justify-content:space-between; color:#64748b;"><span>Pending (PCO, uncommitted)</span><span>' + fmt(pending) + '</span></div>';
+    }
     render();
+    ledger();
 
 })();
 </script>

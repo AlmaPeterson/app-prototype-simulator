@@ -54,18 +54,29 @@
         </div>
     </div>
 
+    <!-- Gates: 4-Day Sprint + payment terms (bidGates flag) -->
+    <div id="gates"></div>
+
     <!-- Construction Divisions -->
     <div class="section-header">
         <span class="section-title">Construction Divisions</span>
         <span id="div-summary" style="font-size:0.8rem; color:#64748b;"></span>
     </div>
+    <input class="search-bar mb-2" type="text" id="div-filter" placeholder="Filter the 58 divisions..." oninput="window.filterDivs(this.value)">
     <div id="div-list"></div>
 
-    <!-- Grand Total -->
+    <!-- Grand Total (client price: sum of the fixed per-division totals) -->
     <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-top:2px solid #0f172a; border-bottom:1px solid #e2e8f0; margin:8px 0 16px 0;">
-        <strong>Grand Total</strong>
+        <strong>Grand Total (client price)</strong>
         <strong id="grand-total" style="font-size:1.1rem; color:#0f172a;">$0.00</strong>
     </div>
+
+    <!-- Internal summary: never shown to the client -->
+    <div class="section-header">
+        <span class="section-title">Internal Summary</span>
+        <span class="badge badge-gray">INTERNAL</span>
+    </div>
+    <div id="internal-summary" class="card" style="cursor:default; padding:12px; margin-bottom:16px; font-size:0.82rem;"></div>
 
     <!-- Project Schedule -->
     <div class="section-header mt-2">
@@ -97,7 +108,7 @@
 
     <!-- Mileage -->
     <div class="section-header mt-2">
-        <span class="section-title">Mileage</span>
+        <span class="section-title">Mileage &amp; Terms</span>
     </div>
     <div class="card" style="cursor:default; padding:12px; margin-bottom:16px;">
         <div class="form-row">
@@ -105,12 +116,11 @@
                 <label>Miles to Site (one-way)</label>
                 <input type="number" id="hdr-miles" min="0" step="1">
             </div>
-            <div class="form-group" style="margin:0; flex:1;">
-                <label>Mileage Rate ($/mile)</label>
-                <input type="number" id="hdr-mileage-rate" min="0" step="0.01">
+            <div class="form-group" style="margin:0; flex:1; display:flex; align-items:flex-end;">
+                <label style="font-size:0.8rem;"><input type="checkbox" id="hdr-millwork"> Millwork job (100% upfront)</label>
             </div>
         </div>
-        <p style="font-size:0.75rem; color:#64748b; margin:6px 0 0 0;">Priced per round trip on each division's tasks — set trips per task on the division sheet.</p>
+        <p id="mileage-note" style="font-size:0.75rem; color:#64748b; margin:6px 0 0 0;"></p>
     </div>
 
     <!-- Schedule of Payments -->
@@ -118,39 +128,10 @@
         <span class="section-title">Schedule of Payments</span>
     </div>
     <div class="card" style="cursor:default; padding:12px; margin-bottom:16px;">
-        <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #f1f5f9;">
-            <div>
-                <div style="font-weight:600;">Deposit — 50%</div>
-                <div style="font-size:0.75rem; color:#64748b;">Due upon acceptance</div>
-            </div>
-            <strong id="pay-dep" style="color:#0f172a;">$0.00</strong>
-        </div>
-        <div style="padding:6px 0; border-bottom:1px solid #f1f5f9;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                <div style="flex:1;">
-                    <div style="font-weight:600;">Progress Draw 1 — 20%</div>
-                    <input type="text" id="pay-m1" placeholder="Milestone description..."
-                        style="margin-top:4px; font-size:0.8rem; width:100%; box-sizing:border-box;">
-                </div>
-                <strong id="pay-d1" style="color:#0f172a; margin-left:12px; white-space:nowrap;">$0.00</strong>
-            </div>
-        </div>
-        <div style="padding:6px 0; border-bottom:1px solid #f1f5f9;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                <div style="flex:1;">
-                    <div style="font-weight:600;">Progress Draw 2 — 20%</div>
-                    <input type="text" id="pay-m2" placeholder="Milestone description..."
-                        style="margin-top:4px; font-size:0.8rem; width:100%; box-sizing:border-box;">
-                </div>
-                <strong id="pay-d2" style="color:#0f172a; margin-left:12px; white-space:nowrap;">$0.00</strong>
-            </div>
-        </div>
-        <div style="display:flex; justify-content:space-between; padding:6px 0;">
-            <div>
-                <div style="font-weight:600;">Final Balance — 10%</div>
-                <div style="font-size:0.75rem; color:#64748b;">Punch list completion</div>
-            </div>
-            <strong id="pay-fin" style="color:#0f172a;">$0.00</strong>
+        <div id="pay-list"></div>
+        <div id="pay-milestones" style="display:none;">
+            <input type="text" id="pay-m1" placeholder="Progress Draw 1 milestone..." style="margin-top:4px; font-size:0.8rem; width:100%; box-sizing:border-box;">
+            <input type="text" id="pay-m2" placeholder="Progress Draw 2 milestone..." style="margin-top:4px; font-size:0.8rem; width:100%; box-sizing:border-box;">
         </div>
     </div>
 
@@ -165,15 +146,8 @@
     // table via companyDivisions(), edited on company-divisions.html) rather
     // than a hardcoded array, so admins can add/remove/reorder/deactivate
     // divisions and every new bid picks up the change.
-    var ALL_DIVISIONS = companyDivisions(state.currentCompanyId);
-    var NAMES = ALL_DIVISIONS.filter(function (d) { return d.is_active; }).map(function (d) { return d.name; });
-    // Real CSI MasterFormat number, carried from the company's division
-    // template onto each bid — this is what makes C5's "CSI divisions" show
-    // up on actual bid/schedule data, not just the settings screen.
-    function csiNumberFor(name) {
-        var d = ALL_DIVISIONS.find(function (d) { return d.name === name; });
-        return d ? d.division_number : null;
-    }
+    var ALL_DIVISIONS = companyDivisions(state.currentCompanyId).filter(function (d) { return d.is_active; })
+        .sort(function (a, b) { return a.division_number - b.division_number; });
 
     var bidId = state.currentBidId;
     var bid   = DB.getById('bids', bidId);
@@ -190,10 +164,6 @@
         var exp = new Date((isoDate(bid.created_at) || new Date().toISOString().slice(0, 10)) + 'T12:00:00');
         exp.setDate(exp.getDate() + 30);
         DB.update('bids', bidId, { expires_at: exp.toISOString().slice(0, 10) });
-        bid = DB.getById('bids', bidId);
-    }
-    if (bid.mileage_rate == null) {
-        DB.update('bids', bidId, { mileage_rate: DEFAULT_MILEAGE_RATE });
         bid = DB.getById('bids', bidId);
     }
     var job   = DB.getById('jobs', state.currentJobId);
@@ -240,8 +210,9 @@
     document.getElementById('sched-build').value   = (bid.construction_days != null) ? bid.construction_days : '';
     document.getElementById('pay-m1').value        = bid.milestone_1 || '';
     document.getElementById('pay-m2').value         = bid.milestone_2 || '';
+    document.getElementById('pay-milestones').style.display = FLAGS.bidGates ? 'none' : 'block';
     document.getElementById('hdr-miles').value        = bid.miles_to_site != null ? bid.miles_to_site : '';
-    document.getElementById('hdr-mileage-rate').value = bid.mileage_rate != null ? bid.mileage_rate : DEFAULT_MILEAGE_RATE;
+    document.getElementById('hdr-millwork').checked = !!bid.is_millwork;
 
     document.getElementById('hdr-date').addEventListener('input', function () { DB.update('bids', bidId, { created_at: this.value }); });
     document.getElementById('hdr-expires').addEventListener('input', function () { DB.update('bids', bidId, { expires_at: this.value }); });
@@ -265,16 +236,7 @@
     // bid-proposal.html uses. Recomputed whenever start/procurement/on-site
     // or the division list changes; the field stays hand-editable, and a
     // manual date holds until one of those inputs changes again.
-    function autoOnsiteDays() {
-        var rows = DB.find('bid_divisions', function (d) { return d.bid_id === bidId && !d.deleted_at; });
-        return rows.reduce(function (sum, row) {
-            var hours = DB.find('bid_line_items', function (li) {
-                return li.bid_division_id === row.id && !li.deleted_at && li.type === 'labor' && li.task_included !== false;
-            }).reduce(function (s, li) { return s + (li.quantity || 0); }, 0);
-            var guys = (row.form_data && row.form_data.guys) || 1;
-            return sum + Math.ceil(hours / (8 * guys));
-        }, 0);
-    }
+    function autoOnsiteDays() { return computeBid(bidId).days; }
     function addWorkDays(iso, days) {
         var d = new Date(iso + 'T12:00:00');
         var left = days;
@@ -299,118 +261,106 @@
     document.getElementById('sched-build').addEventListener('input', function () { DB.update('bids', bidId, { construction_days: +this.value || 0 }); recalcCompletion(); });
     document.getElementById('pay-m1').addEventListener('input', function () { DB.update('bids', bidId, { milestone_1: this.value }); });
     document.getElementById('pay-m2').addEventListener('input', function () { DB.update('bids', bidId, { milestone_2: this.value }); });
-    // Miles/rate feed each division sheet's per-task mileage math (see
-    // bid-division.html) — a division only picks up a change here the next
-    // time it's opened and saved, same as every other division-level rollup
-    // in this app (labor rate, guys on site).
-    document.getElementById('hdr-miles').addEventListener('input', function () { DB.update('bids', bidId, { miles_to_site: this.value === '' ? null : +this.value }); });
-    document.getElementById('hdr-mileage-rate').addEventListener('input', function () { DB.update('bids', bidId, { mileage_rate: +this.value || 0 }); });
+    document.getElementById('hdr-miles').addEventListener('input', function () { DB.update('bids', bidId, { miles_to_site: this.value === '' ? null : +this.value }); refresh(); });
+    document.getElementById('hdr-millwork').addEventListener('change', function () { DB.update('bids', bidId, { is_millwork: this.checked }); refresh(); });
 
-    // ── Division rows — "included" now means "has a live bid_divisions row",
-    // matched by division_name. Cost fields (labor_cost/material_cost) are
-    // rollups written by bid-division.html's saveDivision() whenever that
-    // division's line items change; this page just reads and displays them
-    // (it never recomputes from bid_line_items itself).
-    function findDivisionRow(name) {
-        return DB.findOne('bid_divisions', function (d) {
-            return d.bid_id === bidId && !d.deleted_at && d.division_name === name;
-        });
+    // ── Division rows: "included" = has a live bid_divisions row for that library division.
+    function findDivisionRow(num) {
+        return DB.findOne('bid_divisions', function (d) { return d.bid_id === bidId && !d.deleted_at && d.division_number === num; });
     }
-    function divTotal(row) {
-        var labor = row.labor_cost || 0, mat = row.material_cost || 0, mi = row.mileage_cost || 0;
-        return labor + mat + mi + labor * 0.10 + mat * 0.10 + mi * 0.10;
-    }
-    // Exposed for parity with the old window.calcDivTotal — nothing in this
-    // app currently calls it cross-page, but keeping the name avoids
-    // surprising anyone who greps for it.
-    window.calcDivTotal = divTotal;
-
-    function taskCount(row) {
-        if (!row) return 0;
-        return DB.find('bid_line_items', function (li) {
-            return li.bid_division_id === row.id && !li.deleted_at && li.type === 'labor' && li.task_included !== false;
-        }).length;
-    }
+    var filterText = '';
+    window.filterDivs = function (q) { filterText = (q || '').toLowerCase(); renderDivList(); };
 
     function renderDivList() {
-        var html = '';
-        NAMES.forEach(function (name, i) {
-            var row = findDivisionRow(name);
-            var inc = !!row;
-            var tCount = taskCount(row);
-
-            html += '<div style="border-bottom:1px solid #e2e8f0; padding:6px 0;">';
-
-            html += '<div style="display:flex; align-items:center; gap:8px;">';
-            html += '<input type="checkbox"' + (inc ? ' checked' : '') +
-                    ' style="width:16px; height:16px; flex-shrink:0;"' +
-                    ' onchange="window.toggleDiv(' + i + ')">';
-            html += '<span style="color:#94a3b8; font-size:0.75rem; min-width:18px;">' + (i + 1) + '</span>';
-            html += '<span style="flex:1; font-weight:' + (inc ? '600' : '400') + ';">' + name + '</span>';
+        var res = computeBid(bidId), html = '';
+        ALL_DIVISIONS.forEach(function (d) {
+            var row = findDivisionRow(d.division_number), inc = !!row;
+            if (filterText && !inc && (d.name.toLowerCase().indexOf(filterText) === -1 && String(d.division_number) !== filterText)) return;
+            var t = row ? res.divisions.find(function (x) { return x.id === row.id; }) : null;
+            html += '<div style="border-bottom:1px solid #e2e8f0; padding:6px 0;">' +
+                '<div style="display:flex; align-items:center; gap:8px;">' +
+                '<input type="checkbox"' + (inc ? ' checked' : '') + ' style="width:16px; height:16px; flex-shrink:0;" onchange="window.toggleDiv(' + d.division_number + ')">' +
+                '<span style="color:#94a3b8; font-size:0.75rem; min-width:20px;">' + d.division_number + '</span>' +
+                '<span style="flex:1; font-weight:' + (inc ? '600' : '400') + ';">' + esc(d.name) + '</span>' +
+                (t ? '<span style="color:#0f172a; font-weight:700; font-size:0.9rem; white-space:nowrap;">' + fmt(t.clientTotal) + '</span>' : '') + '</div>';
             if (inc) {
-                html += '<span style="color:#0f172a; font-weight:700; font-size:0.9rem; white-space:nowrap;">' + fmt(divTotal(row)) + '</span>';
+                html += '<div style="padding-left:24px; margin-top:4px;"><div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">' +
+                    '<button class="btn btn-secondary btn-sm" onclick="openDivision(\'' + row.id + '\')">Edit Division Sheet &rarr;</button>' +
+                    '<span style="font-size:0.75rem; color:#64748b;">' + (t ? t.lineCount : 0) + ' line' + (t && t.lineCount === 1 ? '' : 's') + '</span>' +
+                    (t && t.needsPricingCount ? '<span class="badge" style="background:#fef3c7; color:#92400e;">' + t.needsPricingCount + ' need pricing</span>' : '') +
+                    '</div></div>';
             }
-            html += '</div>';
-
-            if (inc) {
-                var scope = row.form_data && row.form_data.scope;
-                html += '<div style="padding-left:24px; margin-top:4px;">';
-                if (scope) {
-                    html += '<div style="font-size:0.78rem; color:#475569; margin-bottom:6px;">' + scope + '</div>';
-                }
-                html += '<div style="display:flex; align-items:center; gap:12px;">';
-                html += '<button class="btn btn-secondary btn-sm" onclick="openDivision(\'' + row.id + '\')">Edit Division Sheet &rarr;</button>';
-                if (tCount > 0) {
-                    html += '<span style="font-size:0.75rem; color:#64748b;">' + tCount + ' task' + (tCount !== 1 ? 's' : '') + '</span>';
-                }
-                html += '</div>';
-                html += '</div>';
-            }
-
             html += '</div>';
         });
-        document.getElementById('div-list').innerHTML = html;
+        document.getElementById('div-list').innerHTML = html || '<p style="color:#94a3b8; font-size:0.85rem;">No divisions match.</p>';
     }
 
-    // Recalculate the client-facing grand total (with 10% contingency baked
-    // in, same as the old divTotal() formula) and the payment schedule, and
-    // bubble the plain (no-contingency) rollup into bids.total_labor/
-    // total_materials/total_cost so job-detail.html's "Estimated Value" and
-    // jobs.html's list stay current.
-    function recalc() {
-        var rows = DB.find('bid_divisions', function (d) { return d.bid_id === bidId && !d.deleted_at; });
-        var total = 0;
-        rows.forEach(function (row) { total += divTotal(row); });
+    function renderGates(g) {
+        var el = document.getElementById('gates');
+        if (!FLAGS.bidGates) { el.innerHTML = ''; return; }
+        var sp = g.sprint, pay = g.payment;
+        el.innerHTML =
+            '<div class="card" style="cursor:default; padding:10px 12px; margin-bottom:12px; border-left:4px solid ' + (sp.ok ? '#16a34a' : '#d97706') + ';">' +
+            '<div style="font-weight:700; font-size:0.85rem;">4-Day Sprint check <span id="gate-sprint" class="badge ' + (sp.ok ? 'badge-green' : '') + '" style="' + (sp.ok ? '' : 'background:#fef3c7; color:#92400e;') + '">' + (sp.ok ? 'OK' : 'WARNING') + '</span></div>' +
+            '<div style="font-size:0.78rem; color:#475569;">' + esc(sp.message) + ' (' + sp.days + ' day' + (sp.days === 1 ? '' : 's') + ' estimated, max ' + sp.max + ')</div></div>' +
+            '<div class="card" style="cursor:default; padding:10px 12px; margin-bottom:12px; border-left:4px solid #2563eb;">' +
+            '<div style="font-weight:700; font-size:0.85rem;">Payment terms <span id="gate-pay" class="badge">' + (pay.mode === 'upfront' ? '100% UPFRONT' : '50% + HANDOVER') + '</span></div>' +
+            '<div style="font-size:0.78rem; color:#475569;">' + esc(pay.reason) + '</div></div>' +
+            (g.needsPricing ? '<div class="card" style="cursor:default; padding:10px 12px; margin-bottom:12px; border-left:4px solid #dc2626;"><b style="font-size:0.85rem;">' + g.needsPricing + ' line' + (g.needsPricing === 1 ? '' : 's') + ' need pricing</b><div style="font-size:0.78rem; color:#475569;">These are not counted as $0 - the proposal cannot be sent until they have hours or a price.</div></div>' : '');
+    }
 
-        document.getElementById('grand-total').textContent = fmt(total);
-        document.getElementById('div-summary').textContent = rows.length + ' selected';
-        document.getElementById('pay-dep').textContent = fmt(total * 0.50);
-        document.getElementById('pay-d1').textContent  = fmt(total * 0.20);
-        document.getElementById('pay-d2').textContent  = fmt(total * 0.20);
-        document.getElementById('pay-fin').textContent = fmt(total * 0.10);
+    function renderInternal(res) {
+        var tiers = res.tierHours, kits = {}, boms = [];
+        bidDivisionRows(bidId).forEach(function (d) {
+            divisionLineRows(d.id).forEach(function (li) {
+                if (li.kit_id) { var k = DB.getById('kits', li.kit_id); if (k) kits[k.id] = k; }
+                if (li.kind === 'material') boms.push({ name: lineTitle(li), qty: li.quantity });
+            });
+        });
+        var kitHtml = Object.keys(kits).map(function (id) { var k = kits[id]; return esc(k.pod_id) + ' (' + (k.deployment_fee == null ? 'fee needs pricing' : fmt(k.deployment_fee)) + ')'; }).join(', ') || 'none';
+        var bomHtml = boms.map(function (m) { return esc(m.name) + ' x' + m.qty; }).join(', ') || 'none';
+        function row(l, v) { return '<div style="display:flex; justify-content:space-between; padding:2px 0;"><span style="color:#64748b;">' + l + '</span><strong>' + v + '</strong></div>'; }
+        document.getElementById('internal-summary').innerHTML =
+            row('Hours - Apprentice / Specialist / Lead / Master', [tiers.apprentice, tiers.specialist, tiers.lead, tiers.master].map(function (h) { return Math.round(h * 100) / 100; }).join(' / ')) +
+            row('Labor (incl. friction)', fmt(res.labor)) + row('Kit deployment fees', fmt(res.kitFees)) +
+            row('Material cost (taxed) + kits + mileage', fmt(res.materialCost)) + row('Exact total before rounding', fmt(res.exactTotal)) +
+            row('Contingency (10% of labor, held separately)', fmt(res.contingency)) + row('Estimated crew days', res.days) +
+            '<div style="margin-top:6px; font-size:0.75rem; color:#475569;"><b>Kits:</b> ' + kitHtml + '</div>' +
+            '<div style="font-size:0.75rem; color:#475569;"><b>Bill of materials:</b> ' + bomHtml + '</div>';
+    }
 
+    function refresh() {
         recalcBidTotals(bidId);
+        var g = bidGates(bidId), res = g.result;
+        renderDivList();
+        document.getElementById('grand-total').textContent = fmt(res.clientTotal);
+        document.getElementById('div-summary').textContent = res.divisions.length + ' selected';
+        document.getElementById('mileage-note').textContent = 'Mileage: one planning round trip at ' + fmt(pricingSettings().mileageRatePerMile) + '/mile plus a ' + fmt(pricingSettings().executionFuelAllowance) + ' execution fuel line, charged once on the first division.';
+        var sched = bidPaymentSchedule(DB.getById('bids', bidId), res.clientTotal);
+        document.getElementById('pay-list').innerHTML = sched.map(function (p) {
+            return '<div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #f1f5f9;"><div style="font-weight:600;">' + esc(p.label) + '</div><strong>' + fmt(p.amount) + '</strong></div>';
+        }).join('');
+        renderGates(g);
+        renderInternal(res);
     }
 
-    window.toggleDiv = function (i) {
-        var name = NAMES[i];
-        var existing = findDivisionRow(name);
+    window.toggleDiv = function (num) {
+        var existing = findDivisionRow(num);
         if (existing) {
             DB.softDelete('bid_divisions', existing.id);
         } else {
+            var lib = ALL_DIVISIONS.find(function (d) { return d.division_number === num; });
             DB.insert('bid_divisions', {
-                company_id: state.currentCompanyId, bid_id: bidId,
-                division_number: csiNumberFor(name), division_name: name,
-                form_data: {}, labor_cost: 0, material_cost: 0, mileage_cost: 0, required_kit_ids: [],
+                company_id: state.currentCompanyId, bid_id: bidId, division_id: lib ? lib.id : null,
+                division_number: num, division_name: lib ? lib.name : ('Division ' + num),
+                form_data: { guys: 1 }, labor_cost: 0, material_cost: 0, mileage_cost: 0, client_total: 0, hours: 0, days: 0, needs_pricing_count: 0, required_kit_ids: [],
             });
         }
-        renderDivList();
-        recalc();
+        refresh();
         recalcCompletion();
     };
 
-    renderDivList();
-    recalc();
+    refresh();
     // Only fill, never clobber, on plain page load — a hand-set completion
     // date survives navigation; edits to the schedule inputs re-derive it.
     if (!bid.completion_date) recalcCompletion();
