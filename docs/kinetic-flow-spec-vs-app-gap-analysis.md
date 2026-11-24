@@ -190,8 +190,8 @@ Decisions: `docs/decisions/001`-`008`.
 |---|---|---|
 | E1. 58-division Kinetic Master Sequence with inclusion/exclusion text | **IMPLEMENTED** | Replaces the 41-name list; new companies are seeded from it. |
 | E2. Division -> category -> task library with hours per unit per tier | **PARTIAL** | Imported as found: tabs 1-27 only, mostly unpriced, several tabs hold tasks from other trades (note 008). Unpriced tasks show "needs pricing". |
-| E3. Labor tiers 300/500/85/120/200 PHR | **PARTIAL** | Lead/Master confirmed from a filled bid; 85/120/200 mapping is an inference (note 002). Supersedes C1 (flat 500/300/120). |
-| E4. Friction toggles, tax, waste/freight/markup, kit deployment fees, mileage, $5 rounding | **IMPLEMENTED** | Reproduces bid 2608010 ($2,239.01 exact, $2,245 client) and the Demo sample labor/materials/total. Specialist hours 15.55 and the mileage fuel line are unreconciled (note 003). |
+| E3. Labor tiers 300/500/85/120/200 PHR | **IMPLEMENTED** | Read from the sheet formulas (note 009): 300/500 task work x quantity, 85/120/200 setup/staging x trips. Supersedes C1 (flat 500/300/120). |
+| E4. Friction toggles, tax, waste/freight/markup, kit deployment fees, mileage, $5 rounding | **IMPLEMENTED** | Reproduces bid 2608010 ($2,239.01 exact, $2,245 client) and the Demo sample labor/materials/total. Specialist hours 15.55 reproduced; mileage is per division with deployments, plus $90/h planning (note 009). |
 | E5. Kits library (PK/EK) | **PARTIAL** | LIB_02 is filled in only for Demolition; fees mostly missing. Linked loosely to physical `inventory_kits`. |
 | E6. Rooms library and room per line | **IMPLEMENTED** | 47 rooms in their own table (`locations` stays storage places). |
 | E7. Scope statuses and scope-status-driven change orders (PCO -> CO-nnn, VOID, non-billable) | **IMPLEMENTED** | Supersedes C4's separate-amount design. `signChangeOrder()` is the hook for real e-signature, still absent. |

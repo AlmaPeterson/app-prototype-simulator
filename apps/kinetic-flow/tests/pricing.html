@@ -31,8 +31,8 @@
     ok(name, a === expected, 'got ' + JSON.stringify(actual) + ', expected ' + JSON.stringify(expected));
   }
   var BASE = { scope_code: 'BASE', is_billable: true }, CO1 = { scope_code: 'CO-001', is_billable: true };
-  function task(q, lead, status, frictions, kit) {
-    return { kind: 'task', quantity: q, task: { hours_per_unit: { lead: lead } }, status: status || BASE, frictions: frictions || {}, kit: kit || null };
+  function task(q, lead, status, frictions, kit, staging, trips) {
+    return { kind: 'task', quantity: q, trips: trips, task: { hours_per_unit: Object.assign({ lead: lead }, staging || {}) }, status: status || BASE, frictions: frictions || {}, kit: kit || null };
   }
   function mat(q, price, status, extra) {
     return { kind: 'material', quantity: q, material: Object.assign({ price: price, markup: 0.24 }, extra || {}), status: status || BASE };
@@ -51,23 +51,33 @@
   eq('1 h x $300 x 1.2 (two toggles) = $360 (sheet core-hole row)',
      P.laborForTask({ quantity: 1, hoursPerUnit: { lead: 1 }, frictions: { ladder_scaffold: 1, occupied: 1 } }, undefined, rates).cost, 360);
   eq('task with no hours is needs-pricing', P.laborForTask({ quantity: 4, hoursPerUnit: {} }, undefined, rates).needsPricing, true);
-  eq('apprentice 85 PHR: 10 units x 0.2 h = $170', P.laborForTask({ quantity: 10, hoursPerUnit: { apprentice: 0.2 } }, undefined, rates).cost, 170);
+  // staging group (85 / 120 / 200 PHR) is hours x rate x trips, NOT x quantity
+  eq('staging: apprentice 0.2 h x $85 x 2 trips = $34 (quantity 10 ignored)', P.laborForTask({ quantity: 10, trips: 2, hoursPerUnit: { apprentice: 0.2 } }, undefined, rates).cost, 34);
+  eq('staging: LIB-06 tab 23 row 130 (0.02 h x $120 + 0.5 h x $200) x 1 trip = $102.40 (sheet AK130)',
+     P.laborForTask({ quantity: 12, trips: 1, hoursPerUnit: { specialist: 0.02, staging_lead: 0.5 } }, undefined, rates).cost, 102.4);
+  eq('staging: friction does not apply to staging', P.laborForTask({ quantity: 1, trips: 1, hoursPerUnit: { specialist: 1 }, frictions: { occupied: 1 } }, undefined, rates).cost, 120);
+  eq('staging-only task with 0 trips is flagged needsTrips (sheet would show $0)', P.laborForTask({ quantity: 5, hoursPerUnit: { apprentice: 1 } }, undefined, rates).needsTrips, true);
+  eq('...and a staging-only line with 0 trips counts as needs pricing', P.priceLine({ kind: 'task', quantity: 5, task: { hours_per_unit: { apprentice: 1 } } }, undefined, rates).needsPricing, true);
+  eq('line trips default to the library task default_trips', P.priceLine({ kind: 'task', quantity: 5, task: { hours_per_unit: { specialist: 1 }, default_trips: 1 } }, undefined, rates).labor, 120);
+  eq('old certified code still reads as the 200 staging rate', P.ratesFromRows([{ code: 'certified', hourly_rate: 210 }]).staging_lead, 210);
   eq('master 500 PHR: 1 h = $500', P.laborForTask({ quantity: 1, hoursPerUnit: { master: 1 } }, undefined, rates).cost, 500);
   eq('ceilStep rounds up to the next $5: 1596.51 -> 1600', P.ceilStep(1596.51, 5), 1600);
   eq('ceilStep: 642.50 -> 645', P.ceilStep(642.5, 5), 645);
   eq('ceilStep: exact multiple stays: 640 -> 640', P.ceilStep(640, 5), 640);
-  eq('mileage: 8 miles away = 16 mi x $2.80 = $44.80 + $12.00 fuel', P.mileage(8).total, 56.8);
+  eq('mileage: 8 miles away = 16 mi x $2.80 = $44.80 + $12.00 execution line', P.mileage(8).total, 56.8);
+  eq('planning hours: 1.5 h x $90 = $135 (labor)', P.mileage(8, undefined, 1.5).planningLabor, 135);
 
   // ---- LIB-06 tab 4 (Demo) sample: Specialist/Lead hours, labor, materials, division total
   var bwe = { id: 'kit-bwe', deployment_fee: 208.33 };
   var f3 = { no_power_water: 1, ladder_scaffold: 1, occupied: 1 }, f2 = { ladder_scaffold: 1, occupied: 1 };
   var demo = [
-    task(12, 0.1, CO1, f3),               // Demolition layout and planning
-    task(1, 0.5, CO1),                    // Temporary air barrier
-    task(1, 1, CO1),                      // Temporary environmental controls
-    task(12, 0.1, CO1),                   // Concrete demolition
-    task(1, 1, CO1, null, bwe),           // Move debris (EK Bulk Waste Egress kit)
-    task(1, 1, CO1, f2),                  // Core hole through wall
+    // Specialist (AG) staging hours from LIB-06 tab 4 rows 100-109; trips (AD) are blank there.
+    task(12, 0.1, CO1, f3, null, { specialist: 1 }),     // Demolition layout and planning
+    task(1, 0.5, CO1, null, null, { specialist: 1 }),    // Temporary air barrier
+    task(1, 1, CO1, null, null, { specialist: 1 }),      // Temporary environmental controls
+    task(12, 0.1, CO1, null, null, { specialist: 0.1 }), // Concrete demolition
+    task(1, 1, CO1, null, bwe, { specialist: 0.1 }),     // Move debris (EK Bulk Waste Egress kit)
+    task(1, 1, CO1, f2, null, { specialist: 0.25 }),     // Core hole through wall
     mat(1, 100, CO1),                     // Dump fee
   ];
   var d = P.divisionTotals(demo, {}, undefined, rates);
@@ -76,17 +86,21 @@
   eq('Demo sample: materials = $341.57 (dump fee x 1.0745 + EK kit $208.33)', d.materialCost, 341.57);
   eq('Demo sample: division total $2,280 (rounded up to $5)', d.clientTotal, 2280);
   eq('Demo sample: contingency 10% of labor = $193.80', d.contingency, 193.8);
-  eq('Demo sample: Specialist hours (sheet shows 15.55) - NOT reproducible from the grid; engine reports 0', d.tierHours.specialist, 0);
+  eq('Demo sample: Specialist hours 15.55 (sheet E7 = sum of quantity x Specialist hours)', d.tierHours.specialist, 15.55);
+  eq('Demo sample: those Specialist hours add $0 because trips are blank (labor stays $1,938)', d.labor, 1938);
 
   // ---- Bid 2608010 (DPS summary): $2,239.01 exact, $2,245 client total
   var div4 = [task(7, 0.4), task(1, 1), mat(1, 100), mat(1, 200)];
   var div55 = [task(1, 2.1416667)];
-  var b = P.bidTotals([{ divisionNumber: 4, lines: div4 }, { divisionNumber: 55, lines: div55 }], { milesAway: 8 }, undefined, rates);
+  var b = P.bidTotals([{ divisionNumber: 4, lines: div4, deployments: 1 }, { divisionNumber: 55, lines: div55 }], { milesAway: 8 }, undefined, rates);
   eq('Bid 2608010 division 4: labor $1,140.00 (7 posts x 0.4 h x $300 + 1 load x 1 h x $300)', b.divisions[0].labor, 1140);
   eq('Bid 2608010 division 4: material cost $456.51 (372 x 1.0745 + mileage $56.80)', b.divisions[0].materialCost, 456.51);
   eq('Bid 2608010 division 4: Lead hours 3.8', b.divisions[0].tierHours.lead, 3.8);
   eq('Bid 2608010 division 4: client price $1,600', b.divisions[0].clientTotal, 1600);
-  eq('Bid 2608010 division 55: labor $642.50, no mileage', b.divisions[1].materialCost, 0);
+  eq('Bid 2608010 division 55: no deployments set, so no mileage', b.divisions[1].materialCost, 0);
+  var b2 = P.bidTotals([{ divisionNumber: 4, lines: div4, deployments: 1 }, { divisionNumber: 55, lines: div55, deployments: 1, planningHours: 1 }], { milesAway: 8 }, undefined, rates);
+  eq('Mileage is per division: both divisions with deployments get $56.80', b2.divisions[1].materialCost, 56.8);
+  eq('Planning hours go to that division labor: $642.50 + $90 = $732.50', b2.divisions[1].labor, 732.5);
   eq('Bid 2608010 DPS total $2,239.01', b.exactTotal, 2239.01);
   eq('Bid 2608010 proposal grand total $2,245.00', b.clientTotal, 2245);
 
@@ -111,6 +125,8 @@
   eq('Payment: millwork over $5,000 = 100% upfront', P.paymentTerms(9000, true).mode, 'upfront');
   eq('Payment: 50% deposit of $9,001 = $4,500.50', P.paymentTerms(9001, false).schedule[0].amount, 4500.5);
   eq('Days: 40 h on 2 guys = 3 days', P.divisionTotals([task(40, 1)], { guys: 2 }, undefined, rates).days, 3);
+  eq('Days: staging hours count once per trip, not per unit (100 units, 4 h staging x 2 trips = 8 h = 1 day)',
+     P.divisionTotals([task(100, 0, null, null, null, { apprentice: 4 }, 2)], {}, undefined, rates).days, 1);
 
   var s = document.getElementById('summary');
   s.textContent = 'pricing tests: ' + pass + ' passed, ' + fail + ' failed';

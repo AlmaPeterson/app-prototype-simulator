@@ -17,7 +17,7 @@ const STORAGE_KEY = 'kineticFlow.state';
 // Bump whenever db/*.json seed data or table shapes change: restoreState()
 // discards localStorage DB snapshots from older versions and re-fetches the
 // fresh seeds, so users don't need a manual "Reset Demo Data".
-const DB_VERSION = 21;
+const DB_VERSION = 22;
 
 // ── Feature flags ───────────────────────────────────────────────────────────
 // Default ON. Toggle from the header ⋯ menu (Testing section); persisted in
@@ -1864,7 +1864,7 @@ function lineTitle(li) {
 function resolveLine(li) {
     const st = lineStatus(li);
     const r = {
-        id: li.id, kind: li.kind, quantity: li.quantity, frictions: li.frictions || {}, included: li.included !== false,
+        id: li.id, kind: li.kind, quantity: li.quantity, trips: li.trips == null ? null : li.trips, frictions: li.frictions || {}, included: li.included !== false,
         status: { scope_code: st.scope_code, is_billable: st.is_billable },
     };
     if (li.kind === 'material') r.material = lineMaterial(li);
@@ -1885,6 +1885,7 @@ function computeBid(bidId) {
         return {
             id: d.id, divisionNumber: d.division_number, name: d.division_name,
             guys: (d.form_data && d.form_data.guys) || 1, lines: divisionLineRows(d.id).map(resolveLine),
+            deployments: (d.form_data && d.form_data.deployments) || 0, planningHours: (d.form_data && d.form_data.planning_hours) || 0,
         };
     }), { milesAway: bid && bid.miles_to_site }, pricingSettings(), laborRates());
 }
@@ -2005,7 +2006,11 @@ const KFLE = {
                     '<div class="form-group"><label>Task</label><select id="le-task" onchange="KFLE.redrawKeep()">' +
                     inCat.map(function (x) { return '<option value="' + x.id + '"' + (x.id === d.task ? ' selected' : '') + '>' + esc(x.task_name) + (x.needs_pricing ? ' (needs pricing)' : '') + '</option>'; }).join('') + '</select></div>';
                 if (t) {
-                    const hpu = KFPricing.TIERS.filter(function (k) { return t.hours_per_unit[k]; }).map(function (k) { return k + ' ' + t.hours_per_unit[k] + ' h/' + t.unit; }).join(', ');
+                    const TL = { lead: 'Lead', master: 'Master', apprentice: 'Apprentice', specialist: 'Specialist', staging_lead: 'Lead/Master' };
+                    const perf = KFPricing.PERF_TIERS.filter(function (k) { return t.hours_per_unit[k]; }).map(function (k) { return TL[k] + ' ' + t.hours_per_unit[k] + ' h/' + t.unit; });
+                    const stg = KFPricing.STAGING_TIERS.filter(function (k) { return t.hours_per_unit[k]; }).map(function (k) { return TL[k] + ' ' + t.hours_per_unit[k] + ' h'; });
+                    const hpu = (perf.length ? 'task ' + perf.join(', ') : '') + (perf.length && stg.length ? '; ' : '') +
+                        (stg.length ? 'staging per trip ' + stg.join(', ') + ' (default ' + (t.default_trips || 0) + ' trip' + (t.default_trips === 1 ? '' : 's') + ')' : '');
                     h += '<div style="' + S + ' color:#475569; margin-bottom:8px;">' + esc(t.scope_of_work || '') + '<br>' +
                         (t.needs_pricing ? '<span class="badge" style="background:#fef3c7; color:#92400e;">Needs pricing - no production hours in the library</span>' : '<span style="color:#64748b;">Library hours: ' + esc(hpu) + '</span>') + '</div>';
                 }
@@ -2085,7 +2090,7 @@ const KFLE = {
         const name = (this.el('le-cname').value || '').trim(); if (!name) { alert('Give the custom task a name.'); return; }
         const h = parseFloat(this.el('le-chours').value) || 0, unit = (this.el('le-cunit').value || 'EA').trim().toUpperCase();
         const fr = {}; KFPricing.FRICTION_KEYS.forEach(function (k) { if (KFLE.draft.frictions[k]) fr[k] = true; });
-        this.insertLine({ kind: 'task', description: name, unit: unit, frictions: fr, custom_task: { task_name: name, unit: unit, scope_of_work: this.el('le-cscope').value || '', category: 'Custom', hours_per_unit: { lead: h, master: 0, apprentice: 0, specialist: 0, certified: 0 } } });
+        this.insertLine({ kind: 'task', description: name, unit: unit, frictions: fr, custom_task: { task_name: name, unit: unit, scope_of_work: this.el('le-cscope').value || '', category: 'Custom', hours_per_unit: { lead: h, master: 0, apprentice: 0, specialist: 0, staging_lead: 0 }, default_trips: 0 } });
         this.renderAdd();
     },
     rows: function () {
@@ -2095,6 +2100,7 @@ const KFLE = {
     changed: function () { this.renderLines(); if (this.cfg.onChange) this.cfg.onChange(); },
     patch: function (id, p) { DB.update(this.cfg.table, id, p); this.changed(); },
     setQty: function (id, v) { this.patch(id, { quantity: Math.max(0, parseFloat(v) || 0) }); },
+    setTrips: function (id, v) { this.patch(id, { trips: v === '' ? null : Math.max(0, parseFloat(v) || 0) }); },
     setFriction: function (id, key, on) {
         const li = DB.getById(this.cfg.table, id), fr = Object.assign({}, li.frictions || {}); fr[key] = !!on; this.patch(id, { frictions: fr });
     },
@@ -2122,6 +2128,7 @@ const KFLE = {
                 '<div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; font-size:0.8rem;">' +
                 '<label>Qty <input type="number" min="0" step="any" value="' + li.quantity + '" style="width:70px;" onchange="KFLE.setQty(\'' + li.id + '\', this.value)"> ' + esc((t && t.unit) || li.unit || '') + '</label>';
             if (li.kind === 'task') {
+                h += '<label title="Mobilization cycles / return trips: staging hours are charged once per trip">Trips <input type="number" min="0" step="1" value="' + (li.trips != null ? li.trips : ((t && t.default_trips) || 0)) + '" style="width:52px;" onchange="KFLE.setTrips(\'' + li.id + '\', this.value)"></label>';
                 if (!li.scope_task_id) h += '<label>Lead h/unit <input type="number" min="0" step="0.01" value="' + ((t && t.hours_per_unit && t.hours_per_unit.lead) || 0) + '" style="width:70px;" onchange="KFLE.setCustomHours(\'' + li.id + '\', this.value)"></label>';
                 h += KFPricing.FRICTION_KEYS.map(function (k) {
                     return '<label title="' + KFPricing.FRICTION_LABELS[k] + '"><input type="checkbox"' + ((li.frictions || {})[k] ? ' checked' : '') + ' onchange="KFLE.setFriction(\'' + li.id + '\', \'' + k + '\', this.checked)"> ' + ({ no_power_water: 'No power/water', ladder_scaffold: 'Ladder/scaffold', occupied: 'Occupied' })[k] + '</label>';
@@ -2131,8 +2138,9 @@ const KFLE = {
                 h += '<label>Price <input type="number" min="0" step="0.01" value="' + (cm.price == null ? '' : cm.price) + '" style="width:80px;" onchange="KFLE.setCustomPrice(\'' + li.id + '\', this.value)"></label>';
             }
             h += '</div><div style="font-size:0.78rem; color:#334155; margin-top:6px; border-top:1px dashed #e2e8f0; padding-top:6px;">';
-            if (p.needsPricing) h += '<span class="badge" style="background:#fef3c7; color:#92400e;">NEEDS PRICING</span> ' + (li.kind === 'task' ? 'No production hours' : 'No price') + ' - not counted as $0, fix before sending. ';
-            else if (li.kind === 'task') h += 'Hours ' + (Math.round(p.hoursRaw * 100) / 100) + ' (x' + (Math.round(p.frictionMultiplier * 100) / 100) + ' friction) &middot; Labor ' + KFPricing.fmt(p.labor);
+            if (p.needsTrips) h += '<span class="badge" style="background:#fef3c7; color:#92400e;">NEEDS TRIPS</span> This task only has setup/staging hours, which are charged per trip. Enter the number of trips - not counted as $0, fix before sending. ';
+            else if (p.needsPricing) h += '<span class="badge" style="background:#fef3c7; color:#92400e;">NEEDS PRICING</span> ' + (li.kind === 'task' ? 'No production hours' : 'No price') + ' - not counted as $0, fix before sending. ';
+            else if (li.kind === 'task') h += 'Hours ' + (Math.round(p.hoursRaw * 100) / 100) + ' (x' + (Math.round(p.frictionMultiplier * 100) / 100) + ' friction on task work) &middot; Task ' + KFPricing.fmt(p.performanceCost) + ' + staging ' + KFPricing.fmt(p.stagingCost) + ' = Labor ' + KFPricing.fmt(p.labor);
             else h += 'Material ' + KFPricing.fmt(p.material) + ' (incl. waste, freight, markup)';
             if (kit) h += ' &middot; Kit ' + esc(kit.pod_id) + (kit.deployment_fee == null ? ' <span class="badge" style="background:#fef3c7; color:#92400e;">fee needs pricing</span>' : ' ' + KFPricing.fmt(kit.deployment_fee));
             if (excluded) h += '<div style="color:#b45309;">Excluded from totals: ' + esc(st.scope_code) + (st.is_billable ? '' : ' is not billable') + '.</div>';

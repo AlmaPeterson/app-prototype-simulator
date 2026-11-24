@@ -90,8 +90,8 @@
  {
   "id": "d4766eb2-f397-5401-b93f-46e5481694cc",
   "company_id": "company-kineticflow",
-  "key": "planning_trips",
-  "value": "1",
+  "key": "planning_rate_per_hour",
+  "value": "90.00",
   "updated_at": "2026-11-24T12:00:00Z",
   "updated_by": null
  }

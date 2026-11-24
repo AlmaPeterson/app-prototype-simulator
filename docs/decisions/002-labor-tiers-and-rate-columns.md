@@ -1,5 +1,7 @@
 # 002 Labor tiers and the 300/500/85/120/200 PHR rate columns
 
+> **Superseded in part by note 009** (2026-11-24): 85/120/200 are setup/staging rates charged per trip, and 200 is Lead/Master staging (`staging_lead`), not a Certified Specialist.
+
 Date: 2026-11-24
 
 ## Decision

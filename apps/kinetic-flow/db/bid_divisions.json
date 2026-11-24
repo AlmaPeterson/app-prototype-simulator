@@ -6,9 +6,11 @@
   "division_number": 18,
   "division_name": "Rough HVAC & Mechanicals",
   "form_data": {
-   "guys": 1
+   "guys": 1,
+   "deployments": 0,
+   "planning_hours": 0
   },
-  "labor_cost": 3403,
+  "labor_cost": 1281.25,
   "material_cost": 0,
   "created_at": "2026-06-06T12:00:00Z",
   "updated_at": "2026-07-01T12:00:00Z",
@@ -20,9 +22,9 @@
   "mileage_cost": 0,
   "division_id": "850f9650-359f-5513-bb3e-8fb16bd0a828",
   "deleted_at": null,
-  "client_total": 3405,
-  "hours": 33.2,
-  "days": 5,
+  "client_total": 1285,
+  "hours": 12.5,
+  "days": 2,
   "needs_pricing_count": 0
  },
  {
@@ -32,7 +34,9 @@
   "division_number": 20,
   "division_name": "Rough Electrical & Renewable Energy Prep",
   "form_data": {
-   "guys": 1
+   "guys": 1,
+   "deployments": 0,
+   "planning_hours": 0
   },
   "labor_cost": 2400,
   "material_cost": 0,
@@ -58,9 +62,11 @@
   "division_number": 19,
   "division_name": "Rough Plumbing & Life Safety Systems",
   "form_data": {
-   "guys": 1
+   "guys": 1,
+   "deployments": 1,
+   "planning_hours": 0
   },
-  "labor_cost": 2074,
+  "labor_cost": 351.5,
   "material_cost": 56.8,
   "created_at": "2026-06-16T12:00:00Z",
   "updated_at": "2026-07-01T12:00:00Z",
@@ -72,9 +78,9 @@
   "mileage_cost": 56.8,
   "division_id": "2dc92cbd-182e-5b17-b91c-381642b06f44",
   "deleted_at": null,
-  "client_total": 2135,
-  "hours": 19.5,
-  "days": 3,
+  "client_total": 410,
+  "hours": 3.25,
+  "days": 1,
   "needs_pricing_count": 0
  },
  {
@@ -84,9 +90,11 @@
   "division_number": 20,
   "division_name": "Rough Electrical & Renewable Energy Prep",
   "form_data": {
-   "guys": 1
+   "guys": 1,
+   "deployments": 1,
+   "planning_hours": 0
   },
-  "labor_cost": 9823,
+  "labor_cost": 8140,
   "material_cost": 56.8,
   "created_at": "2026-06-25T12:00:00Z",
   "updated_at": "2026-07-01T12:00:00Z",
@@ -98,9 +106,9 @@
   "mileage_cost": 56.8,
   "division_id": "32017d68-a286-5ccf-a53f-06cd424c393a",
   "deleted_at": null,
-  "client_total": 9880,
-  "hours": 45.6,
-  "days": 6,
+  "client_total": 8200,
+  "hours": 25.8,
+  "days": 4,
   "needs_pricing_count": 0
  },
  {
@@ -111,7 +119,9 @@
   "division_name": "Demo/ Hazardous Abatement",
   "division_id": "1e29bfc9-97d9-5043-a44c-d6cd1383377e",
   "form_data": {
-   "guys": 1
+   "guys": 1,
+   "deployments": 1,
+   "planning_hours": 0
   },
   "labor_cost": 1140,
   "material_cost": 664.84,

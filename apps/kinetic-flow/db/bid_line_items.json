@@ -141,7 +141,8 @@
   "created_at": "2026-11-24T12:00:00Z",
   "updated_at": "2026-11-24T12:00:00Z",
   "deleted_at": null,
-  "sync_status": "synced"
+  "sync_status": "synced",
+  "trips": 1
  },
  {
   "id": "0435d0e6-6a4b-5f92-81c0-9c00c15d48f1",
@@ -179,7 +180,8 @@
   "created_at": "2026-11-24T12:00:00Z",
   "updated_at": "2026-11-24T12:00:00Z",
   "deleted_at": null,
-  "sync_status": "synced"
+  "sync_status": "synced",
+  "trips": 1
  },
  {
   "id": "92e2c1f5-efcd-5b83-83a8-a290236bfc23",
@@ -309,7 +311,8 @@
   "created_at": "2026-11-24T12:00:00Z",
   "updated_at": "2026-11-24T12:00:00Z",
   "deleted_at": null,
-  "sync_status": "synced"
+  "sync_status": "synced",
+  "trips": 1
  },
  {
   "id": "11724771-066d-5022-a868-0838791fd749",
@@ -347,7 +350,8 @@
   "created_at": "2026-11-24T12:00:00Z",
   "updated_at": "2026-11-24T12:00:00Z",
   "deleted_at": null,
-  "sync_status": "synced"
+  "sync_status": "synced",
+  "trips": 1
  },
  {
   "id": "833b4641-093c-509c-8164-8dda66818b02",

@@ -12,10 +12,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 4,
   "is_active": true,
@@ -37,10 +38,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 5,
   "is_active": true,
@@ -62,10 +64,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 6,
   "is_active": true,
@@ -87,10 +90,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.009,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.009,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 7,
   "is_active": true,
@@ -112,10 +116,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.01,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.01,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 8,
   "is_active": true,
@@ -139,8 +144,9 @@
    "master": 118.71,
    "apprentice": 5.0,
    "specialist": 0.0,
-   "certified": 500.0
+   "staging_lead": 500.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 3,
   "is_active": true,
@@ -160,13 +166,14 @@
   "unit": "EA",
   "unit_assumed": true,
   "hours_per_unit": {
-   "lead": 0.0,
+   "lead": 5.0,
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 4,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -185,13 +192,14 @@
   "unit": "EA",
   "unit_assumed": true,
   "hours_per_unit": {
-   "lead": 0.0,
+   "lead": 7.0,
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 5,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -212,10 +220,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 6,
   "is_active": true,
@@ -237,10 +246,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 7,
   "is_active": true,
@@ -262,10 +272,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 8,
   "is_active": true,
@@ -287,10 +298,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.009,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.009,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 9,
   "is_active": true,
@@ -312,10 +324,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.01,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.01,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 10,
   "is_active": true,
@@ -338,9 +351,10 @@
    "lead": 0.75,
    "master": 0.5,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.25
+   "specialist": 0.25,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 0,
   "is_active": true,
@@ -364,8 +378,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 2,
   "is_active": true,
@@ -389,8 +404,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 4,
   "is_active": true,
@@ -414,8 +430,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 5,
   "is_active": true,
@@ -439,8 +456,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 6,
   "is_active": true,
@@ -464,8 +482,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 7,
   "is_active": true,
@@ -489,8 +508,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 8,
   "is_active": true,
@@ -514,8 +534,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 9,
   "is_active": true,
@@ -539,8 +560,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 10,
   "is_active": true,
@@ -564,8 +586,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 11,
   "is_active": true,
@@ -589,8 +612,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 12,
   "is_active": true,
@@ -614,8 +638,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 13,
   "is_active": true,
@@ -639,8 +664,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 14,
   "is_active": true,
@@ -664,8 +690,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 15,
   "is_active": true,
@@ -689,8 +716,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 16,
   "is_active": true,
@@ -714,8 +742,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 17,
   "is_active": true,
@@ -739,8 +768,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 18,
   "is_active": true,
@@ -764,8 +794,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 19,
   "is_active": true,
@@ -789,8 +820,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 20,
   "is_active": true,
@@ -814,8 +846,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 21,
   "is_active": true,
@@ -839,8 +872,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 22,
   "is_active": true,
@@ -864,8 +898,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 23,
   "is_active": true,
@@ -889,8 +924,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 24,
   "is_active": true,
@@ -914,8 +950,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 25,
   "is_active": true,
@@ -939,8 +976,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 26,
   "is_active": true,
@@ -964,8 +1002,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 27,
   "is_active": true,
@@ -989,8 +1028,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 28,
   "is_active": true,
@@ -1014,8 +1054,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 29,
   "is_active": true,
@@ -1039,8 +1080,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 30,
   "is_active": true,
@@ -1064,8 +1106,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 31,
   "is_active": true,
@@ -1089,8 +1132,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 32,
   "is_active": true,
@@ -1114,8 +1158,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 33,
   "is_active": true,
@@ -1139,8 +1184,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 34,
   "is_active": true,
@@ -1164,8 +1210,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 35,
   "is_active": true,
@@ -1189,8 +1236,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 36,
   "is_active": true,
@@ -1214,8 +1262,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 37,
   "is_active": true,
@@ -1239,8 +1288,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 39,
   "is_active": true,
@@ -1264,8 +1314,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 40,
   "is_active": true,
@@ -1289,8 +1340,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 41,
   "is_active": true,
@@ -1314,8 +1366,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 42,
   "is_active": true,
@@ -1339,8 +1392,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 43,
   "is_active": true,
@@ -1364,8 +1418,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 44,
   "is_active": true,
@@ -1389,8 +1444,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 45,
   "is_active": true,
@@ -1414,8 +1470,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 46,
   "is_active": true,
@@ -1439,8 +1496,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 47,
   "is_active": true,
@@ -1464,8 +1522,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 48,
   "is_active": true,
@@ -1489,8 +1548,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 49,
   "is_active": true,
@@ -1514,8 +1574,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 50,
   "is_active": true,
@@ -1539,8 +1600,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 51,
   "is_active": true,
@@ -1564,8 +1626,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 52,
   "is_active": true,
@@ -1589,8 +1652,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 53,
   "is_active": true,
@@ -1614,8 +1678,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 54,
   "is_active": true,
@@ -1639,8 +1704,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 55,
   "is_active": true,
@@ -1664,8 +1730,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 56,
   "is_active": true,
@@ -1689,8 +1756,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 57,
   "is_active": true,
@@ -1714,8 +1782,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 58,
   "is_active": true,
@@ -1739,8 +1808,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 59,
   "is_active": true,
@@ -1764,8 +1834,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 60,
   "is_active": true,
@@ -1789,8 +1860,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 61,
   "is_active": true,
@@ -1814,8 +1886,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 62,
   "is_active": true,
@@ -1839,8 +1912,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 63,
   "is_active": true,
@@ -1864,8 +1938,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 64,
   "is_active": true,
@@ -1889,8 +1964,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 65,
   "is_active": true,
@@ -1914,8 +1990,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 66,
   "is_active": true,
@@ -1939,8 +2016,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 67,
   "is_active": true,
@@ -1964,8 +2042,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 68,
   "is_active": true,
@@ -1989,8 +2068,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 69,
   "is_active": true,
@@ -2014,8 +2094,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 70,
   "is_active": true,
@@ -2039,8 +2120,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 71,
   "is_active": true,
@@ -2064,8 +2146,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 72,
   "is_active": true,
@@ -2089,8 +2172,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 73,
   "is_active": true,
@@ -2113,10 +2197,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.04,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 74,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -2138,9 +2223,10 @@
    "lead": 0.1,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 1.0,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 75,
   "is_active": true,
@@ -2163,10 +2249,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 3.0,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 76,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -2188,9 +2275,10 @@
    "lead": 0.5,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 1.0,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 77,
   "is_active": true,
@@ -2213,9 +2301,10 @@
    "lead": 1.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 1.0,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 78,
   "is_active": true,
@@ -2238,9 +2327,10 @@
    "lead": 0.1,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.1,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 79,
   "is_active": true,
@@ -2263,9 +2353,10 @@
    "lead": 1.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.1,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 80,
   "is_active": true,
@@ -2288,10 +2379,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.075,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 81,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -2310,13 +2402,14 @@
   "unit": "EA",
   "unit_assumed": true,
   "hours_per_unit": {
-   "lead": 0.0,
+   "lead": 1.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.25,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 82,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -2337,10 +2430,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 1.0,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 83,
   "is_active": true,
@@ -2362,10 +2456,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.032,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.032,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 84,
   "is_active": true,
@@ -2389,8 +2484,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 85,
   "is_active": true,
@@ -2414,8 +2510,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 86,
   "is_active": true,
@@ -2437,10 +2534,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 4,
   "is_active": true,
@@ -2462,10 +2560,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.15,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.15,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 5,
   "is_active": true,
@@ -2487,10 +2586,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 6,
   "is_active": true,
@@ -2512,10 +2612,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.009,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.009,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 7,
   "is_active": true,
@@ -2537,10 +2638,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.01,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.01,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 8,
   "is_active": true,
@@ -2562,10 +2664,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.029,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.029,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 2,
   "is_active": true,
@@ -2589,8 +2692,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 4,
   "is_active": true,
@@ -2614,8 +2718,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 5,
   "is_active": true,
@@ -2639,8 +2744,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 8,
   "is_active": true,
@@ -2664,8 +2770,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 9,
   "is_active": true,
@@ -2687,10 +2794,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 10,
   "is_active": true,
@@ -2712,10 +2820,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 11,
   "is_active": true,
@@ -2737,10 +2846,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 12,
   "is_active": true,
@@ -2762,10 +2872,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.009,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.009,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 13,
   "is_active": true,
@@ -2787,10 +2898,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.01,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.01,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 14,
   "is_active": true,
@@ -2811,12 +2923,13 @@
   "unit_assumed": true,
   "hours_per_unit": {
    "lead": 0.0,
-   "master": 0.0,
+   "master": 2.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 4.25,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 4,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -2837,10 +2950,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 5,
   "is_active": true,
@@ -2862,10 +2976,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 6,
   "is_active": true,
@@ -2887,10 +3002,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 7,
   "is_active": true,
@@ -2912,10 +3028,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.009,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.009,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 8,
   "is_active": true,
@@ -2937,10 +3054,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.01,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.01,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 9,
   "is_active": true,
@@ -2962,10 +3080,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.029,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.029,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 2,
   "is_active": true,
@@ -2989,8 +3108,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 4,
   "is_active": true,
@@ -3014,8 +3134,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 5,
   "is_active": true,
@@ -3039,8 +3160,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 8,
   "is_active": true,
@@ -3064,8 +3186,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 9,
   "is_active": true,
@@ -3087,10 +3210,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 10,
   "is_active": true,
@@ -3112,10 +3236,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 11,
   "is_active": true,
@@ -3137,10 +3262,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 12,
   "is_active": true,
@@ -3162,10 +3288,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.009,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.009,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 13,
   "is_active": true,
@@ -3187,10 +3314,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.01,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.01,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 14,
   "is_active": true,
@@ -3212,10 +3340,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 4,
   "is_active": true,
@@ -3237,10 +3366,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 5,
   "is_active": true,
@@ -3262,10 +3392,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 6,
   "is_active": true,
@@ -3287,10 +3418,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.009,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.009,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 7,
   "is_active": true,
@@ -3312,10 +3444,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.01,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.01,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 8,
   "is_active": true,
@@ -3337,10 +3470,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 4,
   "is_active": true,
@@ -3362,10 +3496,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 5,
   "is_active": true,
@@ -3387,10 +3522,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 6,
   "is_active": true,
@@ -3412,10 +3548,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.009,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.009,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 7,
   "is_active": true,
@@ -3437,10 +3574,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.01,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.01,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 8,
   "is_active": true,
@@ -3464,8 +3602,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 1,
   "is_active": true,
@@ -3489,8 +3628,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 2,
   "is_active": true,
@@ -3512,11 +3652,12 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
-  "needs_pricing": false,
+  "default_trips": 1,
+  "needs_pricing": true,
   "sort_order": 3,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -3539,8 +3680,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 4,
   "is_active": true,
@@ -3564,8 +3706,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 5,
   "is_active": true,
@@ -3589,8 +3732,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 6,
   "is_active": true,
@@ -3614,8 +3758,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 7,
   "is_active": true,
@@ -3639,8 +3784,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 8,
   "is_active": true,
@@ -3664,8 +3810,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 9,
   "is_active": true,
@@ -3689,8 +3836,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 10,
   "is_active": true,
@@ -3714,8 +3862,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 11,
   "is_active": true,
@@ -3739,8 +3888,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 12,
   "is_active": true,
@@ -3763,10 +3913,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.5,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 13,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -3788,10 +3939,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 4.0,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 14,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -3812,10 +3964,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 15,
   "is_active": true,
@@ -3837,10 +3990,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 16,
   "is_active": true,
@@ -3862,10 +4016,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.16,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.16,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 17,
   "is_active": true,
@@ -3887,10 +4042,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.2,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.2,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 18,
   "is_active": true,
@@ -3912,10 +4068,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.17,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.17,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 19,
   "is_active": true,
@@ -3938,10 +4095,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.25,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 20,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -3964,8 +4122,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 21,
   "is_active": true,
@@ -3988,10 +4147,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 1.25,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 22,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -4013,10 +4173,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 1.0,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 23,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -4038,10 +4199,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 1.9,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 24,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -4063,10 +4225,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 1.45,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 25,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -4088,10 +4251,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.15,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 26,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -4113,10 +4277,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.08,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 27,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -4138,10 +4303,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.05,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 28,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -4163,10 +4329,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.192,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 29,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -4188,10 +4355,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.2,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 30,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -4213,10 +4381,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.17,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 31,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -4239,8 +4408,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 33,
   "is_active": true,
@@ -4264,8 +4434,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 41,
   "is_active": true,
@@ -4288,10 +4459,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.13,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 42,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -4313,10 +4485,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.11,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 43,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -4338,10 +4511,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.09,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 44,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -4363,10 +4537,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.08,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 45,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -4388,10 +4563,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.14,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 46,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -4413,10 +4589,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.03,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 47,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -4438,10 +4615,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.07,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 48,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -4463,10 +4641,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.24,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 49,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -4489,8 +4668,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 50,
   "is_active": true,
@@ -4512,10 +4692,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.029,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.029,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 2,
   "is_active": true,
@@ -4539,8 +4720,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 4,
   "is_active": true,
@@ -4564,8 +4746,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 5,
   "is_active": true,
@@ -4589,8 +4772,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 8,
   "is_active": true,
@@ -4614,8 +4798,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 9,
   "is_active": true,
@@ -4637,10 +4822,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 10,
   "is_active": true,
@@ -4662,10 +4848,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 11,
   "is_active": true,
@@ -4687,10 +4874,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 12,
   "is_active": true,
@@ -4712,10 +4900,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.009,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.009,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 13,
   "is_active": true,
@@ -4737,10 +4926,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.01,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.01,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 14,
   "is_active": true,
@@ -4762,10 +4952,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.029,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.029,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 2,
   "is_active": true,
@@ -4789,8 +4980,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 4,
   "is_active": true,
@@ -4814,8 +5006,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 5,
   "is_active": true,
@@ -4839,8 +5032,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 8,
   "is_active": true,
@@ -4864,8 +5058,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 9,
   "is_active": true,
@@ -4887,10 +5082,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 10,
   "is_active": true,
@@ -4912,10 +5108,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 11,
   "is_active": true,
@@ -4937,10 +5134,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 12,
   "is_active": true,
@@ -4962,10 +5160,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.009,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.009,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 13,
   "is_active": true,
@@ -4987,10 +5186,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.01,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.01,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 14,
   "is_active": true,
@@ -5012,10 +5212,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.029,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.029,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 2,
   "is_active": true,
@@ -5039,8 +5240,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 4,
   "is_active": true,
@@ -5064,8 +5266,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 5,
   "is_active": true,
@@ -5089,8 +5292,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 8,
   "is_active": true,
@@ -5114,8 +5318,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 9,
   "is_active": true,
@@ -5137,10 +5342,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 10,
   "is_active": true,
@@ -5162,10 +5368,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 11,
   "is_active": true,
@@ -5187,10 +5394,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 12,
   "is_active": true,
@@ -5212,10 +5420,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.009,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.009,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 13,
   "is_active": true,
@@ -5237,10 +5446,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.01,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.01,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 14,
   "is_active": true,
@@ -5262,10 +5472,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 4,
   "is_active": true,
@@ -5287,10 +5498,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 5,
   "is_active": true,
@@ -5312,10 +5524,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 6,
   "is_active": true,
@@ -5337,10 +5550,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.009,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.009,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 7,
   "is_active": true,
@@ -5362,10 +5576,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.01,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.01,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 8,
   "is_active": true,
@@ -5387,10 +5602,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.029,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.029,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 2,
   "is_active": true,
@@ -5414,8 +5630,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 4,
   "is_active": true,
@@ -5439,8 +5656,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 5,
   "is_active": true,
@@ -5464,8 +5682,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 8,
   "is_active": true,
@@ -5489,8 +5708,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 9,
   "is_active": true,
@@ -5512,10 +5732,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 10,
   "is_active": true,
@@ -5537,10 +5758,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 11,
   "is_active": true,
@@ -5562,10 +5784,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 12,
   "is_active": true,
@@ -5587,10 +5810,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.009,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.009,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 13,
   "is_active": true,
@@ -5612,10 +5836,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.01,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.01,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 14,
   "is_active": true,
@@ -5637,10 +5862,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.029,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.029,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 2,
   "is_active": true,
@@ -5664,8 +5890,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 4,
   "is_active": true,
@@ -5689,8 +5916,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 5,
   "is_active": true,
@@ -5714,8 +5942,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 8,
   "is_active": true,
@@ -5739,8 +5968,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 9,
   "is_active": true,
@@ -5762,10 +5992,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 10,
   "is_active": true,
@@ -5787,10 +6018,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 11,
   "is_active": true,
@@ -5812,10 +6044,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 12,
   "is_active": true,
@@ -5837,10 +6070,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.009,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.009,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 13,
   "is_active": true,
@@ -5862,10 +6096,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.01,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.01,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 14,
   "is_active": true,
@@ -5889,8 +6124,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 4,
   "is_active": true,
@@ -5914,8 +6150,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 5,
   "is_active": true,
@@ -5939,8 +6176,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 4,
   "is_active": true,
@@ -5962,10 +6200,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 5,
   "is_active": true,
@@ -5987,10 +6226,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 6,
   "is_active": true,
@@ -6012,10 +6252,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 7,
   "is_active": true,
@@ -6037,10 +6278,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.009,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.009,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 8,
   "is_active": true,
@@ -6062,10 +6304,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 2.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 2.0,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 9,
   "is_active": true,
@@ -6089,8 +6332,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 10,
   "is_active": true,
@@ -6114,8 +6358,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 11,
   "is_active": true,
@@ -6139,8 +6384,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 12,
   "is_active": true,
@@ -6163,10 +6409,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 1.0,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 13,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -6189,8 +6436,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 14,
   "is_active": true,
@@ -6214,8 +6462,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 15,
   "is_active": true,
@@ -6239,8 +6488,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 16,
   "is_active": true,
@@ -6264,8 +6514,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 17,
   "is_active": true,
@@ -6289,8 +6540,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 18,
   "is_active": true,
@@ -6314,8 +6566,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 19,
   "is_active": true,
@@ -6339,8 +6592,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 20,
   "is_active": true,
@@ -6362,10 +6616,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 4,
   "is_active": true,
@@ -6387,10 +6642,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 5,
   "is_active": true,
@@ -6412,10 +6668,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 6,
   "is_active": true,
@@ -6437,10 +6694,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.009,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.009,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 7,
   "is_active": true,
@@ -6462,10 +6720,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.01,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.01,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 8,
   "is_active": true,
@@ -6487,10 +6746,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 4,
   "is_active": true,
@@ -6512,10 +6772,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 5,
   "is_active": true,
@@ -6537,10 +6798,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 6,
   "is_active": true,
@@ -6562,10 +6824,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.009,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.009,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 7,
   "is_active": true,
@@ -6587,10 +6850,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.01,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.01,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 8,
   "is_active": true,
@@ -6613,10 +6877,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.25,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 4,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -6637,10 +6902,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 5,
   "is_active": true,
@@ -6662,10 +6928,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 6,
   "is_active": true,
@@ -6687,10 +6954,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 7,
   "is_active": true,
@@ -6712,10 +6980,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.25,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.25,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 8,
   "is_active": true,
@@ -6737,10 +7006,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.01,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.01,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 9,
   "is_active": true,
@@ -6762,10 +7032,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 4,
   "is_active": true,
@@ -6787,10 +7058,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 5,
   "is_active": true,
@@ -6812,10 +7084,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 6,
   "is_active": true,
@@ -6837,10 +7110,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.009,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.009,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 7,
   "is_active": true,
@@ -6862,10 +7136,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.01,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.01,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 8,
   "is_active": true,
@@ -6887,10 +7162,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.125,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.125,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 1,
   "is_active": true,
@@ -6913,10 +7189,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.25,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 2,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -6937,10 +7214,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 3,
   "is_active": true,
@@ -6963,10 +7241,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 4,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -6988,10 +7267,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 5,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -7013,10 +7293,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 6,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -7039,8 +7320,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 7,
   "is_active": true,
@@ -7064,8 +7346,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 8,
   "is_active": true,
@@ -7088,10 +7371,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.005,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 9,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -7113,10 +7397,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.005,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 10,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -7138,10 +7423,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 12,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -7164,8 +7450,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 13,
   "is_active": true,
@@ -7188,10 +7475,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.25,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 14,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -7214,8 +7502,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 15,
   "is_active": true,
@@ -7239,8 +7528,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 16,
   "is_active": true,
@@ -7264,8 +7554,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 17,
   "is_active": true,
@@ -7289,8 +7580,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 18,
   "is_active": true,
@@ -7314,8 +7606,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 19,
   "is_active": true,
@@ -7339,8 +7632,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 20,
   "is_active": true,
@@ -7364,8 +7658,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 21,
   "is_active": true,
@@ -7389,8 +7684,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 22,
   "is_active": true,
@@ -7414,8 +7710,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 23,
   "is_active": true,
@@ -7439,8 +7736,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 24,
   "is_active": true,
@@ -7464,8 +7762,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 25,
   "is_active": true,
@@ -7489,8 +7788,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 26,
   "is_active": true,
@@ -7514,8 +7814,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 27,
   "is_active": true,
@@ -7539,8 +7840,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 28,
   "is_active": true,
@@ -7564,8 +7866,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 29,
   "is_active": true,
@@ -7588,10 +7891,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 1.0,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 30,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -7613,10 +7917,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 4.0,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 31,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -7638,10 +7943,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 0.2,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 32,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -7664,8 +7970,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 33,
   "is_active": true,
@@ -7689,8 +7996,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 34,
   "is_active": true,
@@ -7714,8 +8022,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 35,
   "is_active": true,
@@ -7738,10 +8047,11 @@
    "lead": 0.0,
    "master": 0.0,
    "apprentice": 0.0,
-   "specialist": 0.0,
-   "certified": 0.0
+   "specialist": 1.0,
+   "staging_lead": 0.0
   },
-  "needs_pricing": true,
+  "default_trips": 0,
+  "needs_pricing": false,
   "sort_order": 37,
   "is_active": true,
   "created_at": "2026-11-24T12:00:00Z",
@@ -7764,8 +8074,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 38,
   "is_active": true,
@@ -7787,10 +8098,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 4,
   "is_active": true,
@@ -7812,10 +8124,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 5,
   "is_active": true,
@@ -7837,10 +8150,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 6,
   "is_active": true,
@@ -7862,10 +8176,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.009,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.009,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 7,
   "is_active": true,
@@ -7887,10 +8202,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.01,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.01,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 8,
   "is_active": true,
@@ -7912,10 +8228,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.029,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.029,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 2,
   "is_active": true,
@@ -7939,8 +8256,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 4,
   "is_active": true,
@@ -7964,8 +8282,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 5,
   "is_active": true,
@@ -7989,8 +8308,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 8,
   "is_active": true,
@@ -8014,8 +8334,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 9,
   "is_active": true,
@@ -8037,10 +8358,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 10,
   "is_active": true,
@@ -8062,10 +8384,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 11,
   "is_active": true,
@@ -8087,10 +8410,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 12,
   "is_active": true,
@@ -8112,10 +8436,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.009,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.009,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 13,
   "is_active": true,
@@ -8137,10 +8462,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.01,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.01,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 14,
   "is_active": true,
@@ -8162,10 +8488,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.029,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.029,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 2,
   "is_active": true,
@@ -8189,8 +8516,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 4,
   "is_active": true,
@@ -8214,8 +8542,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 5,
   "is_active": true,
@@ -8239,8 +8568,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 8,
   "is_active": true,
@@ -8264,8 +8594,9 @@
    "master": 0.0,
    "apprentice": 0.0,
    "specialist": 0.0,
-   "certified": 0.0
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": true,
   "sort_order": 9,
   "is_active": true,
@@ -8287,10 +8618,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 1.0,
+   "apprentice": 0.0,
    "specialist": 0.02,
-   "certified": 0.0
+   "staging_lead": 0.5
   },
+  "default_trips": 1,
   "needs_pricing": false,
   "sort_order": 10,
   "is_active": true,
@@ -8312,10 +8644,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 11,
   "is_active": true,
@@ -8337,10 +8670,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.02,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.02,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 12,
   "is_active": true,
@@ -8362,10 +8696,11 @@
   "hours_per_unit": {
    "lead": 0.0,
    "master": 0.0,
-   "apprentice": 0.009,
-   "specialist": 0.0,
-   "certified": 0.0
+   "apprentice": 0.0,
+   "specialist": 0.009,
+   "staging_lead": 0.0
   },
+  "default_trips": 0,
   "needs_pricing": false,
   "sort_order": 13,
   "is_active": true,

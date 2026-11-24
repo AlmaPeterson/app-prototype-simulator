@@ -21,20 +21,22 @@ const DEFAULTS = {
     includeContingency: false, // the sheet shows contingency beside, not inside, the division total
     roundStep: 5,              // client price per division is rounded UP to the next $5
     hoursPerDay: 8,
-    mileageRatePerMile: 2.80,  // $44.80 for a 16-mile round trip (8 miles away)
-    executionFuelAllowance: 12, // flat "Executing The Plan" fuel line ($12.00)
-    planningTrips: 1,          // "Meet on site / Planning" deployments
+    mileageRatePerMile: 2.80,  // "Meet on site / Planning": miles away x 2 x $2.80 ($44.80 for 8 miles away)
+    executionFuelAllowance: 12, // "Executing The Plan" line: typed-in 6 x 2 = $12.00 on every division tab
+    planningRatePerHour: 90,   // "Meet on site / Planning" hours x $90, counted as labor
     sprintMaxDays: 4,          // 4-Day Sprint: Monday-Thursday
     smallJobThreshold: 5000,   // under this (or millwork) = 100% upfront
     defaultMarkup: 0.24,       // materials library markup
 };
 
-// Tier code -> which hours-per-unit column it prices from. Rates come from the
-// labor_rates table (300 / 500 / 85 / 120 / 200 PHR).
-const TIERS = ['apprentice', 'specialist', 'certified', 'lead', 'master'];
-// The CI "Labor Tier Summary" has four rows; the 200 PHR column rolls up under Specialist.
-const SUMMARY_TIER = { apprentice: 'apprentice', specialist: 'specialist', certified: 'specialist', lead: 'lead', master: 'master' };
-const DEFAULT_RATES = { lead: 300, master: 500, apprentice: 85, specialist: 120, certified: 200 };
+// The five hour columns on every division tab, in two groups (see docs/decisions/009):
+//  - task performance (W/Y): quantity x hours x rate x friction, rates 300 / 500
+//  - setup, staging and cleanup (AE/AG/AI): hours x rate x mobilization trips (NOT x quantity),
+//    rates 85 / 120 / 200. 200 is "driving, setup, staging, tear down performed by Lead/Master".
+const PERF_TIERS = ['lead', 'master'];
+const STAGING_TIERS = ['apprentice', 'specialist', 'staging_lead'];
+const TIERS = PERF_TIERS.concat(STAGING_TIERS);
+const DEFAULT_RATES = { lead: 300, master: 500, apprentice: 85, specialist: 120, staging_lead: 200 };
 
 const FRICTION_KEYS = ['no_power_water', 'ladder_scaffold', 'occupied'];
 const FRICTION_LABELS = {
@@ -50,7 +52,7 @@ function cents(x) { return Math.round((num(x) + Number.EPSILON) * 100) / 100; }
 function ceilStep(x, step) {
     step = step || 5;
     // epsilon guards 640.0000000001 style noise from tipping to the next step
-    return Math.ceil(cents(x) / step - 1e-9) * step;
+    return Math.ceil(cents(x) / step - 1e-9) * step + 0; // + 0 turns -0 into 0
 }
 function fmt(x) {
     return '$' + num(x).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -63,7 +65,7 @@ function settingsFromRows(rows) {
         tax_multiplier: 'taxMultiplier', friction_pct: 'frictionPct', contingency_pct: 'contingencyPct',
         include_contingency: 'includeContingency', round_step: 'roundStep', mileage_rate_per_mile: 'mileageRatePerMile',
         execution_fuel_allowance: 'executionFuelAllowance', sprint_max_days: 'sprintMaxDays',
-        small_job_threshold: 'smallJobThreshold', planning_trips: 'planningTrips',
+        small_job_threshold: 'smallJobThreshold', planning_rate_per_hour: 'planningRatePerHour',
     };
     (rows || []).forEach(function (r) {
         const k = map[r.key];
@@ -75,7 +77,7 @@ function settingsFromRows(rows) {
 
 function ratesFromRows(rows) {
     const r = Object.assign({}, DEFAULT_RATES);
-    (rows || []).forEach(function (x) { if (x.code) r[x.code] = num(x.hourly_rate); });
+    (rows || []).forEach(function (x) { if (x.code) r[x.code === 'certified' ? 'staging_lead' : x.code] = num(x.hourly_rate); });
     return r;
 }
 
@@ -89,31 +91,43 @@ function frictionMultiplier(frictions, settings) {
     return 1 + s.frictionPct * frictionCount(frictions);
 }
 
-// hoursPerUnit: { lead, master, apprentice, specialist, certified } (hours per unit of quantity)
-// A task is "needs pricing" when it has no production hours at all.
+// hoursPerUnit: { lead, master, apprentice, specialist, staging_lead }. lead/master are hours per
+// unit of quantity; apprentice/specialist/staging_lead are setup/staging hours per mobilization trip.
+// trips: the sheet's "Number of Mobilization Cycles / Return Trips" (column AD).
+// A task "needs pricing" when it has no hours at all, and "needs trips" when its only hours are
+// staging hours and trips is 0 (the sheet would silently price it at $0).
+function hpuOf(hpu) {
+    const h = hpu || {};
+    return { lead: num(h.lead), master: num(h.master), apprentice: num(h.apprentice), specialist: num(h.specialist),
+        staging_lead: num(h.staging_lead != null ? h.staging_lead : h.certified) };
+}
 function laborForTask(opts, settings, rates) {
     const s = settings || DEFAULTS, r = rates || DEFAULT_RATES;
-    const qty = num(opts.quantity), hpu = opts.hoursPerUnit || {};
+    const qty = num(opts.quantity), trips = Math.max(0, num(opts.trips)), hpu = hpuOf(opts.hoursPerUnit);
     const mult = frictionMultiplier(opts.frictions, s);
-    const hoursByTier = {}, summaryHours = { apprentice: 0, specialist: 0, lead: 0, master: 0 };
-    let raw = 0, baseCost = 0;
-    TIERS.forEach(function (t) {
-        const h = qty * num(hpu[t]);
-        hoursByTier[t] = h;
-        raw += h;
-        baseCost += h * num(r[t]);
-        summaryHours[SUMMARY_TIER[t]] += h;
-    });
-    const needsPricing = TIERS.every(function (t) { return !num(hpu[t]); });
+    let perfHours = 0, perfBase = 0, stagingPerTrip = 0, stagingHoursPerTrip = 0;
+    PERF_TIERS.forEach(function (t) { perfHours += qty * hpu[t]; perfBase += qty * hpu[t] * num(r[t]); });
+    STAGING_TIERS.forEach(function (t) { stagingHoursPerTrip += hpu[t]; stagingPerTrip += hpu[t] * num(r[t]); });
+    const stagingHours = stagingHoursPerTrip * trips, stagingCost = stagingPerTrip * trips;
+    // The CI "Labor Tier Summary" (E6:E9) is quantity x hours for Apprentice / Specialist / Lead / Master,
+    // even though staging is priced per trip. It ignores the 200 column. Kept as the sheet does it.
+    const summaryHours = { apprentice: qty * hpu.apprentice, specialist: qty * hpu.specialist, lead: qty * hpu.lead, master: qty * hpu.master };
+    const needsPricing = TIERS.every(function (t) { return !hpu[t]; });
+    const needsTrips = !needsPricing && perfHours === 0 && stagingHoursPerTrip > 0 && trips === 0;
     return {
         needsPricing: needsPricing,
-        hoursByTier: hoursByTier,
+        needsTrips: needsTrips,
+        trips: trips,
         summaryHours: summaryHours,
-        hoursRaw: raw,
-        hoursAdjusted: raw * mult,   // friction slows the crew, so days use this
+        performanceHours: perfHours,
+        stagingHours: stagingHours,
+        hoursRaw: perfHours + stagingHours,
+        hoursAdjusted: perfHours * mult + stagingHours,   // friction slows task performance only
         frictionMultiplier: mult,
-        baseCost: cents(baseCost),
-        cost: cents(baseCost * mult),
+        performanceCost: cents(perfBase * mult),
+        stagingCost: cents(stagingCost),
+        baseCost: cents(perfBase + stagingCost),
+        cost: cents(perfBase * mult + stagingCost),
     };
 }
 
@@ -132,19 +146,22 @@ function materialLine(opts, settings) {
     return { needsPricing: false, unitCost: cents(unit), cost: cost, taxed: cost * (settings || DEFAULTS).taxMultiplier };
 }
 
-// Mileage: one planning trip (round trip) at the per-mile rate + the flat execution fuel line.
-function mileage(milesAway, settings) {
+// Mileage block on each division tab, charged only when that division's "# of Deployments" is set:
+// planning round trip (miles x 2 x rate) + the "Executing The Plan" line go into Material Cost;
+// planning hours x $90 go into Labor.
+function mileage(milesAway, settings, planningHours) {
     const s = settings || DEFAULTS;
-    if (!num(milesAway) || !s.planningTrips) return { planning: 0, execution: 0, total: 0, roundTripMiles: 0 };
     const rt = num(milesAway) * 2;
-    const planning = cents(rt * s.mileageRatePerMile * s.planningTrips);
+    const planning = cents(rt * s.mileageRatePerMile);
     const execution = cents(s.executionFuelAllowance);
-    return { planning: planning, execution: execution, total: cents(planning + execution), roundTripMiles: rt };
+    const planningLabor = cents(num(planningHours) * s.planningRatePerHour);
+    return { planning: planning, execution: execution, total: cents(planning + execution), roundTripMiles: rt, planningLabor: planningLabor };
 }
+const NO_MILEAGE = { planning: 0, execution: 0, total: 0, roundTripMiles: 0, planningLabor: 0 };
 
 // A resolved line is one bid_line_items row with its library rows attached:
-//   { id, kind: 'task'|'material', quantity, frictions, included, status: {scope_code,is_billable},
-//     task: {task_name, unit, hours_per_unit}, kit: {id, pod_id, deployment_fee}|null,
+//   { id, kind: 'task'|'material', quantity, trips, frictions, included, status: {scope_code,is_billable},
+//     task: {task_name, unit, hours_per_unit, default_trips}, kit: {id, pod_id, deployment_fee}|null,
 //     material: {price, waste, freight, markup}|null, room }
 function priceLine(line, settings, rates) {
     const s = settings || DEFAULTS;
@@ -152,7 +169,7 @@ function priceLine(line, settings, rates) {
     const out = {
         id: line.id, kind: line.kind, scopeCode: status.scope_code,
         included: line.included !== false, billable: !!status.is_billable && status.scope_code !== 'VOID',
-        needsPricing: false, labor: 0, material: 0, materialTaxed: 0, hoursByTier: null, summaryHours: null, hoursRaw: 0, hoursAdjusted: 0,
+        needsPricing: false, needsTrips: false, labor: 0, material: 0, materialTaxed: 0, summaryHours: null, hoursRaw: 0, hoursAdjusted: 0,
         kitId: null, kitFee: 0,
     };
     if (line.kind === 'material') {
@@ -160,15 +177,18 @@ function priceLine(line, settings, rates) {
         out.needsPricing = m.needsPricing; out.material = m.cost; out.materialTaxed = m.taxed; out.unitCost = m.unitCost;
     } else {
         const t = line.task || {};
-        const l = laborForTask({ quantity: line.quantity, hoursPerUnit: t.hours_per_unit, frictions: line.frictions }, s, rates);
-        out.needsPricing = l.needsPricing; out.labor = l.cost; out.hoursByTier = l.hoursByTier; out.summaryHours = l.summaryHours;
+        const trips = line.trips != null ? line.trips : t.default_trips;
+        const l = laborForTask({ quantity: line.quantity, trips: trips, hoursPerUnit: t.hours_per_unit, frictions: line.frictions }, s, rates);
+        out.needsPricing = l.needsPricing || l.needsTrips; out.needsTrips = l.needsTrips; out.trips = l.trips;
+        out.labor = l.cost; out.performanceCost = l.performanceCost; out.stagingCost = l.stagingCost; out.summaryHours = l.summaryHours;
         out.hoursRaw = l.hoursRaw; out.hoursAdjusted = l.hoursAdjusted; out.frictionMultiplier = l.frictionMultiplier;
         if (line.kit) { out.kitId = line.kit.id; out.kitFee = cents(num(line.kit.deployment_fee)); }
     }
     return out;
 }
 
-// lines: resolved lines for ONE division. opts: { guys, milesAway, chargeMileage }
+// lines: resolved lines for ONE division. opts: { guys, milesAway, deployments, planningHours }
+// (chargeMileage: true is accepted as an alias for deployments).
 function divisionTotals(lines, opts, settings, rates) {
     const s = settings || DEFAULTS, o = opts || {};
     const priced = (lines || []).map(function (l) { return priceLine(l, s, rates); });
@@ -184,8 +204,8 @@ function divisionTotals(lines, opts, settings, rates) {
         if (p.summaryHours) Object.keys(tier).forEach(function (k) { tier[k] += p.summaryHours[k]; });
         if (p.kitId && !kitSeen[p.kitId]) { kitSeen[p.kitId] = true; kitFees += p.kitFee; } // one deployment per kit per division
     });
-    const mi = o.chargeMileage ? mileage(o.milesAway, s) : { planning: 0, execution: 0, total: 0, roundTripMiles: 0 };
-    labor = cents(labor); kitFees = cents(kitFees); materialTaxed = cents(materialTaxed); // tax applied once to the division's material subtotal
+    const mi = (num(o.deployments) > 0 || o.chargeMileage) ? mileage(o.milesAway, s, o.planningHours) : NO_MILEAGE;
+    labor = cents(labor + mi.planningLabor);  // the sheet's "Labor Estimated" includes the planning hours kitFees = cents(kitFees); materialTaxed = cents(materialTaxed); // tax applied once to the division's material subtotal
     const materialCostSheet = cents(materialTaxed + kitFees + mi.total); // the sheet's "Material Cost" cell
     const subtotal = cents(labor + materialCostSheet);
     const contingency = cents(labor * s.contingencyPct);
@@ -194,7 +214,7 @@ function divisionTotals(lines, opts, settings, rates) {
     return {
         labor: labor, materialsBeforeTax: cents(material), materialsTaxed: materialTaxed, kitFees: kitFees, mileage: mi,
         materialCost: materialCostSheet, subtotal: subtotal, contingency: contingency, total: total,
-        clientTotal: live.length || mi.total ? ceilStep(total, s.roundStep) : 0,
+        clientTotal: live.length || mi.total || mi.planningLabor ? ceilStep(total, s.roundStep) : 0,
         hoursRaw: hoursRaw, hoursAdjusted: hoursAdj, tierHours: tier,
         days: hoursAdj > 0 ? Math.ceil(hoursAdj / (s.hoursPerDay * guys) - 1e-9) : 0,
         needsPricingCount: needs, lineCount: live.length, excludedCount: excluded.length,
@@ -202,17 +222,13 @@ function divisionTotals(lines, opts, settings, rates) {
     };
 }
 
-// divisions: [{ divisionNumber, name, lines, guys }] in sequence order. Mileage is charged once,
-// on the first division that has priced lines (the DPS sheet shows it only on division 4).
+// divisions: [{ divisionNumber, name, lines, guys, deployments, planningHours }] in sequence order.
+// Mileage is charged on every division whose deployments is set, as each division tab does.
 function bidTotals(divisions, opts, settings, rates) {
     const s = settings || DEFAULTS, o = opts || {};
-    let mileageCharged = false;
     const out = { divisions: [], labor: 0, materialCost: 0, subtotal: 0, contingency: 0, clientTotal: 0, days: 0, needsPricingCount: 0, hoursRaw: 0, tierHours: { apprentice: 0, specialist: 0, lead: 0, master: 0 }, kitFees: 0 };
     (divisions || []).forEach(function (d) {
-        const hasLive = (d.lines || []).some(function (l) { return l.included !== false; });
-        const charge = !mileageCharged && hasLive && !!num(o.milesAway);
-        if (charge) mileageCharged = true;
-        const t = divisionTotals(d.lines, { guys: d.guys, milesAway: o.milesAway, chargeMileage: charge }, s, rates);
+        const t = divisionTotals(d.lines, { guys: d.guys, milesAway: o.milesAway, deployments: d.deployments, planningHours: d.planningHours }, s, rates);
         t.divisionNumber = d.divisionNumber; t.name = d.name; t.id = d.id;
         out.divisions.push(t);
         out.labor += t.labor; out.materialCost += t.materialCost; out.subtotal += t.subtotal; out.contingency += t.contingency;
@@ -260,7 +276,7 @@ function changeOrderTotals(lines, settings, rates) {
 }
 
 const API = {
-    DEFAULTS: DEFAULTS, DEFAULT_RATES: DEFAULT_RATES, TIERS: TIERS, FRICTION_KEYS: FRICTION_KEYS, FRICTION_LABELS: FRICTION_LABELS,
+    DEFAULTS: DEFAULTS, DEFAULT_RATES: DEFAULT_RATES, TIERS: TIERS, PERF_TIERS: PERF_TIERS, STAGING_TIERS: STAGING_TIERS, FRICTION_KEYS: FRICTION_KEYS, FRICTION_LABELS: FRICTION_LABELS,
     cents: cents, ceilStep: ceilStep, fmt: fmt, fmt0: fmt0, settingsFromRows: settingsFromRows, ratesFromRows: ratesFromRows,
     frictionCount: frictionCount, frictionMultiplier: frictionMultiplier, laborForTask: laborForTask, materialUnitCost: materialUnitCost,
     materialLine: materialLine, mileage: mileage, priceLine: priceLine, divisionTotals: divisionTotals, bidTotals: bidTotals,

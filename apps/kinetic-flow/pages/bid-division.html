@@ -14,11 +14,18 @@
     <div id="div-stats" class="card" style="cursor:default; font-size:0.82rem; padding:10px 12px; margin-bottom:12px;"></div>
 
     <div class="card" style="cursor:default; padding:12px; margin-bottom:12px;">
-        <div class="form-group" style="margin:0; max-width:50%;">
-            <label>Guys on Site</label>
-            <input type="number" id="guys-count" min="1" step="1">
+        <div class="form-row">
+            <div class="form-group" style="margin:0;">
+                <label>Guys on Site</label>
+                <input type="number" id="guys-count" min="1" step="1">
+            </div>
+            <div class="form-group" style="margin:0;">
+                <label>Planning hours on site</label>
+                <input type="number" id="planning-hours" min="0" step="0.25">
+            </div>
         </div>
-        <p style="font-size:0.72rem; color:#64748b; margin:6px 0 0;">Labor rates come from the labor_rates table (Lead $300, Master $500, Apprentice $85, Specialist $120, Certified $200 per hour).</p>
+        <label style="display:block; font-size:0.82rem; margin-top:8px;"><input type="checkbox" id="deployments-on"> Deployments on this division (charge trip mileage, the execution line and planning hours)</label>
+        <p style="font-size:0.72rem; color:#64748b; margin:6px 0 0;">Task work: quantity x hours x rate (Lead $300, Master $500), plus friction. Setup and staging: hours x rate x trips (Apprentice $85, Specialist $120, Lead/Master $200). Rates come from the labor_rates table.</p>
     </div>
 
     <!-- Kits & carts required (physical inventory kits - drives kit checkout) -->
@@ -69,6 +76,16 @@
         divRow = DB.getById('bid_divisions', divRow.id);
         updateStats();
     });
+    var planInput = document.getElementById('planning-hours'), depInput = document.getElementById('deployments-on');
+    planInput.value = (divRow.form_data && divRow.form_data.planning_hours) || 0;
+    depInput.checked = !!(divRow.form_data && divRow.form_data.deployments);
+    function setForm(patch) {
+        DB.update('bid_divisions', divRow.id, { form_data: Object.assign({}, divRow.form_data, patch) });
+        divRow = DB.getById('bid_divisions', divRow.id);
+        updateStats();
+    }
+    planInput.addEventListener('input', function () { setForm({ planning_hours: Math.max(0, +this.value || 0) }); });
+    depInput.addEventListener('change', function () { setForm({ deployments: this.checked ? 1 : 0 }); });
 
     // Internal stats: this is the estimator's side of the firewall.
     function updateStats() {
@@ -82,6 +99,7 @@
             '<span>Days: <b>' + t.days + '</b></span><span>Labor: <b>' + fmt(t.labor) + '</b></span>' +
             '<span>Kit fees: <b>' + fmt(t.kitFees) + '</b></span><span>Materials (taxed): <b>' + fmt(t.materialsTaxed) + '</b></span>' +
             (t.mileage.total ? '<span>Mileage: <b>' + fmt(t.mileage.total) + '</b></span>' : '') +
+            (t.mileage.planningLabor ? '<span>Planning labor: <b>' + fmt(t.mileage.planningLabor) + '</b></span>' : '') +
             '<span>Exact: <b>' + fmt(t.total) + '</b></span><span>Client price: <b>' + fmt(t.clientTotal) + '</b></span></div>' +
             (t.needsPricingCount ? '<div style="margin-top:6px;"><span class="badge" style="background:#fef3c7; color:#92400e;">' + t.needsPricingCount + ' line(s) need pricing</span> not counted as $0.</div>' : '') +
             (t.excludedCount ? '<div style="margin-top:4px; font-size:0.75rem; color:#b45309;">' + t.excludedCount + ' line(s) excluded by scope status.</div>' : '');

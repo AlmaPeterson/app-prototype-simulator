@@ -335,7 +335,7 @@
         renderDivList();
         document.getElementById('grand-total').textContent = fmt(res.clientTotal);
         document.getElementById('div-summary').textContent = res.divisions.length + ' selected';
-        document.getElementById('mileage-note').textContent = 'Mileage: one planning round trip at ' + fmt(pricingSettings().mileageRatePerMile) + '/mile plus a ' + fmt(pricingSettings().executionFuelAllowance) + ' execution fuel line, charged once on the first division.';
+        document.getElementById('mileage-note').textContent = 'Mileage: on each division with deployments turned on, one planning round trip at ' + fmt(pricingSettings().mileageRatePerMile) + '/mile, a ' + fmt(pricingSettings().executionFuelAllowance) + ' execution line, and planning hours at ' + fmt(pricingSettings().planningRatePerHour) + '/h.';
         var sched = bidPaymentSchedule(DB.getById('bids', bidId), res.clientTotal);
         document.getElementById('pay-list').innerHTML = sched.map(function (p) {
             return '<div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #f1f5f9;"><div style="font-weight:600;">' + esc(p.label) + '</div><strong>' + fmt(p.amount) + '</strong></div>';

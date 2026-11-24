@@ -1,5 +1,7 @@
 # 003 Pricing formulas decoded from the sheets, and the guesses
 
+> **Superseded in part by note 009** (2026-11-24): staging labor, the 15.55 Specialist hours and mileage now follow the sheet formulas.
+
 Date: 2026-11-24
 
 ## Decision
