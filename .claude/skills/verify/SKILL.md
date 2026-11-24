@@ -19,7 +19,7 @@ Node is NOT installed in this sandbox; Python 3 + Playwright (chromium) are avai
 ## Drive (Playwright, sync API)
 
 - `page.goto("http://localhost:8931/index.html")`, then `wait_for_timeout(800)` for the OS boot animation.
-- The phone home screen shows app icons: `page.click(".home-icon")` opens Kinetic Flow; first open fetches ~41 `db/*.json` seeds — allow ~1s.
+- The phone home screen shows app icons: `page.click(".home-icon")` opens Kinetic Flow; first open fetches ~55 `db/*.json` seeds — allow ~1s.
 - App content renders inside `#main`; assert with `page.locator("#main").inner_text()`.
 - App state is inspectable: `page.evaluate("() => state.currentPage")` etc. (kinetic-flow's `activate()` puts `state`, `DB`, and page functions on `window`).
 - Header controls (account type, role, "Sign in as…" switcher, Reset Data, size presets) live outside the phone and work before the app icon is ever tapped.
