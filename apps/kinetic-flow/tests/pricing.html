@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<title>Kinetic Flow pricing tests</title>
+<style>
+  body { font: 14px/1.5 system-ui, sans-serif; margin: 16px; background: #fff; color: #0f172a; }
+  .pass { color: #15803d; } .fail { color: #b91c1c; font-weight: 600; }
+  #summary { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  li { list-style: none; }
+</style>
+</head>
+<body>
+<div id="summary">Running...</div>
+<ul id="results"></ul>
+<script src="../pricing.js"></script>
+<script>
+(function () {
+  var P = window.KFPricing, rates = P.DEFAULT_RATES;
+  var out = document.getElementById('results'), pass = 0, fail = 0;
+  function ok(name, cond, detail) {
+    var li = document.createElement('li');
+    li.className = cond ? 'pass' : 'fail';
+    li.textContent = (cond ? 'PASS  ' : 'FAIL  ') + name + (cond ? '' : '  -> ' + detail);
+    out.appendChild(li);
+    cond ? pass++ : fail++;
+  }
+  function eq(name, actual, expected) {
+    var a = typeof actual === 'number' ? Math.round(actual * 100) / 100 : actual;
+    ok(name, a === expected, 'got ' + JSON.stringify(actual) + ', expected ' + JSON.stringify(expected));
+  }
+  var BASE = { scope_code: 'BASE', is_billable: true }, CO1 = { scope_code: 'CO-001', is_billable: true };
+  function task(q, lead, status, frictions, kit) {
+    return { kind: 'task', quantity: q, task: { hours_per_unit: { lead: lead } }, status: status || BASE, frictions: frictions || {}, kit: kit || null };
+  }
+  function mat(q, price, status, extra) {
+    return { kind: 'material', quantity: q, material: Object.assign({ price: price, markup: 0.24 }, extra || {}), status: status || BASE };
+  }
+
+  // ---- primitives
+  eq('dump fee $100 at 24% markup = $124.00', P.materialUnitCost({ price: 100, markup: 0.24 }), 124);
+  ok('staples $80.68 at 24% = $100.0432', Math.abs(P.materialUnitCost({ price: 80.68, markup: 0.24 }) - 100.0432) < 1e-9, 'got ' + P.materialUnitCost({ price: 80.68, markup: 0.24 }));
+  eq('waste and freight: (10 x 1.1 + 2) x 1.24 = 16.12', P.materialUnitCost({ price: 10, waste: 0.1, freight: 2, markup: 0.24 }), 16.12);
+  eq('no price = needs pricing (null), not 0', P.materialUnitCost({ price: null }), null);
+  eq('material line with no price flags needsPricing', P.materialLine({ material: { price: null }, quantity: 5 }).needsPricing, true);
+  eq('friction: none = x1.0', P.frictionMultiplier({}), 1);
+  eq('friction: three toggles = x1.3 (additive)', P.frictionMultiplier({ no_power_water: 1, ladder_scaffold: 1, occupied: 1 }), 1.3);
+  eq('12 SF x 0.1 h x $300 x 1.3 = $468 (sheet row 102)',
+     P.laborForTask({ quantity: 12, hoursPerUnit: { lead: 0.1 }, frictions: { no_power_water: 1, ladder_scaffold: 1, occupied: 1 } }, undefined, rates).cost, 468);
+  eq('1 h x $300 x 1.2 (two toggles) = $360 (sheet core-hole row)',
+     P.laborForTask({ quantity: 1, hoursPerUnit: { lead: 1 }, frictions: { ladder_scaffold: 1, occupied: 1 } }, undefined, rates).cost, 360);
+  eq('task with no hours is needs-pricing', P.laborForTask({ quantity: 4, hoursPerUnit: {} }, undefined, rates).needsPricing, true);
+  eq('apprentice 85 PHR: 10 units x 0.2 h = $170', P.laborForTask({ quantity: 10, hoursPerUnit: { apprentice: 0.2 } }, undefined, rates).cost, 170);
+  eq('master 500 PHR: 1 h = $500', P.laborForTask({ quantity: 1, hoursPerUnit: { master: 1 } }, undefined, rates).cost, 500);
+  eq('ceilStep rounds up to the next $5: 1596.51 -> 1600', P.ceilStep(1596.51, 5), 1600);
+  eq('ceilStep: 642.50 -> 645', P.ceilStep(642.5, 5), 645);
+  eq('ceilStep: exact multiple stays: 640 -> 640', P.ceilStep(640, 5), 640);
+  eq('mileage: 8 miles away = 16 mi x $2.80 = $44.80 + $12.00 fuel', P.mileage(8).total, 56.8);
+
+  // ---- LIB-06 tab 4 (Demo) sample: Specialist/Lead hours, labor, materials, division total
+  var bwe = { id: 'kit-bwe', deployment_fee: 208.33 };
+  var f3 = { no_power_water: 1, ladder_scaffold: 1, occupied: 1 }, f2 = { ladder_scaffold: 1, occupied: 1 };
+  var demo = [
+    task(12, 0.1, CO1, f3),               // Demolition layout and planning
+    task(1, 0.5, CO1),                    // Temporary air barrier
+    task(1, 1, CO1),                      // Temporary environmental controls
+    task(12, 0.1, CO1),                   // Concrete demolition
+    task(1, 1, CO1, null, bwe),           // Move debris (EK Bulk Waste Egress kit)
+    task(1, 1, CO1, f2),                  // Core hole through wall
+    mat(1, 100, CO1),                     // Dump fee
+  ];
+  var d = P.divisionTotals(demo, {}, undefined, rates);
+  eq('Demo sample: Lead hours = 5.9', d.tierHours.lead, 5.9);
+  eq('Demo sample: labor = $1,938.00', d.labor, 1938);
+  eq('Demo sample: materials = $341.57 (dump fee x 1.0745 + EK kit $208.33)', d.materialCost, 341.57);
+  eq('Demo sample: division total $2,280 (rounded up to $5)', d.clientTotal, 2280);
+  eq('Demo sample: contingency 10% of labor = $193.80', d.contingency, 193.8);
+  eq('Demo sample: Specialist hours (sheet shows 15.55) - NOT reproducible from the grid; engine reports 0', d.tierHours.specialist, 0);
+
+  // ---- Bid 2608010 (DPS summary): $2,239.01 exact, $2,245 client total
+  var div4 = [task(7, 0.4), task(1, 1), mat(1, 100), mat(1, 200)];
+  var div55 = [task(1, 2.1416667)];
+  var b = P.bidTotals([{ divisionNumber: 4, lines: div4 }, { divisionNumber: 55, lines: div55 }], { milesAway: 8 }, undefined, rates);
+  eq('Bid 2608010 division 4: labor $1,140.00 (7 posts x 0.4 h x $300 + 1 load x 1 h x $300)', b.divisions[0].labor, 1140);
+  eq('Bid 2608010 division 4: material cost $456.51 (372 x 1.0745 + mileage $56.80)', b.divisions[0].materialCost, 456.51);
+  eq('Bid 2608010 division 4: Lead hours 3.8', b.divisions[0].tierHours.lead, 3.8);
+  eq('Bid 2608010 division 4: client price $1,600', b.divisions[0].clientTotal, 1600);
+  eq('Bid 2608010 division 55: labor $642.50, no mileage', b.divisions[1].materialCost, 0);
+  eq('Bid 2608010 DPS total $2,239.01', b.exactTotal, 2239.01);
+  eq('Bid 2608010 proposal grand total $2,245.00', b.clientTotal, 2245);
+
+  // ---- scope statuses
+  var co = [task(1, 1, CO1), task(1, 2, { scope_code: 'PCO', is_billable: false }), task(1, 4, { scope_code: 'VOID', is_billable: false }), task(1, 1, { scope_code: 'PUNCH-INT', is_billable: false })];
+  var cot = P.changeOrderTotals(co, undefined, rates);
+  eq('Change order: only the billable CO line is totalled ($300 -> $300)', cot.total, 300);
+  eq('Change order: PCO shown as pending ($600), not in total', cot.pendingAmount, 600);
+  eq('Change order: VOID and non-billable lines are excluded (3)', cot.excludedCount, 3);
+
+  // ---- needs-pricing never silently $0
+  var np = P.divisionTotals([task(5, 0), mat(2, null)], {}, undefined, rates);
+  eq('Division with an unpriced task and material counts 2 needs-pricing lines', np.needsPricingCount, 2);
+  eq('...and does not invent a price', np.total, 0);
+
+  // ---- gates
+  eq('Sprint: 4 days is OK', P.sprintCheck(4).ok, true);
+  eq('Sprint: 5 days warns', P.sprintCheck(5).ok, false);
+  eq('Payment: $4,999.99 = 100% upfront', P.paymentTerms(4999.99, false).mode, 'upfront');
+  eq('Payment: $5,000 = 50/50 split', P.paymentTerms(5000, false).mode, 'split');
+  eq('Payment: millwork over $5,000 = 100% upfront', P.paymentTerms(9000, true).mode, 'upfront');
+  eq('Payment: 50% deposit of $9,001 = $4,500.50', P.paymentTerms(9001, false).schedule[0].amount, 4500.5);
+  eq('Days: 40 h on 2 guys = 3 days', P.divisionTotals([task(40, 1)], { guys: 2 }, undefined, rates).days, 3);
+
+  var s = document.getElementById('summary');
+  s.textContent = 'pricing tests: ' + pass + ' passed, ' + fail + ' failed';
+  s.className = fail ? 'fail' : 'pass';
+  document.body.setAttribute('data-pass', pass);
+  document.body.setAttribute('data-fail', fail);
+  document.body.setAttribute('data-done', '1');
+})();
+</script>
+</body>
+</html>

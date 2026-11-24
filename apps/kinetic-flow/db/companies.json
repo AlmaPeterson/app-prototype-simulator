@@ -1,10 +1,11 @@
 [
-  {
-    "id": "company-kineticflow",
-    "name": "Kinetic Flow LLC",
-    "slug": "kinetic-flow-llc",
-    "created_at": "2024-04-03T12:00:00Z",
-    "updated_at": "2026-06-29T12:00:00Z",
-    "deleted_at": null
-  }
+ {
+  "id": "company-kineticflow",
+  "name": "Kinetic Flow LLC",
+  "slug": "kinetic-flow-llc",
+  "created_at": "2024-04-03T12:00:00Z",
+  "updated_at": "2026-06-29T12:00:00Z",
+  "deleted_at": null,
+  "invite_code": "KF7Q2M4X"
+ }
 ]

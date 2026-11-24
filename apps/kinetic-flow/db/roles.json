@@ -1,46 +1,54 @@
 [
-  {
-    "id": "role-kf-admin",
-    "company_id": "company-kineticflow",
-    "name": "admin",
-    "permissions": {
-      "finance": "nationwide",
-      "manage_users": true,
-      "manage_bids": true,
-      "manage_inventory": true
-    }
-  },
-  {
-    "id": "role-kf-manager",
-    "company_id": "company-kineticflow",
-    "name": "manager",
-    "permissions": {
-      "finance": "branch",
-      "manage_users": true,
-      "manage_bids": true,
-      "manage_inventory": true
-    }
-  },
-  {
-    "id": "role-kf-employee",
-    "company_id": "company-kineticflow",
-    "name": "employee",
-    "permissions": {
-      "finance": "job",
-      "manage_users": false,
-      "manage_bids": false,
-      "manage_inventory": false
-    }
-  },
-  {
-    "id": "role-kf-supplier",
-    "company_id": "company-kineticflow",
-    "name": "supplier",
-    "permissions": {
-      "finance": "none",
-      "manage_users": false,
-      "manage_bids": false,
-      "manage_inventory": false
-    }
+ {
+  "id": "role-kf-admin",
+  "company_id": "company-kineticflow",
+  "name": "admin",
+  "permissions": {
+   "manageUsers": false,
+   "manageBids": false,
+   "manageInventory": false,
+   "financeNationwide": false,
+   "financeBranch": false,
+   "financeJob": false
   }
+ },
+ {
+  "id": "role-kf-manager",
+  "company_id": "company-kineticflow",
+  "name": "manager",
+  "permissions": {
+   "manageUsers": false,
+   "manageBids": false,
+   "manageInventory": false,
+   "financeNationwide": false,
+   "financeBranch": false,
+   "financeJob": false
+  }
+ },
+ {
+  "id": "role-kf-employee",
+  "company_id": "company-kineticflow",
+  "name": "employee",
+  "permissions": {
+   "manageUsers": false,
+   "manageBids": false,
+   "manageInventory": false,
+   "financeNationwide": false,
+   "financeBranch": false,
+   "financeJob": false
+  }
+ },
+ {
+  "id": "role-kf-supplier",
+  "company_id": "company-kineticflow",
+  "name": "supplier",
+  "permissions": {
+   "manageUsers": false,
+   "manageBids": false,
+   "manageInventory": false,
+   "financeNationwide": false,
+   "financeBranch": false,
+   "financeJob": false
+  }
+ }
 ]

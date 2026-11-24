@@ -1,0 +1,72 @@
+[
+ {
+  "id": "51b81324-6e0c-51d8-b848-ca98ee5cf26c",
+  "company_id": "company-kineticflow",
+  "code": "lead",
+  "name": "Lead Craftsman",
+  "hourly_rate": 300,
+  "sheet_column": "300 PHR",
+  "note": "Lead Execution (pro rate)",
+  "sort_order": 0,
+  "created_at": "2026-11-24T12:00:00Z",
+  "updated_at": "2026-11-24T12:00:00Z",
+  "deleted_at": null,
+  "sync_status": "synced"
+ },
+ {
+  "id": "c0e44956-b120-5bb7-80e0-436c1f729113",
+  "company_id": "company-kineticflow",
+  "code": "master",
+  "name": "Master",
+  "hourly_rate": 500,
+  "sheet_column": "500 PHR",
+  "note": "Master consultation / high risk / certifications",
+  "sort_order": 1,
+  "created_at": "2026-11-24T12:00:00Z",
+  "updated_at": "2026-11-24T12:00:00Z",
+  "deleted_at": null,
+  "sync_status": "synced"
+ },
+ {
+  "id": "3db89085-2896-5c98-9f11-b7cae8815bbb",
+  "company_id": "company-kineticflow",
+  "code": "apprentice",
+  "name": "Apprentice",
+  "hourly_rate": 85,
+  "sheet_column": "85 PHR",
+  "note": "Apprentice",
+  "sort_order": 2,
+  "created_at": "2026-11-24T12:00:00Z",
+  "updated_at": "2026-11-24T12:00:00Z",
+  "deleted_at": null,
+  "sync_status": "synced"
+ },
+ {
+  "id": "8e6e64d4-bc38-5837-b660-db55de7fbfce",
+  "company_id": "company-kineticflow",
+  "code": "specialist",
+  "name": "Specialist",
+  "hourly_rate": 120,
+  "sheet_column": "120 PHR",
+  "note": "Specialist",
+  "sort_order": 3,
+  "created_at": "2026-11-24T12:00:00Z",
+  "updated_at": "2026-11-24T12:00:00Z",
+  "deleted_at": null,
+  "sync_status": "synced"
+ },
+ {
+  "id": "d02618ae-ce5a-5b45-9a6b-94a92011b54e",
+  "company_id": "company-kineticflow",
+  "code": "certified",
+  "name": "Certified Specialist",
+  "hourly_rate": 200,
+  "sheet_column": "200 PHR",
+  "note": "Specialist (certified) - rolls up under Specialist hours",
+  "sort_order": 4,
+  "created_at": "2026-11-24T12:00:00Z",
+  "updated_at": "2026-11-24T12:00:00Z",
+  "deleted_at": null,
+  "sync_status": "synced"
+ }
+]
