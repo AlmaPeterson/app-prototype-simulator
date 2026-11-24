@@ -111,6 +111,8 @@ Full-screen forced training video before clock-in and a "Master Co-Sign Required
 
 ## C. Bids, Labor Rates & Scheduling
 
+> **2026-11-24:** the bid system was rebuilt on the shared libraries; see section E, which supersedes C1-C4 where they overlap. The C notes below describe the 2026-08-12 behavior.
+
 ### C1. 3-Tier Labor Rate Engine — **IMPLEMENTED**, exact dollar match ✅
 Spec wants Support & Prep $120/hr, Trade Professional $300/hr, Master Specialist $500/hr. `bid-division.html` codes exactly this: `DEFAULT_RATE_APPRENTICE=120`, `DEFAULT_RATE_FELLOW=300`, `DEFAULT_RATE_MASTER=500`, with matching UI labels "Support & Prep" / "Trade Professional" / "Master Specialist." Correctly kept independent of the worker-rank `levels.json` axis (see A6 and [[kinetic-flow-levels-name-collision]]).
 
@@ -175,6 +177,28 @@ Confirmed absent repo-wide. `job_history_library.json` does hold the avg-cost/av
 
 ### D7. "In-Project Value Drops" (auto-push tips/updates to clients) — **NOT IMPLEMENTED**
 No content-push, feed, or notification mechanism to customers exists anywhere; customer pages are read-only pull views.
+
+---
+
+## E. Libraries, pricing engine and accounts alignment (2026-11-24)
+
+The owner's six shared Google Sheets libraries (LIB_01 clients, LIB_02 kits, LIB_03 materials, LIB-04 rooms,
+LIB-05 scope statuses, LIB-06 master scope) now drive bids. Verdicts below supersede C1-C4 where they overlap.
+Decisions: `docs/decisions/001`-`008`.
+
+| Item | Status | Notes |
+|---|---|---|
+| E1. 58-division Kinetic Master Sequence with inclusion/exclusion text | **IMPLEMENTED** | Replaces the 41-name list; new companies are seeded from it. |
+| E2. Division -> category -> task library with hours per unit per tier | **PARTIAL** | Imported as found: tabs 1-27 only, mostly unpriced, several tabs hold tasks from other trades (note 008). Unpriced tasks show "needs pricing". |
+| E3. Labor tiers 300/500/85/120/200 PHR | **PARTIAL** | Lead/Master confirmed from a filled bid; 85/120/200 mapping is an inference (note 002). Supersedes C1 (flat 500/300/120). |
+| E4. Friction toggles, tax, waste/freight/markup, kit deployment fees, mileage, $5 rounding | **IMPLEMENTED** | Reproduces bid 2608010 ($2,239.01 exact, $2,245 client) and the Demo sample labor/materials/total. Specialist hours 15.55 and the mileage fuel line are unreconciled (note 003). |
+| E5. Kits library (PK/EK) | **PARTIAL** | LIB_02 is filled in only for Demolition; fees mostly missing. Linked loosely to physical `inventory_kits`. |
+| E6. Rooms library and room per line | **IMPLEMENTED** | 47 rooms in their own table (`locations` stays storage places). |
+| E7. Scope statuses and scope-status-driven change orders (PCO -> CO-nnn, VOID, non-billable) | **IMPLEMENTED** | Supersedes C4's separate-amount design. `signChangeOrder()` is the hook for real e-signature, still absent. |
+| E8. Internal vs client firewall | **IMPLEMENTED** | Supersedes C3; asserted by a browser test. |
+| E9. 4-Day Sprint and payment-terms gates | **IMPLEMENTED** | Behind `bidGates`. Terms: 100% upfront under $5,000 or millwork, else 50% + Thursday handover. |
+| E10. Accounts model (status, invite code, boolean role permissions, union) | **IMPLEMENTED** | Per-member permission overrides kept as a prototype extra (note 007). |
+| E11. Real client rows (LIB_01) | **NOT IMPORTED** | Privacy rule: only the column shape is used; all rows are fictional. |
 
 ---
 

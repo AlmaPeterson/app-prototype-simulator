@@ -1,6 +1,6 @@
 # Kinetic Flow — App Review & Situation Reference
 
-Reviewed as of 2026-07-02, against the working tree (includes uncommitted changes to
+Reviewed as of 2026-07-02 (bid system sections updated 2026-11-24), against the working tree (includes uncommitted changes to
 `apps/kinetic-flow/app.js` and `pages/feild-clock.html` adding the Material Log modal).
 
 ## 1. What This Is
@@ -64,8 +64,7 @@ state = {
 ```
 
 Plus two module-level globals that live outside `state`:
-- `window.bidData` — the active bid object (see §8). Persists across bid-flow
-  navigations but is **wiped every time `openBid()` runs**.
+- (`window.bidData` was removed 2026-11-24 — see §6.17.)
 - `clockedIn` / `elapsedSeconds` / `timerInterval` in app.js — the field-clock timer.
 
 None of this survives a full page reload; it's all in-memory JS state.
@@ -314,60 +313,28 @@ clock. Once the chain clears, the task starts recording in the activity log and 
   - "Submit Scorecard" → back to `job-detail.html`; the score is discarded, not stored
     anywhere.
 
-### 6.17 Bid System (`bid.html` → `bid-division.html` → `bid-proposal.html`)
+### 6.17 Bid System (`bid.html` -> `bid-division.html` -> `bid-proposal.html`) and Change Orders
 
-The most data-heavy part of the app — mirrors the real "R6 Bid Packet" Google Sheet
-template (40-division CSI-style checklist).
+*Rebuilt 2026-11-24 ("data first, then screens"); the 2026-08-12 description of a hardcoded 40-division
+`window.bidData` blob no longer applies. `window.bidData` is gone; bids live in the DB tables.*
 
-- **`openBid()`** (called from job-home's/job-detail's "View Bid"/"Create Bid" and
-  from create-job's "Yes, take me to bid creation") **always sets
-  `window.bidData = null` before navigating to `bid.html`.** This means: if you leave
-  the bid flow (back to job-detail) and tap "View Bid" again, **any edits you made are
-  discarded** and `bid.html` reseeds its hardcoded demo bid from scratch. Only staying
-  *within* the bid flow (bid ↔ bid-division ↔ bid-proposal, none of which call
-  `openBid()` again) preserves in-progress edits.
-- **`bid.html`** on first load with no existing `bidData`: seeds a full 40-division
-  array from a hardcoded `NAMES` list (Planning/Design through Furnishings), all
-  blank/unchecked, then pre-fills 3 divisions with real demo task data — **Division 22
-  (Finish Carpentry — Phase 2)**, **Division 23 (Painting)**, **Division 32 (Floor
-  Coverings — Phase 2)** — plus a header (project "Westgate Electrical Panel",
-  customer Jordan Blake, craftsman Alex Rivera, etc.).
-  - Every header field is a bound `<input>` — typing updates `window.bidData` live via
-    `input` listeners (no explicit "save").
-  - Each of the 40 division rows has a checkbox; toggling `included` re-renders the
-    list and recalculates. When included, an "Edit Division Sheet →" button appears
-    (`openDivision(i)` → `bid-division.html`) plus a live task count if the division
-    already has tasks.
-  - Grand Total and the 4-row Schedule of Payments (50% deposit / 20% draw 1 / 20%
-    draw 2 / 10% final) recalculate from the sum of all included divisions' totals.
-  - Formula per division: `total = labor + materials + labor×0.10 + materials×0.10`
-    (10% contingency on both labor and materials), where a task only contributes if
-    `task.included` is true.
-  - "Preview Proposal →" → `bid-proposal.html`. "Save Draft" → `openJob(state.currentJob)`
-    (back to job-detail/nobid) — this is a real navigation, not an actual save
-    (there's nothing further to save; `bidData` is already live-bound).
-- **`bid-division.html`** — full editor for one division (`state.currentDivision`
-  indexes into `bidData.divisions`):
-  - Labor Rate and Guys on Site inputs recalc everything live.
-  - Task cards are fully inline-editable (category, name, scope, qty type
-    `SF/LF/C/EA/HR`, qty, hrs/each) with per-task include toggle, add/remove task,
-    and add/remove material (item/supplier/price/qty) all wired to mutate
-    `window.bidData` directly (no separate "save" step — `saveDivision()` just
-    navigates back to `bid.html`, whose re-render picks up the already-mutated data).
-  - Days calc: `Math.ceil(totalHours / (8 × guysOnSite))`.
-  - Removing the last task shows an empty state with "+ Add First Task."
-- **`bid-proposal.html`** — read-only client-facing document (Building Forward LLC
-  letterhead, legal boilerplate, dual signature blocks).
-  - If `window.bidData` is somehow null when this page loads, shows a red inline error
-    ("No bid data. Go back and create a bid first.") instead of a proposal — can't
-    normally happen since this page is only reached via `previewProposal()` from
-    `bid.html`, which always has `bidData` set by then.
-  - If zero divisions are included: "No divisions selected" placeholder instead of a
-    line-item list.
-  - Milestone descriptions for Progress Draw 1/2 fall back to a blank underscore line
-    if the corresponding `milestone1`/`milestone2` field was left empty.
-  - "Send to Customer" → `alert('Send flow not wired in prototype.')` — explicitly a
-    stub. "← Back to Bid Creation" → `bid.html` (does not clear `bidData`).
+- **Data:** `bids` -> `bid_divisions` (one per included division of the 58-division Kinetic Master Sequence) ->
+  `bid_line_items` (library references + quantity + friction toggles). Cached rollups are written by
+  `recalcBidTotals()`: `bids.total_cost` is the client price (sum of per-division fixed totals).
+- **Engine:** `apps/kinetic-flow/pricing.js` (pure functions, `window.KFPricing`) does labor by tier, friction,
+  materials with waste/freight/markup, tax 1.0745, kit deployment fees, mileage, contingency, rounding up to the
+  next $5 per division, the 4-Day Sprint check and the payment-terms gate. `tests/pricing.html` asserts the
+  sheet sample numbers.
+- **openBid()** creates (or resumes) the job's `bids` row; nothing is discarded on re-entry anymore.
+- **bid.html:** header, gate cards (flag `bidGates`), division checklist with per-division price and
+  needs-pricing badges, grand total, **internal summary**, schedule, miles/millwork, payment schedule.
+- **bid-division.html:** library scope text, internal stats, guys on site, required inventory kits, crew,
+  and the shared line editor (`KFLE` in app.js; also used by change-order.html).
+- **bid-proposal.html / PDF:** the client side of the firewall: library scope text, task scope + quantity, one
+  fixed total per division, grand total, terms-gate payment schedule. Send is blocked while any line needs pricing.
+- **Change orders:** lines carry a scope status (PCO -> CO-nnn on signing; VOID and non-billable excluded); the
+  change-orders page shows a contract ledger. See `docs/decisions/004`.
+- **Flags:** `FLAGS.libraryBids`, `FLAGS.bidGates` (header menu, persisted). See `docs/decisions/006`.
 
 ### 6.18 Kits & Tools (`kits.html`)
 - Browse-only UI over the shared `KIT_CATEGORIES` catalog (13 categories, ~118 kits,
@@ -488,8 +455,7 @@ template (40-division CSI-style checklist).
   assumes a worker/company context.
 - **`branch-detail.html`** falls back to Calgary HQ's data if `state.currentBranch`
   doesn't match a known key (see §6.7).
-- **`bid-proposal.html`** shows a red inline error if `window.bidData` is null (see
-  §6.17) — theoretically unreachable via the current UI, but the check exists.
+- **`bid-proposal.html`** shows a red inline error if there is no current bid (`state.currentBidId`) — unreachable via the current UI.
 - **Label generator PDF button** guards both "nothing selected" and "jsPDF failed to
   load" with `alert()`s rather than failing silently or throwing.
 
@@ -503,14 +469,12 @@ template (40-division CSI-style checklist).
   intentionally centralized so the three consumers never drift out of sync (page
   fragments' inline scripts re-run on every visit; app.js loads once per app
   lifetime).
-- **`window.bidData`**: `{ date, expires, bidNumber, project, customer, craftsman,
-  address, phone, email, startDate, procurementDays, constructionDays,
-  completionDate, milestone1, milestone2, divisions: [40 × { name, included, scope,
-  laborRate, guys, tasks: [{ category, name, included, scope, qtyType, qty, hrsEach,
-  materials: [{ item, supplier, price, qty }] }] }] }`. Lives on `window` (not
-  `state`) specifically so it survives navigation between the three bid pages without
-  needing to be threaded through every `loadPage()` call — but see the "wiped by
-  `openBid()`" gotcha in §6.17.
+- **Library tables (2026-11-24):** `divisions` (58, with `scope_inclusions`/`scope_exclusions`), `scope_tasks`
+  (division -> category -> task, unit, `hours_per_unit` by tier, `needs_pricing`), `labor_rates`, `kits` (LIB_02),
+  `materials` (extended with supplier/part/spec/lead time/waste/freight/markup), `rooms` (LIB-04),
+  `scope_statuses` (LIB-05), `customers` (LIB_01 shape, fictional rows). Pricing settings are `system_state` rows.
+  Accounts: `users.status`, `companies.invite_code`, `roles.permissions` as a boolean map (union across roles).
+  Bump `DB_VERSION` (now 21) whenever seed shapes change.
 - **`NO_BID_JOBS`**: single-element array (`['Westgate Electrical Panel']`) controlling
   which job name routes to `job-detail-nobid.html` instead of `job-detail.html`.
 
@@ -531,9 +495,6 @@ logged" checkbox. This is not yet committed to git.
   the in-memory session (a full page reload resets everything).
 - `job-detail.html` shows fixed "Riverside HVAC Retrofit" content no matter which job
   was tapped; only `job-home.html` is genuinely per-job.
-- `openBid()` unconditionally discards `window.bidData` — re-entering the bid flow
-  from outside it (rather than navigating within bid ↔ bid-division ↔ bid-proposal)
-  loses all edits.
 - Several tab bars (Scoreboard's Monthly/Weekly/All Time, Stats' Month/Quarter/Year,
   Finance's Overview/Invoices/Expenses, Inventory's category tabs) render a
   hardcoded-active first tab with no click handling on the others.

@@ -2124,7 +2124,7 @@ const KFLE = {
             if (li.kind === 'task') {
                 if (!li.scope_task_id) h += '<label>Lead h/unit <input type="number" min="0" step="0.01" value="' + ((t && t.hours_per_unit && t.hours_per_unit.lead) || 0) + '" style="width:70px;" onchange="KFLE.setCustomHours(\'' + li.id + '\', this.value)"></label>';
                 h += KFPricing.FRICTION_KEYS.map(function (k) {
-                    return '<label title="' + KFPricing.FRICTION_LABELS[k] + '"><input type="checkbox"' + ((li.frictions || {})[k] ? ' checked' : '') + ' onchange="KFLE.setFriction(\'' + li.id + '\', \'' + k + '\', this.checked)"> ' + KFPricing.FRICTION_LABELS[k].split(' ')[0] + '</label>';
+                    return '<label title="' + KFPricing.FRICTION_LABELS[k] + '"><input type="checkbox"' + ((li.frictions || {})[k] ? ' checked' : '') + ' onchange="KFLE.setFriction(\'' + li.id + '\', \'' + k + '\', this.checked)"> ' + ({ no_power_water: 'No power/water', ladder_scaffold: 'Ladder/scaffold', occupied: 'Occupied' })[k] + '</label>';
                 }).join('');
             } else if (!li.material_id) {
                 const cm = li.custom_material || {};

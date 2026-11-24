@@ -43,10 +43,10 @@ sense — nothing hits a server.
 ### manage-users.html (⋯ menu → Manage Users; gated by the manage_users permission)
 - **See:** Account Requests (pending sign-ups: name, email/phone, note, a position dropdown prefilled with what they requested — Employee when they didn't pick); position chips; branch cards (name, address, Primary badge); Company Configuration: Bid Divisions card plus the fixed Guild/Competency ladders (badged "Fixed"); a Permissions list summarizing each position's finance access / manage-users / manage-bids; Team Members list (name, position, branch — pending accounts excluded).
 - **Edit:** Everything above through bottom-sheet panels:
-  - Position panel (+ Add or tap a chip/permission row): name, finance access (none/job/branch/nationwide), manage-users and manage-bids toggles; Remove Position (blocked-with-confirm if members hold it; admin can't be removed).
+  - Position panel (+ Add or tap a chip/permission row): name, finance access (none/job/branch/nationwide, stored as three booleans), manage-users and manage-bids toggles (roles hold a `map[string]bool`; a user's permissions are the union of their roles); Remove Position (blocked-with-confirm if members hold it; admin can't be removed).
   - Branch panel (+ Add): name, street, city, state (first branch becomes Primary). Remove non-primary branches (unassigns their members).
   - Member panel (tap a member): branch, position, per-member finance access override, manage-users / manage-bids toggles.
-- **Do:** Approve an account request (sets `approval_status: 'approved'` and activates their `user_roles` row at whichever position is selected — the approver can change it) or Reject (confirm dialog, soft-deletes the user; they can request again). Remove a member (deletes their account — new members only arrive via Request Access, so there is no separate add-user search). Tap a branch card → branch-detail. Open Bid Divisions. Done → back.
+- **Do:** Approve an account request (sets `status: 'approved'` and activates their `user_roles` row at whichever position is selected — the approver can change it) or Reject (confirm dialog, sets `status: 'rejected'`; the row is kept and cannot sign in). Remove a member (deletes their account — new members only arrive via Request Access, so there is no separate add-user search). Tap a branch card → branch-detail. Open Bid Divisions. Done → back.
 
 ### branch-detail.html
 - **See:** Branch name, Primary badge, address, manager, manager's phone, active-job count, branch member list (name + guild level) with a search box scoped to company members.
@@ -110,57 +110,48 @@ Built for C6/A9 — see the gap analysis doc.
 
 ---
 
-## Bids
+## Bids (rebuilt on the libraries, 2026-11-24)
+
+Bid lines no longer carry free-typed descriptions. A `bid_line_items` row points at a library row
+(`scope_task_id` / `material_id` / `kit_id` / `room_id` / `scope_status_id`) plus `quantity` and `frictions`
+(`no_power_water`, `ladder_scaffold`, `occupied`, +10% each). A "custom" task/material (snapshot on the line) is
+still possible. All money comes from `pricing.js`. See `docs/decisions/001`-`008`.
 
 ### bid.html — bid builder
-- **See:** Job-header form; the company's active divisions as a numbered checklist (checked = included, showing cost with 10% contingency, scope preview, task count); auto-calculated Grand Total; project schedule form; 50/20/20/10 payment schedule with auto-calculated dollar amounts.
-- **Edit:** Everything writes straight to the DB on input:
-  - Header: date, expires, bid #, project (bid title), customer name/phone/email (updates the customer record), lead craftsman, site address override. Bid # and expires are auto-filled (QA notes 2026-07-07): new bids get a generated `BID-<year>-<seq>` number and an expiration of bid date + 30 days at creation (openBid), and bids missing either are backfilled on open — expiration is a fixed price-validity window, deliberately not derived from job duration. Both stay editable.
-  - Divisions: check/uncheck to include (insert / soft-delete a `bid_divisions` row).
-  - Schedule: start, completion, procurement days, on-site days (overrides the auto-sum). Est. completion auto-calculates as start + procurement + on-site working days (Mon–Sat, Sundays skipped; on-site falls back to the division auto-sum when the override is blank) and re-derives whenever start/procurement/on-site or the division list changes; a hand-typed completion date holds until one of those changes.
-  - Mileage (2026-08-10): one round-trip **Miles to Site** and **Mileage Rate ($/mile)** per bid (default `DEFAULT_MILEAGE_RATE` = $0.67/mi, IRS-style default, backfilled onto bids created before this existed), priced against each division-sheet task's own **Trips** count — a division only picks up a rate/mileage change here the next time it's opened and saved.
-  - Payments: milestone descriptions for draws 1 and 2.
-- **Do:** "Edit Division Sheet →" on an included division → bid-division. Preview Proposal → bid-proposal. Save Draft / ← Job Detail (everything is already saved).
+- **See:** Job-header form; the **4-Day Sprint** and **Payment terms** gate cards (flag `bidGates`) plus a red "N lines need pricing" card; the 58 Kinetic Master Sequence divisions (filterable) with the client price, line count and needs-pricing badge for included ones; **Grand Total (client price)**; an **Internal Summary** (hours by tier, labor, kit fees, taxed materials + kits + mileage, exact total, contingency held separately, crew days, kits and bill of materials); Schedule; Mileage & Terms; Schedule of Payments.
+- **Edit:** Header fields, include/exclude divisions, schedule dates, **Miles to Site**, **Millwork job** checkbox (division 38 also counts). The mileage rate is a system setting (`mileage_rate_per_mile`), not a per-bid field.
+- **Do:** "Edit Division Sheet" -> bid-division. Preview Proposal -> bid-proposal. The payment schedule comes from the terms gate: 100% upfront under $5,000 or for millwork, otherwise 50% deposit and the balance at Thursday handover (flag off: legacy 50/20/20/10).
 
-### bid-division.html — one division's sheet
-- **See:** Division name and position ("Division N of 41 · CSI {number}" — the CSI MasterFormat number added 2026-08-12, see `kinetic-flow-40-divisions` memory for the division count); live stats row (total, labor, materials, **mileage**, hours, days); division totals card (labor/materials/mileage subtotals, 10% contingency each, division total). A **Crew Assigned to This Division** list (2026-08-10) — company members added via a picker sheet, stored as `job_assignments` rows scoped to this division (`bid_division_id`, nullable — job-wide assignments keep `bid_division_id: null` and are unaffected). A **Kits & Carts Required** picker (QA note 2026-07-14) — every company kit/cart grouped into the same category headers kits.html's drawer uses, with a search box filtering by kit or category name (deliberately not auto-filtered by matching division name to kit category — those are separate free-text taxonomies with no reliable mapping). Each task card shows total hours, labor cost, mileage, and task total, live-recalculated.
-- **Edit:** **Billed Labor Rates (2026-08-10)** — three $/hr fields, **Master Specialist / Trade Professional / Support & Prep** (deliberately not named after the Guild ladder — these describe what a *task* requires, not who's actually doing it, and are customer-facing bid rates independent of what `LEVELS`/`users.hourly_rate` actually pays the crew; defaults 500/300/120, matching the source sheet's own per-tier rates; a division saved before this existed keeps its one flat rate on all three tiers until edited) — plus guys-on-site (drives `days = ceil(hours / (8 × guys))`); division scope (shown on the proposal); required kits/carts (tap a chip to toggle); crew (+ Add opens a picker of company members not yet on this division; Remove drops the assignment); tasks — each with include-checkbox, category, name, scope, qty type (dropdown shows full names — Square Feet / Linear Feet / Count / Each / Hours — while the SF/LF/C/EA/HR codes are what's stored), qty, **Trips** (round trips to the job site this task requires, priced via the bid's mileage settings), and **Master Specialist/Trade Professional/Support & Prep Hrs per Each** (hours split across the three billed tiers instead of one shared field); per-task materials — item, supplier, price, qty. Task hours round to the nearest quarter hour (15 min) per tier in both the live calc and what's saved; the hrs/each spinners step by 0.25, task qty/trips and material qty by whole numbers (typed decimals still accepted), material price by cents. Add/remove tasks and materials freely.
-- **Do:** Edits are held in a page-local working copy; **Save & Return to Bid** (or the ← back button, same function) flattens tasks into `bid_line_items` rows (tier hours in `hrs_each_master`/`hrs_each_fellow_craft`/`hrs_each_apprentice`, trips in `task_trips`), writes the chip selection to `bid_divisions.required_kit_ids` (surfaced on job-home.html's Kits & Carts Needed checklist), updates the division's cost rollups (including `mileage_cost`) and the bid totals, and returns to bid.html.
+### bid-division.html — one division's sheet (internal)
+- **See:** Division name; the library scope text (inclusions / exclusions) the client will see; an internal stats card (tier hours, days, labor, kit fees, taxed materials, mileage, exact and client price, needs-pricing and excluded counts); Guys on Site; Kits & Carts Required (physical inventory kits, drives kit checkout); Crew Assigned; the line editor and the line list.
+- **Edit:** Add a **library task** (division is fixed; pick category, then task; quantity, room, scope status, three friction toggles, kit), a **material** (search the materials library) or a **custom task** (hours per unit, 0 = needs pricing). Each line: quantity, status, friction toggles, kit, remove. Edits write immediately; "Done" persists the kit chips and returns.
+- **Needs pricing:** a task with no production hours or a material/kit with no price shows NEEDS PRICING and is excluded from totals, never $0.
 
 ### bid-proposal.html — client-facing preview
-- **See:** Read-only proposal: company letterhead, bid header grid (date, expires, bid #, project, customer, craftsman, site address), included divisions with scope + cost, grand total, project schedule (on-site days auto-summed from division sheets unless overridden), legal boilerplate, 50/20/20/10 payment schedule with milestones, dual signature blocks (your company + owner).
-- **Edit:** Nothing.
-- **Do:** "Send to Customer" — generates and downloads a real jsPDF proposal (header, division costs with contingency, project schedule, 50/20/20/10 payment plan; that document is what the customer would receive) and moves the bid to `status: 'sent'` with `sent_at`. Already-sent bids show "Download PDF (sent {date})" instead (QA note 2026-07-07) — a pure re-download that leaves the sent status and `sent_at` untouched. ← Back to Bid Creation.
+- **See:** Letterhead, header grid, per division: library inclusions, each task's scope with quantity, exclusions, and ONE fixed total; the grand total; schedule; the payment schedule from the terms gate; acceptance block. No hours, tiers, kits or internal costs.
+- **Do:** "Send to Customer" generates the PDF from the same client model and moves the bid to sent (blocked while any line needs pricing). Invoices are cut from the payment schedule.
 
 ---
 
-## Change Orders (2026-08-10)
+## Change Orders (scope-status driven, 2026-11-24)
 
-A change order is its own signable document against an already-sent bid — not
-inline Original/Change columns on the bid divisions. `change_order_line_items`
-mirrors `bid_line_items`' task shape (same tiered-labor/mileage/material
-columns), but a change order isn't split into named divisions like a bid is:
-each task just optionally tags which existing bid division it amends. No 10%
-contingency is added — a change order is a firm price for already-negotiated
-work, not a fresh estimate, and it's paid in full on acceptance rather than
-the bid's 50/20/20/10 draws. Reachable only once the underlying bid has been
-sent (there's no e-sign flow in this app, so gating on `signed` would make
-the feature permanently unreachable).
+A change order is its own signable document against a sent bid. Its lines use the same library line shape
+(`change_order_line_items`) and a **scope status** decides how they count: new lines are **PCO** (priced, pending, not billed);
+when the customer signs they become the change order's own code (CO-001, ...) and are billable. VOID and non-billable
+statuses (PUNCH-INT, WAR-RPR) are excluded from totals and from the client document. Numbering uses the library codes
+(CO-001, CO-002, ... per bid). It is paid in full on acceptance.
 
 ### change-orders.html (job-detail's "Change Orders" button)
-- **See:** The job's change orders against its bid (number, title, status badge — Draft/Sent/Signed, total), newest first. A gating note when the job has no bid yet, or has a bid that hasn't been sent yet.
-- **Edit:** Nothing.
-- **Do:** "+ New Change Order" (hidden until the bid is sent/signed) — creates a `change_orders` row (`CO-<year>-<seq>`, 7-day expiration, default 500/300/120 tier rates) and opens it. Tap a row → change-order. ← Job Detail.
+- **See:** A contract ledger (original contract BASE + signed change orders = contract sum; pending PCO shown separately) and the job's change orders with status and amounts.
+- **Do:** "+ New Change Order" (hidden until the bid is sent/signed).
 
-### change-order.html — one change order's sheet
-- **See:** CO number, job name and which bid it amends; live stats row (total, labor, materials, mileage); a mileage note showing the bid's miles/rate feeding this order's math.
-- **Edit:** Title, reason/description of change, expires date; Billed Labor Rates (Master Specialist/Trade Professional/Support & Prep $/hr — same naming as bid-division.html, see that entry for why they're not named after the Guild ladder; defaults 500/300/120, independent per change order from the originating divisions); tasks — same shape as bid-division.html's (category dropdown of which bid division this task amends, or "New / General Scope"; name, scope, qty type/qty, trips, per-tier hrs-each, materials). Add/remove tasks and materials freely.
-- **Do:** Edits are held in a page-local working copy. "Preview & Send →" persists then opens change-order-proposal. **Save Draft** (or ← back, same function) persists tasks into `change_order_line_items` rows, recomputes the rollup, and returns to change-orders.
+### change-order.html — one change order's sheet (internal)
+- **See:** Billable now / pending (PCO) / proposed total / excluded lines, and needs-pricing count; title, reason, expiry; the line editor (division picker is available because a change order can touch any division).
+- **Do:** Add library tasks, materials or custom tasks, set each line's scope status, "Preview & Send".
 
 ### change-order-proposal.html — client-facing preview
-- **See:** Read-only proposal: company letterhead, header grid (date, expires, CO #, amends bid #, customer, site address, reason for change), included tasks with cost, Grand Total, a fixed "due in full upon acceptance" payment note, dual signature blocks.
-- **Edit:** Nothing.
-- **Do:** "Send to Customer" — generates and downloads a real jsPDF proposal, moves the CO to `status: 'sent'` with `sent_at`, and generates its one real `invoices` row (full amount, due on acceptance). Already-sent COs show "Download PDF (sent {date})" instead — a pure re-download. ← Back to Change Order.
+- **See:** Header, scope grouped by division (task scope + quantity), one total, payment note, acceptance block.
+- **Do:** "Send to Customer" (blocked while lines need pricing; generates the PDF and the invoice); once sent, "Customer signed - mark signed" flips PCO lines to the CO code.
 
 ---
 
